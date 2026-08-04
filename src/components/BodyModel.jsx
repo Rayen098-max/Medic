@@ -16,23 +16,13 @@ const Hotspot = ({ position, onClick, active, name }) => {
 
   return (
     <group position={position}>
-      <mesh
+      <mesh 
         ref={meshRef}
-        onClick={(e) => {
-          e.stopPropagation();
-          onClick();
-        }}
-        onPointerOver={(e) => {
-          e.stopPropagation();
-          setHover(true);
-          document.body.style.cursor = 'pointer';
-        }}
-        onPointerOut={(e) => {
-          setHover(false);
-          document.body.style.cursor = 'auto';
-        }}
+        onClick={(e) => { e.stopPropagation(); onClick(); }}
+        onPointerOver={(e) => { e.stopPropagation(); setHovered(true); document.body.style.cursor = 'pointer'; }}
+        onPointerOut={(e) => { e.stopPropagation(); setHovered(false); document.body.style.cursor = 'default'; }}
       >
-        <sphereGeometry args={[0.06, 32, 32]} />
+        <sphereGeometry args={[0.04, 32, 32]} />
         <meshStandardMaterial
           color={active ? '#ff0000' : hovered ? '#ff4444' : '#cc0000'}
           emissive={active ? '#ff0000' : hovered ? '#ff4444' : '#cc0000'}
@@ -105,19 +95,34 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
     return { scale };
   }, [meshNode]);
 
-  const getHotspotPosition = (zoneCategory, origPos) => {
+  const getHotspotPosition = (zoneCategory, id, origPos) => {
+    let base = origPos || [0, 0, 0];
     switch (zoneCategory?.toLowerCase()) {
       case 'neck':
-        return [0, 2.2, -0.1];
+        base = [0, 2.2, -0.1];
+        break;
       case 'shoulder':
-        return [0.7, 1.7, -0.1];
+        base = [0.7, 1.7, -0.1];
+        break;
       case 'upper back':
-        return [0, 1.3, -0.55];
+        base = [0, 1.3, -0.55];
+        break;
       case 'lower back':
-        return [0, 0.1, -0.55];
-      default:
-        return origPos || [0, 0, 0];
+        base = [0, 0.1, -0.55];
+        break;
     }
+
+    if (id) {
+      // Deterministic spread based on ID (e.g. N04 -> 4)
+      const num = parseInt(id.replace(/\D/g, '')) || 0;
+      if (num > 0) {
+        const radius = 0.04 + (num % 4) * 0.04;
+        const angle = num * 2.399; // Golden angle approx
+        return [base[0] + Math.cos(angle) * radius, base[1] + Math.sin(angle) * radius, base[2]];
+      }
+    }
+    
+    return base;
   };
 
   return (
@@ -135,7 +140,7 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
       {zones.filter(z => activeZones.length === 0 || activeZones.includes(z.id)).map((zone) => (
         <Hotspot
           key={zone.id}
-          position={getHotspotPosition(zone.zone, zone.position)}
+          position={getHotspotPosition(zone.zone, zone.id, zone.position)}
           name={zone.name}
           active={activeZones.includes(zone.id)}
           onClick={() => onZoneClick(zone.id)}

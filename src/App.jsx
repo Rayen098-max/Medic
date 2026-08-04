@@ -8,11 +8,12 @@ import AdminPanel from './components/AdminPanel';
 import CaptureForm from './components/CaptureForm';
 import CustomerPortal from './components/CustomerPortal';
 import contentData from './data/content.json';
+import painPointsData from './data/painPoints.json';
 
 function MapView() {
   const [activeZone, setActiveZone] = useState(null);
 
-  const selectedZoneData = activeZone ? contentData.zones.find(z => z.id === activeZone) : null;
+  const selectedZoneData = activeZone ? painPointsData.find(z => z.id === activeZone) : null;
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
@@ -32,7 +33,7 @@ function MapView() {
         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} />
         
         <BodyModel 
-          zones={contentData.zones}
+          zones={painPointsData}
           activeZones={activeZone ? [activeZone] : []}
           onZoneClick={setActiveZone}
         />
