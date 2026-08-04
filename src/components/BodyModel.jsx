@@ -41,7 +41,7 @@ const Hotspot = ({ position, onClick, active, name }) => {
           opacity={0.9}
         />
       </mesh>
-      {(hovered || active) && (
+      {hovered && (
         <Html center position={[0, 0.5, 0]} zIndexRange={[100, 0]}>
           <div style={{
             background: 'rgba(13, 17, 23, 0.9)',
