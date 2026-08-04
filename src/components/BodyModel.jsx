@@ -36,9 +36,9 @@ const Hotspot = ({ position, onClick, active, name }) => {
         <meshStandardMaterial
           color={active ? '#ff0000' : hovered ? '#ff4444' : '#cc0000'}
           emissive={active ? '#ff0000' : hovered ? '#ff4444' : '#cc0000'}
-          emissiveIntensity={0.8}
+          emissiveIntensity={3.0}
           transparent
-          opacity={0.9}
+          opacity={1}
         />
       </mesh>
       {hovered && (
@@ -81,8 +81,8 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
 
   const bodyMaterial = new THREE.MeshStandardMaterial({
     color: '#e8beac',
-    transparent: false,
-    opacity: 1,
+    transparent: true,
+    opacity: 0.65,
     roughness: 0.6,
     metalness: 0.1,
     wireframe: false 
