@@ -19,12 +19,21 @@ function MapView() {
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       {/* Header */}
       <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 10, pointerEvents: 'none' }}>
-        <h1 style={{ color: 'var(--accent)', margin: 0, fontSize: '1.5rem', letterSpacing: '2px', textTransform: 'uppercase' }}>
-          Posture & Pain Map
+        <h1 style={{ color: 'var(--accent)', margin: 0, fontSize: '2rem', letterSpacing: '2px', textTransform: 'uppercase' }}>
+          Medic
         </h1>
         <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.9rem' }}>
-          Select a highlighted zone for clinical insights
+          Hover over the body to explore pain points
         </p>
+      </div>
+
+      {/* Top Right Logo */}
+      <div style={{ position: 'absolute', top: 24, right: 24, zIndex: 10, display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ position: 'relative', width: '24px', height: '24px' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '16px', height: '16px', border: '3px solid var(--accent)' }}></div>
+          <div style={{ position: 'absolute', bottom: 0, right: 0, width: '16px', height: '16px', border: '3px solid #fff' }}></div>
+        </div>
+        <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'white', letterSpacing: '1px', textTransform: 'uppercase' }}>THE SLEEP COMPANY</span>
       </div>
 
       {/* 3D Canvas */}
