@@ -18,22 +18,40 @@ function MapView() {
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       {/* Header */}
-      <div style={{ position: 'absolute', top: 20, left: 20, zIndex: 10, pointerEvents: 'none' }}>
-        <h1 style={{ color: 'var(--accent)', margin: 0, fontSize: '2rem', letterSpacing: '2px', textTransform: 'uppercase' }}>
-          Medic
+      <div style={{ position: 'absolute', top: 30, left: 30, zIndex: 10, pointerEvents: 'none' }}>
+        <h1 style={{ 
+          margin: 0, 
+          fontSize: '3.5rem', 
+          fontWeight: '900', 
+          letterSpacing: '4px', 
+          textTransform: 'uppercase',
+          background: 'linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          textShadow: '0px 10px 30px rgba(0, 210, 255, 0.3)',
+          fontFamily: '"Montserrat", "Inter", sans-serif'
+        }}>
+          MEDIC
         </h1>
-        <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.9rem' }}>
+        <p style={{ color: 'var(--text-muted)', margin: '8px 0 0 4px', fontSize: '1rem', fontWeight: '500', letterSpacing: '1px' }}>
           Hover over the body to explore pain points
         </p>
       </div>
 
       {/* Top Right Logo */}
-      <div style={{ position: 'absolute', top: 24, right: 24, zIndex: 10, display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div style={{ position: 'relative', width: '24px', height: '24px' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '16px', height: '16px', border: '3px solid var(--accent)' }}></div>
-          <div style={{ position: 'absolute', bottom: 0, right: 0, width: '16px', height: '16px', border: '3px solid #fff' }}></div>
+      <div style={{ position: 'absolute', top: 30, right: 30, zIndex: 10, display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ position: 'relative', width: '44px', height: '44px' }}>
+          {/* Light blue intersection box */}
+          <div style={{ position: 'absolute', top: '12px', left: '12px', width: '20px', height: '20px', backgroundColor: '#a4dada' }}></div>
+          {/* Top-left square */}
+          <div style={{ position: 'absolute', top: 0, left: 0, width: '32px', height: '32px', border: '4px solid #fff', boxSizing: 'border-box' }}></div>
+          {/* Bottom-right square */}
+          <div style={{ position: 'absolute', bottom: 0, right: 0, width: '32px', height: '32px', border: '4px solid #fff', boxSizing: 'border-box' }}></div>
         </div>
-        <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: 'white', letterSpacing: '1px', textTransform: 'uppercase' }}>THE SLEEP COMPANY</span>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', lineHeight: '1.1' }}>
+          <span style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ffffff', letterSpacing: '1px', fontFamily: '"Montserrat", "Inter", sans-serif' }}>THE SLEEP</span>
+          <span style={{ fontSize: '1.4rem', fontWeight: '900', color: '#ffffff', letterSpacing: '1px', fontFamily: '"Montserrat", "Inter", sans-serif' }}>COMPANY</span>
+        </div>
       </div>
 
       {/* 3D Canvas */}
