@@ -52,3 +52,13 @@ export const updatePatientStatus = async (id, statusData) => {
 
   if (error) throw error;
 };
+
+export const deletePatient = async (id) => {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase
+    .from('patients')
+    .delete()
+    .eq('id', id);
+
+  if (error) throw error;
+};

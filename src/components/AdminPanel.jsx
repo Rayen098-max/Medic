@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Check, Clock, Eye } from 'lucide-react';
-import { getPatients, addPatient } from '../utils/db';
+import { ArrowLeft, MessageCircle, Check, Clock, Eye, Trash2 } from 'lucide-react';
+import { getPatients, deletePatient } from '../utils/db';
 
 // Helper to get date N days ago
 const getDaysAgo = (days) => {
@@ -57,6 +57,17 @@ export default function AdminPanel() {
 
   const handleMarkSent = (id) => {
     setSentStatus(prev => ({ ...prev, [id]: true }));
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this patient record?')) {
+      try {
+        await deletePatient(id);
+        setPatients(prev => prev.filter(p => p.id !== id));
+      } catch (err) {
+        alert('Failed to delete patient: ' + err.message);
+      }
+    }
   };
 
   return (
@@ -141,6 +152,15 @@ export default function AdminPanel() {
                               <MessageCircle size={18} /> Send WhatsApp
                             </a>
                           )}
+
+                          <button 
+                            onClick={() => handleDelete(customer.id)}
+                            className="clinical-btn"
+                            title="Delete Record"
+                            style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderColor: '#ef4444', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          >
+                            <Trash2 size={18} />
+                          </button>
                         </div>
                       </td>
                     </tr>
