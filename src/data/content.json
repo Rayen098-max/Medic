@@ -1,0 +1,72 @@
+{
+  "zones": [
+    {
+      "id": "neck",
+      "name": "Neck & Cervical Spine",
+      "position": [0, 4.5, 0.5],
+      "description": "Forward head posture creates excessive strain on the cervical spine and surrounding musculature. For every inch the head moves forward, the load on the neck muscles effectively doubles, leading to chronic tension, headaches, and nerve compression.",
+      "dos": [
+        "Maintain neutral spine alignment while sitting",
+        "Perform chin tucks to strengthen deep cervical flexors",
+        "Use a supportive pillow that maintains the natural curve of the neck"
+      ],
+      "donts": [
+        "Avoid looking down at phones for extended periods (Text Neck)",
+        "Don't sleep on your stomach with your head turned sharply",
+        "Avoid propping your head up with too many pillows while reading/watching TV in bed"
+      ],
+      "products": ["Cervical Contour Pillow", "SmartGrid Orthopedic Mattress"]
+    },
+    {
+      "id": "shoulders",
+      "name": "Shoulder Girdle",
+      "position": [1.5, 3.5, 0],
+      "description": "Rounded shoulders and protracted scapulae are common issues stemming from prolonged desk work. This alters the mechanics of the shoulder joint, increasing the risk of impingement and rotator cuff strain.",
+      "dos": [
+        "Perform doorway chest stretches",
+        "Strengthen rhomboids and middle traps (scapular retraction)",
+        "Sleep on your back or on the unaffected side with a supportive pillow between arms"
+      ],
+      "donts": [
+        "Avoid sleeping directly on the affected shoulder",
+        "Don't slump forward while sitting",
+        "Avoid lifting heavy objects away from the body's center of gravity"
+      ],
+      "products": ["Adjustable Sleep System", "Medium-Firm Smart Mattress"]
+    },
+    {
+      "id": "upper_back",
+      "name": "Thoracic Spine (Upper Back)",
+      "position": [0, 2.5, -0.6],
+      "description": "Thoracic kyphosis (excessive rounding of the upper back) is often linked to poor postural habits. It restricts mobility, impacts breathing capacity, and contributes to neck and lower back pain as the body compensates.",
+      "dos": [
+        "Use a foam roller for thoracic extensions",
+        "Incorporate regular movement breaks during desk work",
+        "Ensure your chair provides adequate mid-back support"
+      ],
+      "donts": [
+        "Avoid sitting without back support for long durations",
+        "Don't perform heavy overhead lifts without proper thoracic mobility",
+        "Avoid sleeping on overly soft, sagging mattresses that exacerbate rounding"
+      ],
+      "products": ["Ergonomic Lumbar Support Cushion", "SmartGrid Orthopedic Mattress"]
+    },
+    {
+      "id": "lower_back",
+      "name": "Lumbar Spine (Lower Back)",
+      "position": [0, 0, -0.2],
+      "description": "The lumbar spine bears the majority of the body's weight. Poor seated posture or inadequate spinal support during sleep can flatten or exaggerate the natural lumbar curve, increasing disc pressure and straining ligaments.",
+      "dos": [
+        "Maintain a neutral pelvic tilt while sitting or standing",
+        "Engage core muscles to stabilize the spine",
+        "Sleep on a mattress that conforms to your body's natural curves while providing firm support"
+      ],
+      "donts": [
+        "Avoid prolonged sitting, especially in slouched positions",
+        "Don't lift with a rounded back (lift with your legs)",
+        "Avoid sleeping on your stomach without a pillow under your pelvis to prevent hyperextension"
+      ],
+      "products": ["SmartGrid Ortho Pro Mattress", "Ergonomic Office Chair"]
+    }
+  ]
+}
