@@ -27,7 +27,8 @@ export default function CustomerPortal() {
           const matchedPoints = pointIds.map(id => painPointsData.find(p => p.id === id)).filter(Boolean);
           
           if (matchedPoints.length > 0) {
-            const combinedName = matchedPoints.map(p => p.name).join(', ');
+            const primaryName = matchedPoints[0].name;
+            const combinedName = matchedPoints.length > 1 ? `${primaryName} + ${matchedPoints.length - 1} other${matchedPoints.length > 2 ? 's' : ''}` : primaryName;
             const combinedDesc = matchedPoints.map(p => p.description).join('\n\n');
             const combinedDos = [...new Set(matchedPoints.flatMap(p => p.dos))];
             const combinedDonts = [...new Set(matchedPoints.flatMap(p => p.donts))];

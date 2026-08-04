@@ -104,17 +104,16 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
     return { scale };
   }, [meshNode]);
 
-  // Hardcoded visually-aligned positions for the specific model (normalized to height 7)
-  const getHotspotPosition = (id, origPos) => {
-    switch (id) {
+  const getHotspotPosition = (zoneCategory, origPos) => {
+    switch (zoneCategory?.toLowerCase()) {
       case 'neck':
         return [0, 2.2, -0.1];
-      case 'shoulders':
+      case 'shoulder':
         return [0.7, 1.7, -0.1];
-      case 'upper_back':
+      case 'upper back':
         return [0, 1.3, -0.55];
-      case 'lower_back':
-        return [0, 0.1, -0.45];
+      case 'lower back':
+        return [0, 0.1, -0.55];
       default:
         return origPos || [0, 0, 0];
     }
@@ -135,7 +134,7 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
       {zones.filter(z => activeZones.length === 0 || activeZones.includes(z.id)).map((zone) => (
         <Hotspot
           key={zone.id}
-          position={getHotspotPosition(zone.id, zone.position)}
+          position={getHotspotPosition(zone.zone, zone.position)}
           name={zone.name}
           active={activeZones.includes(zone.id)}
           onClick={() => onZoneClick(zone.id)}
