@@ -81,8 +81,8 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
 
   const bodyMaterial = new THREE.MeshStandardMaterial({
     color: '#e8beac',
-    transparent: true,
-    opacity: 0.7,
+    transparent: false,
+    opacity: 1,
     roughness: 0.6,
     metalness: 0.1,
     wireframe: false 
