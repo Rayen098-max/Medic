@@ -87,12 +87,12 @@ export default function CustomerPortal() {
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px', padding: '24px', maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
+      <div className="portal-grid">
         
         {/* 3D Visual Column */}
         <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <h2 style={{ color: 'var(--accent)', margin: '0' }}>Focus Area: {zone?.name}</h2>
-          <div style={{ flex: '1', minHeight: '400px', background: 'var(--secondary-bg)', borderRadius: '12px', overflow: 'hidden', position: 'relative' }}>
+          <div className="model-container">
             <Canvas dpr={[1, 1.5]} camera={{ position: [0, 0, 9], fov: 45 }}>
               <ambientLight intensity={0.5} />
               <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} />

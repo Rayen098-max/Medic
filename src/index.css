@@ -91,3 +91,38 @@ h1, h2, h3, h4, h5, h6 {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
+
+.portal-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (min-width: 992px) {
+  .portal-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.model-container {
+  min-height: 500px;
+  height: 60vh;
+  background: var(--secondary-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+@media (min-width: 992px) {
+  .model-container {
+    height: calc(100vh - 160px);
+    position: sticky;
+    top: 24px;
+  }
+}
