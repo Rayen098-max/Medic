@@ -5,6 +5,7 @@ import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 import BodyModel from './BodyModel';
 import contentData from '../data/content.json';
 import painPointsData from '../data/painPoints.json';
+import productsCatalog from '../data/products.json';
 import { getPatientById } from '../utils/db';
 import { CheckCircle2, XCircle, ShoppingBag, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -33,7 +34,24 @@ export default function CustomerPortal() {
             const combinedDesc = matchedPoints.map(p => p.description).join('\n\n');
             const combinedDos = [...new Set(matchedPoints.flatMap(p => p.dos))];
             const combinedDonts = [...new Set(matchedPoints.flatMap(p => p.donts))];
-            const combinedProducts = [...new Set(matchedPoints.flatMap(p => p.products))];
+            
+            const uniqueProductsMap = new Map();
+            matchedPoints.forEach(p => {
+              p.products.forEach(prod => {
+                if (!uniqueProductsMap.has(prod.id)) {
+                  uniqueProductsMap.set(prod.id, prod);
+                }
+              });
+            });
+            
+            let fullProducts = Array.from(uniqueProductsMap.values()).map(p => {
+              const catProd = productsCatalog.find(c => c.id === p.id);
+              return { ...catProd, reason: p.reason };
+            }).filter(p => p.id); // Filter any missing from catalog
+
+            // Sort by priority (lower number = higher priority)
+            fullProducts.sort((a, b) => a.priority - b.priority);
+
             const activeZoneIds = matchedPoints.map(p => p.id);
 
             setZone({
@@ -41,7 +59,7 @@ export default function CustomerPortal() {
               description: combinedDesc,
               dos: combinedDos,
               donts: combinedDonts,
-              products: combinedProducts,
+              products: fullProducts,
               activeZones: activeZoneIds
             });
           } else {
@@ -161,13 +179,26 @@ export default function CustomerPortal() {
 
           <div className="glass-panel" style={{ background: 'rgba(0, 210, 255, 0.05)', padding: '24px', border: '1px solid rgba(0, 210, 255, 0.3)' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent)', margin: '0 0 16px 0' }}>
-              <ShoppingBag size={20} /> Product Recommendations
+              <ShoppingBag size={20} /> Priority Recommended Products
             </h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {zone.products.map((prod, i) => (
-                <span key={i} style={{ background: 'rgba(13, 17, 23, 0.8)', padding: '8px 16px', borderRadius: '16px', fontSize: '0.9rem', border: '1px solid var(--border-color)' }}>
-                  {prod}
-                </span>
+                <div key={i} style={{ display: 'flex', gap: '16px', background: 'rgba(13, 17, 23, 0.8)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', alignItems: 'center' }}>
+                  <img src={prod.image} alt={prod.name} style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border-color)' }} />
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', color: 'white' }}>{prod.name}</h4>
+                    <p style={{ margin: '0 0 12px 0', fontSize: '0.9rem', color: 'var(--text-muted)' }}>{prod.reason}</p>
+                    <a 
+                      href={prod.url} 
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="clinical-btn"
+                      style={{ display: 'inline-flex', padding: '6px 16px', fontSize: '0.9rem', textDecoration: 'none' }}
+                    >
+                      View on Store
+                    </a>
+                  </div>
+                </div>
               ))}
             </div>
           </div>

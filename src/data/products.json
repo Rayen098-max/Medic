@@ -1,0 +1,82 @@
+[
+  {
+    "id": "MAT_SNOWTEC",
+    "name": "Smart Ortho Pro SnowTec Cooling Mattress",
+    "url": "https://thesleepcompany.in/products/smart-ortho-pro-snowtec-cooling-technology?variant=46696510783717",
+    "category": "Mattress",
+    "priority": 1,
+    "image": "https://placehold.co/400x300?text=Product+Image"
+  },
+  {
+    "id": "MAT_ORTHOPRO",
+    "name": "Smart Ortho Pro Mattress",
+    "url": "https://thesleepcompany.in/products/smart-ortho-pro-mattress?variant=46696542994661",
+    "category": "Mattress",
+    "priority": 2,
+    "image": "https://placehold.co/400x300?text=Product+Image"
+  },
+  {
+    "id": "MAT_ORTHO",
+    "name": "Smart Ortho Mattress",
+    "url": "https://thesleepcompany.in/products/smart-ortho-mattress?variant=46696554070245",
+    "category": "Mattress",
+    "priority": 3,
+    "image": "https://placehold.co/400x300?text=Product+Image"
+  },
+  {
+    "id": "MAT_HYBRID",
+    "name": "Smart Ortho Hybrid Mattress",
+    "url": "https://thesleepcompany.in/products/smart-ortho-hybrid-pocketed-spring-mattress?variant=44048086827237",
+    "category": "Mattress",
+    "priority": 4,
+    "image": "https://placehold.co/400x300?text=Product+Image"
+  },
+  {
+    "id": "CHR_STYLUX",
+    "name": "Stylux Ergonomic Office Chair",
+    "url": "https://thesleepcompany.in/products/stylux-ergonomic-office-chair",
+    "category": "Chair",
+    "priority": 5,
+    "image": "https://placehold.co/400x300?text=Product+Image"
+  },
+  {
+    "id": "CHR_AURA",
+    "name": "Aura Executive Chair",
+    "url": "https://thesleepcompany.in/products/aura-executive-chair?variant=46753362608357",
+    "category": "Chair",
+    "priority": 6,
+    "image": "https://placehold.co/400x300?text=Product+Image"
+  },
+  {
+    "id": "CHR_ELITE",
+    "name": "Elite Premium Office Chair",
+    "url": "https://thesleepcompany.in/products/elite-premium-office-chair",
+    "category": "Chair",
+    "priority": 7,
+    "image": "https://placehold.co/400x300?text=Product+Image"
+  },
+  {
+    "id": "PIL_HYBRID",
+    "name": "Smart Hybrid Pillow",
+    "url": "https://thesleepcompany.in/products/hybrid-pillow",
+    "category": "Pillow",
+    "priority": 8,
+    "image": "https://placehold.co/400x300?text=Product+Image"
+  },
+  {
+    "id": "PIL_CERVICAL",
+    "name": "Smart Cervical Pillow",
+    "url": "https://thesleepcompany.in/products/cervical-pillow",
+    "category": "Pillow",
+    "priority": 9,
+    "image": "https://placehold.co/400x300?text=Product+Image"
+  },
+  {
+    "id": "PIL_RELIEF",
+    "name": "Smart Ortho Relief Pillow",
+    "url": "https://thesleepcompany.in/products/smart-ortho-relief-pillow",
+    "category": "Pillow",
+    "priority": 10,
+    "image": "https://placehold.co/400x300?text=Product+Image"
+  }
+]

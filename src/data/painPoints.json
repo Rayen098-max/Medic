@@ -19,7 +19,10 @@
       "upper back stretch"
     ],
     "products": [
-      "Cervical support pillow - medium loft - Keeps neck aligned with spine, reduces forward-head strain overnight"
+      {
+        "id": "PIL_RELIEF",
+        "reason": "Keeps neck aligned with spine, reduces forward-head strain overnight"
+      }
     ]
   },
   {
@@ -41,7 +44,10 @@
       "isometric neck holds"
     ],
     "products": [
-      "Cervical support pillow - firm - Maintains neutral neck curve to reduce morning stiffness"
+      {
+        "id": "PIL_CERVICAL",
+        "reason": "Maintains neutral neck curve to reduce morning stiffness"
+      }
     ]
   },
   {
@@ -62,7 +68,10 @@
       "isometric holds once cleared"
     ],
     "products": [
-      "Cervical support pillow - soft-medium - Reduces pressure while healing, supports natural curve"
+      {
+        "id": "PIL_HYBRID",
+        "reason": "Reduces pressure while healing, supports natural curve"
+      }
     ]
   },
   {
@@ -84,7 +93,10 @@
       "shoulder blade squeezes"
     ],
     "products": [
-      "Cervical support pillow - medium loft - Helps reset neck alignment during rest to counter daytime posture"
+      {
+        "id": "PIL_RELIEF",
+        "reason": "Helps reset neck alignment during rest to counter daytime posture"
+      }
     ]
   },
   {
@@ -106,7 +118,10 @@
       "chin tucks"
     ],
     "products": [
-      "Cervical support pillow - contoured - Prevents extreme neck angles that can aggravate nerve compression"
+      {
+        "id": "PIL_CERVICAL",
+        "reason": "Prevents extreme neck angles that can aggravate nerve compression"
+      }
     ]
   },
   {
@@ -127,7 +142,10 @@
       "Gentle side-to-side neck stretches within comfort"
     ],
     "products": [
-      "Cervical support pillow - medium loft - Reduces chance of recurrence from unsupported sleep posture"
+      {
+        "id": "PIL_RELIEF",
+        "reason": "Reduces chance of recurrence from unsupported sleep posture"
+      }
     ]
   },
   {
@@ -147,7 +165,10 @@
       "chin tucks"
     ],
     "products": [
-      "Cervical support pillow - high loft (side sleeper) - Specifically sized to fill the gap for side sleepers"
+      {
+        "id": "PIL_HYBRID",
+        "reason": "Specifically sized to fill the gap for side sleepers"
+      }
     ]
   },
   {
@@ -169,7 +190,10 @@
       "chin tucks"
     ],
     "products": [
-      "Cervical support pillow - medium loft - Reduces base-of-skull tension by keeping neck neutral overnight"
+      {
+        "id": "PIL_RELIEF",
+        "reason": "Reduces base-of-skull tension by keeping neck neutral overnight"
+      }
     ]
   },
   {
@@ -191,7 +215,10 @@
       "upper trapezius stretch"
     ],
     "products": [
-      "Cervical support pillow - medium loft - Supports recovery of fatigued neck muscles overnight"
+      {
+        "id": "PIL_RELIEF",
+        "reason": "Supports recovery of fatigued neck muscles overnight"
+      }
     ]
   },
   {
@@ -213,7 +240,10 @@
       "physio-guided mobility work"
     ],
     "products": [
-      "Cervical support pillow - contoured firm - Maintains alignment to reduce pressure on the disc"
+      {
+        "id": "PIL_CERVICAL",
+        "reason": "Maintains alignment to reduce pressure on the disc"
+      }
     ]
   },
   {
@@ -234,7 +264,10 @@
       "chin tucks"
     ],
     "products": [
-      "Cervical support pillow - medium loft - Encourages a more neutral sleep position over time"
+      {
+        "id": "PIL_RELIEF",
+        "reason": "Encourages a more neutral sleep position over time"
+      }
     ]
   },
   {
@@ -255,7 +288,10 @@
       "shoulder rolls"
     ],
     "products": [
-      "Cervical support pillow - medium loft - Reduces overnight tension buildup in the upper trapezius"
+      {
+        "id": "PIL_RELIEF",
+        "reason": "Reduces overnight tension buildup in the upper trapezius"
+      }
     ]
   },
   {
@@ -277,7 +313,10 @@
       "isometric neck holds"
     ],
     "products": [
-      "Cervical support pillow - firm contoured - Provides consistent support to reduce strain on worn discs"
+      {
+        "id": "PIL_CERVICAL",
+        "reason": "Provides consistent support to reduce strain on worn discs"
+      }
     ]
   },
   {
@@ -299,7 +338,10 @@
       "external rotation stretch (physio-guided)"
     ],
     "products": [
-      "Medium-soft comfort mattress - Reduces direct pressure on the shoulder joint during side sleeping"
+      {
+        "id": "MAT_HYBRID",
+        "reason": "Reduces direct pressure on the shoulder joint during side sleeping"
+      }
     ]
   },
   {
@@ -320,7 +362,10 @@
       "wall crawls (physio-guided)"
     ],
     "products": [
-      "Medium-soft comfort mattress - Cushions the shoulder to reduce nighttime discomfort"
+      {
+        "id": "MAT_HYBRID",
+        "reason": "Cushions the shoulder to reduce nighttime discomfort"
+      }
     ]
   },
   {
@@ -341,7 +386,10 @@
       "external rotation with band"
     ],
     "products": [
-      "Medium-soft comfort mattress - Even support reduces pressure points that aggravate impingement"
+      {
+        "id": "MAT_HYBRID",
+        "reason": "Even support reduces pressure points that aggravate impingement"
+      }
     ]
   },
   {
@@ -362,7 +410,10 @@
       "band pull-aparts"
     ],
     "products": [
-      "Ergonomic task chair - adjustable armrests - Keeps shoulders in a relaxed, neutral position during seated hours"
+      {
+        "id": "CHR_ELITE",
+        "reason": "Keeps shoulders in a relaxed, neutral position during seated hours"
+      }
     ]
   },
   {
@@ -382,7 +433,10 @@
       "pendulum swings"
     ],
     "products": [
-      "Medium-soft comfort mattress - Provides cushioning at the shoulder to reduce point pressure"
+      {
+        "id": "MAT_HYBRID",
+        "reason": "Provides cushioning at the shoulder to reduce point pressure"
+      }
     ]
   },
   {
@@ -403,7 +457,10 @@
       "isometric holds (physio-guided)"
     ],
     "products": [
-      "Medium-soft comfort mattress - Reduces direct pressure on the inflamed area during sleep"
+      {
+        "id": "MAT_HYBRID",
+        "reason": "Reduces direct pressure on the inflamed area during sleep"
+      }
     ]
   },
   {
@@ -424,7 +481,10 @@
       "band pull-aparts"
     ],
     "products": [
-      "Ergonomic task chair - adjustable armrests - Supports relaxed shoulder position to reduce fatigue buildup"
+      {
+        "id": "CHR_ELITE",
+        "reason": "Supports relaxed shoulder position to reduce fatigue buildup"
+      }
     ]
   },
   {
@@ -444,7 +504,10 @@
       "scapular retraction holds"
     ],
     "products": [
-      "Ergonomic task chair - adjustable upper back support - Encourages better scapular positioning during seated hours"
+      {
+        "id": "CHR_ELITE",
+        "reason": "Encourages better scapular positioning during seated hours"
+      }
     ]
   },
   {
@@ -464,7 +527,10 @@
       "isometric holds"
     ],
     "products": [
-      "Medium-soft comfort mattress - Reduces pressure on the joint during rest and recovery"
+      {
+        "id": "MAT_HYBRID",
+        "reason": "Reduces pressure on the joint during rest and recovery"
+      }
     ]
   },
   {
@@ -484,7 +550,10 @@
       "band rows"
     ],
     "products": [
-      "Ergonomic task chair - adjustable armrests - Reduces added strain from poor seated shoulder posture"
+      {
+        "id": "CHR_ELITE",
+        "reason": "Reduces added strain from poor seated shoulder posture"
+      }
     ]
   },
   {
@@ -505,7 +574,10 @@
       "upper trap stretch"
     ],
     "products": [
-      "Medium-soft comfort mattress - Allows shoulders to fully relax and decompress during sleep"
+      {
+        "id": "MAT_HYBRID",
+        "reason": "Allows shoulders to fully relax and decompress during sleep"
+      }
     ]
   },
   {
@@ -525,7 +597,10 @@
       "gentle neck and shoulder mobility"
     ],
     "products": [
-      "Cervical support pillow - medium loft - Supports the neck, which may be the actual source of shoulder pain"
+      {
+        "id": "PIL_RELIEF",
+        "reason": "Supports the neck, which may be the actual source of shoulder pain"
+      }
     ]
   },
   {
@@ -546,7 +621,10 @@
       "doorway chest stretch"
     ],
     "products": [
-      "Ergonomic task chair - full-length back support - Keeps thoracic spine from curving forward during long seated hours"
+      {
+        "id": "CHR_STYLUX",
+        "reason": "Keeps thoracic spine from curving forward during long seated hours"
+      }
     ]
   },
   {
@@ -567,7 +645,10 @@
       "band pull-aparts"
     ],
     "products": [
-      "Ergonomic task chair - full-length back support - Reduces load on upper back muscles by providing consistent support"
+      {
+        "id": "CHR_STYLUX",
+        "reason": "Reduces load on upper back muscles by providing consistent support"
+      }
     ]
   },
   {
@@ -589,7 +670,10 @@
       "scapular squeezes"
     ],
     "products": [
-      "Ergonomic task chair - full-length back support - Supports the upper back to reduce strain during seated work"
+      {
+        "id": "CHR_STYLUX",
+        "reason": "Supports the upper back to reduce strain during seated work"
+      }
     ]
   },
   {
@@ -610,7 +694,10 @@
       "band pull-aparts"
     ],
     "products": [
-      "Ergonomic task chair - adjustable lumbar and upper back - Encourages upright posture, reducing forward lean toward screens"
+      {
+        "id": "CHR_AURA",
+        "reason": "Encourages upright posture, reducing forward lean toward screens"
+      }
     ]
   },
   {
@@ -630,7 +717,10 @@
       "cat-cow stretch"
     ],
     "products": [
-      "Ergonomic task chair - full-length back support - Encourages a more neutral spine position, reducing stiffness buildup"
+      {
+        "id": "CHR_STYLUX",
+        "reason": "Encourages a more neutral spine position, reducing stiffness buildup"
+      }
     ]
   },
   {
@@ -649,7 +739,10 @@
       "gentle thoracic extension"
     ],
     "products": [
-      "Orthopedic support mattress - firm - Maintains even spinal support through the night, preventing sag-related strain"
+      {
+        "id": "MAT_SNOWTEC",
+        "reason": "Maintains even spinal support through the night, preventing sag-related strain"
+      }
     ]
   },
   {
@@ -671,7 +764,10 @@
       "deep breathing exercises"
     ],
     "products": [
-      "Orthopedic support mattress - medium-firm - Provides even support reducing strain through the rib-spine joints"
+      {
+        "id": "MAT_SNOWTEC",
+        "reason": "Provides even support reducing strain through the rib-spine joints"
+      }
     ]
   },
   {
@@ -691,7 +787,10 @@
       "reverse flys"
     ],
     "products": [
-      "Ergonomic task chair - full-length back support - Supports the upper back while strength is being built up"
+      {
+        "id": "CHR_STYLUX",
+        "reason": "Supports the upper back while strength is being built up"
+      }
     ]
   },
   {
@@ -711,7 +810,10 @@
       "scapular retraction holds"
     ],
     "products": [
-      "Ergonomic task chair - adjustable upper back support - Encourages better scapular positioning throughout the day"
+      {
+        "id": "CHR_ELITE",
+        "reason": "Encourages better scapular positioning throughout the day"
+      }
     ]
   },
   {
@@ -732,7 +834,10 @@
       "thoracic extension stretch"
     ],
     "products": [
-      "Ergonomic task chair - full-length back support - Helps the upper back recover from cumulative daily load strain"
+      {
+        "id": "CHR_STYLUX",
+        "reason": "Helps the upper back recover from cumulative daily load strain"
+      }
     ]
   },
   {
@@ -753,7 +858,10 @@
       "doorway chest stretch"
     ],
     "products": [
-      "Ergonomic task chair - full-length back support - Provides consistent support to reduce strain from prolonged sitting"
+      {
+        "id": "CHR_STYLUX",
+        "reason": "Provides consistent support to reduce strain from prolonged sitting"
+      }
     ]
   },
   {
@@ -773,7 +881,10 @@
       "thoracic rotation stretch"
     ],
     "products": [
-      "Ergonomic task chair - full-length back support - Encourages better posture, reducing stiffness from prolonged sitting"
+      {
+        "id": "CHR_STYLUX",
+        "reason": "Encourages better posture, reducing stiffness from prolonged sitting"
+      }
     ]
   },
   {
@@ -795,7 +906,10 @@
       "knee-to-chest stretch"
     ],
     "products": [
-      "Orthopedic support mattress - firm - Maintains the spine's natural curve, the most common fix for lower back pain"
+      {
+        "id": "MAT_SNOWTEC",
+        "reason": "Maintains the spine's natural curve, the most common fix for lower back pain"
+      }
     ]
   },
   {
@@ -817,7 +931,10 @@
       "nerve glide (physio-guided)"
     ],
     "products": [
-      "Orthopedic support mattress - medium-firm - Reduces pressure on the lower spine that can aggravate the sciatic nerve"
+      {
+        "id": "MAT_SNOWTEC",
+        "reason": "Reduces pressure on the lower spine that can aggravate the sciatic nerve"
+      }
     ]
   },
   {
@@ -839,7 +956,10 @@
       "pelvic tilts"
     ],
     "products": [
-      "Orthopedic support mattress - firm - Provides consistent spinal support to reduce pressure on the affected disc"
+      {
+        "id": "MAT_SNOWTEC",
+        "reason": "Provides consistent spinal support to reduce pressure on the affected disc"
+      }
     ]
   },
   {
@@ -858,7 +978,10 @@
       "child's pose stretch"
     ],
     "products": [
-      "Orthopedic support mattress - firm - Directly addresses the root cause by maintaining spinal alignment overnight"
+      {
+        "id": "MAT_SNOWTEC",
+        "reason": "Directly addresses the root cause by maintaining spinal alignment overnight"
+      }
     ]
   },
   {
@@ -878,7 +1001,10 @@
       "pelvic tilts"
     ],
     "products": [
-      "Ergonomic task chair - adjustable lumbar support - Provides consistent lower back support during long seated periods"
+      {
+        "id": "CHR_AURA",
+        "reason": "Provides consistent lower back support during long seated periods"
+      }
     ]
   },
   {
@@ -898,7 +1024,10 @@
       "gentle glute bridges"
     ],
     "products": [
-      "Orthopedic support mattress - medium-firm - Supports even pelvic alignment during sleep"
+      {
+        "id": "MAT_SNOWTEC",
+        "reason": "Supports even pelvic alignment during sleep"
+      }
     ]
   },
   {
@@ -920,7 +1049,10 @@
       "gentle pelvic tilts"
     ],
     "products": [
-      "Orthopedic support mattress - firm - Reduces morning stiffness by maintaining consistent spinal support overnight"
+      {
+        "id": "MAT_SNOWTEC",
+        "reason": "Reduces morning stiffness by maintaining consistent spinal support overnight"
+      }
     ]
   },
   {
@@ -941,7 +1073,10 @@
       "hip flexor stretch"
     ],
     "products": [
-      "Ergonomic task chair - adjustable lumbar support - Provides recovery support during any seated breaks through the day"
+      {
+        "id": "CHR_AURA",
+        "reason": "Provides recovery support during any seated breaks through the day"
+      }
     ]
   },
   {
@@ -961,7 +1096,10 @@
       "pelvic tilts"
     ],
     "products": [
-      "Orthopedic support mattress - medium-firm - Reduces unnatural arching by providing more even support"
+      {
+        "id": "MAT_SNOWTEC",
+        "reason": "Reduces unnatural arching by providing more even support"
+      }
     ]
   },
   {
@@ -982,7 +1120,10 @@
       "gentle planks"
     ],
     "products": [
-      "Orthopedic support mattress - medium-firm - Provides supportive rest surface while core strength is being built up"
+      {
+        "id": "MAT_SNOWTEC",
+        "reason": "Provides supportive rest surface while core strength is being built up"
+      }
     ]
   },
   {
@@ -1003,7 +1144,10 @@
       "gentle hamstring stretch"
     ],
     "products": [
-      "Orthopedic support mattress - firm - Supports recovery of strained lower back muscles overnight"
+      {
+        "id": "MAT_SNOWTEC",
+        "reason": "Supports recovery of strained lower back muscles overnight"
+      }
     ]
   },
   {
@@ -1026,7 +1170,10 @@
       "cat-cow stretch"
     ],
     "products": [
-      "Orthopedic support mattress - firm - Provides consistent support to reduce strain on worn discs"
+      {
+        "id": "MAT_SNOWTEC",
+        "reason": "Provides consistent support to reduce strain on worn discs"
+      }
     ]
   },
   {
@@ -1048,7 +1195,10 @@
       "gentle walking (as approved by a doctor)"
     ],
     "products": [
-      "Orthopedic support mattress - medium-firm - Provides adaptable support recommended alongside a doctor's guidance during pregnancy"
+      {
+        "id": "MAT_SNOWTEC",
+        "reason": "Provides adaptable support recommended alongside a doctor's guidance during pregnancy"
+      }
     ]
   }
 ]

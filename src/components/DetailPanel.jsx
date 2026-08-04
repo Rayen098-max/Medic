@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, CheckCircle2, XCircle, ShoppingBag } from 'lucide-react';
+import productsCatalog from '../data/products.json';
 
 export default function DetailPanel({ zone, onClose }) {
   if (!zone) return null;
@@ -68,14 +69,31 @@ export default function DetailPanel({ zone, onClose }) {
 
       <div style={{ marginTop: 'auto', background: 'rgba(0, 210, 255, 0.1)', padding: '16px', borderRadius: '8px', border: '1px solid rgba(0, 210, 255, 0.3)' }}>
         <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1rem', color: 'var(--accent)', margin: '0 0 12px 0' }}>
-          <ShoppingBag size={18} /> Sleep Company Solutions
+          <ShoppingBag size={18} /> Priority Sleep Company Solutions
         </h3>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-          {zone.products.map((prod, i) => (
-            <span key={i} style={{ background: 'rgba(13, 17, 23, 0.8)', color: 'var(--text-main)', padding: '6px 12px', borderRadius: '16px', fontSize: '0.875rem', border: '1px solid var(--border-color)' }}>
-              {prod}
-            </span>
-          ))}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {zone.products.map((p, i) => {
+            const catProd = productsCatalog.find(c => c.id === p.id);
+            if (!catProd) return null;
+            return (
+              <div key={i} style={{ display: 'flex', gap: '12px', background: 'rgba(13, 17, 23, 0.8)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', alignItems: 'center' }}>
+                <img src={catProd.image} alt={catProd.name} style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-color)' }} />
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', color: 'white' }}>{catProd.name}</h4>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>{p.reason}</p>
+                  <a 
+                    href={catProd.url} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="clinical-btn"
+                    style={{ display: 'inline-flex', padding: '4px 12px', fontSize: '0.8rem', textDecoration: 'none' }}
+                  >
+                    View on Store
+                  </a>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
       
