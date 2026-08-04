@@ -13,6 +13,7 @@ export default function CustomerPortal() {
   const { id } = useParams();
   const [patient, setPatient] = useState(null);
   const [zone, setZone] = useState(null);
+  const [activePointId, setActivePointId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -69,6 +70,8 @@ export default function CustomerPortal() {
     return <div style={{ padding: '40px', color: 'white' }}>Loading or record not found...</div>;
   }
 
+  const activePointData = activePointId ? painPointsData.find(p => p.id === activePointId) : null;
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--primary-bg)', color: 'var(--text-main)', display: 'flex', flexDirection: 'column' }}>
       
@@ -101,7 +104,7 @@ export default function CustomerPortal() {
                 <BodyModel 
                   zones={painPointsData}
                   activeZones={zone.activeZones}
-                  onZoneClick={() => {}} 
+                  onZoneClick={(clickedId) => setActivePointId(clickedId)} 
                 />
                 <ContactShadows resolution={256} frames={1} position={[0, -3.5, 0]} opacity={0.5} scale={20} blur={2} far={4.5} />
                 <Environment preset="city" />
@@ -130,23 +133,31 @@ export default function CustomerPortal() {
             )}
           </div>
 
-          <div className="glass-panel" style={{ background: 'rgba(34, 197, 94, 0.05)', padding: '24px', borderLeft: '4px solid #22c55e' }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#22c55e', margin: '0 0 16px 0' }}>
-              <CheckCircle2 size={20} /> Recommended Actions
-            </h3>
-            <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {zone.dos.map((item, i) => <li key={i}>{item}</li>)}
-            </ul>
-          </div>
+          {activePointData ? (
+            <>
+              <div className="glass-panel" style={{ background: 'rgba(34, 197, 94, 0.05)', padding: '24px', borderLeft: '4px solid #22c55e' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#22c55e', margin: '0 0 16px 0' }}>
+                  <CheckCircle2 size={20} /> Recommended Actions ({activePointData.name})
+                </h3>
+                <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {activePointData.dos.map((item, i) => <li key={i}>{item}</li>)}
+                </ul>
+              </div>
 
-          <div className="glass-panel" style={{ background: 'rgba(239, 68, 68, 0.05)', padding: '24px', borderLeft: '4px solid #ef4444' }}>
-            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ef4444', margin: '0 0 16px 0' }}>
-              <XCircle size={20} /> Actions to Avoid
-            </h3>
-            <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {zone.donts.map((item, i) => <li key={i}>{item}</li>)}
-            </ul>
-          </div>
+              <div className="glass-panel" style={{ background: 'rgba(239, 68, 68, 0.05)', padding: '24px', borderLeft: '4px solid #ef4444' }}>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ef4444', margin: '0 0 16px 0' }}>
+                  <XCircle size={20} /> Actions to Avoid ({activePointData.name})
+                </h3>
+                <ul style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {activePointData.donts.map((item, i) => <li key={i}>{item}</li>)}
+                </ul>
+              </div>
+            </>
+          ) : (
+            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', border: '1px dashed var(--border-color)', borderRadius: '12px', background: 'rgba(255,255,255,0.02)' }}>
+              Click on a glowing red point on the 3D model to view specific recommended actions and things to avoid for that area.
+            </div>
+          )}
 
           <div className="glass-panel" style={{ background: 'rgba(0, 210, 255, 0.05)', padding: '24px', border: '1px solid rgba(0, 210, 255, 0.3)' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent)', margin: '0 0 16px 0' }}>

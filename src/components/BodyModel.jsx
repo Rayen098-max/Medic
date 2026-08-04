@@ -39,6 +39,7 @@ const Hotspot = ({ position, onClick, active, name }) => {
           emissiveIntensity={3.0}
           transparent
           opacity={1}
+          depthTest={false}
         />
       </mesh>
       {hovered && (
