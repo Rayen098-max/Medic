@@ -91,8 +91,10 @@ export default function CustomerPortal() {
 
   const renderScene = () => (
     <>
-      <ambientLight intensity={0.5} />
-      <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} />
+      <ambientLight intensity={1.2} />
+      <directionalLight position={[10, 10, 10]} intensity={2} />
+      <directionalLight position={[-10, 10, -10]} intensity={2} />
+      <directionalLight position={[0, -10, 0]} intensity={1} />
       <React.Suspense fallback={null}>
         <BodyModel 
           zones={painPointsData}
