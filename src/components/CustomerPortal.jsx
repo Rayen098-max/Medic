@@ -120,6 +120,7 @@ export default function CustomerPortal() {
         <Environment preset="city" />
       </React.Suspense>
       <OrbitControls 
+        target={[0, 0, 0]}
         enablePan={false}
         minDistance={3}
         maxDistance={10}
@@ -192,16 +193,28 @@ export default function CustomerPortal() {
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: '8px', padding: '8px', minHeight: 0 }}>
         
         {/* Box 1: Physio Note */}
-        <div className="glass-panel" style={{ padding: '12px', display: 'flex', flexDirection: 'column', fontSize: '0.85rem' }}>
+        <div className="glass-panel" style={{ padding: '12px', display: 'flex', flexDirection: 'column', fontSize: '0.85rem', overflowY: 'auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <img src={patient.physioPhoto || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=150&h=150"} alt={`Dr. ${patient.physioName}`} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
             <span style={{ fontWeight: '600', color: 'white' }}>Dr. {patient.physioName || 'Physio'}</span>
           </div>
-          <p style={{ margin: '0 0 8px 0', lineHeight: 1.3 }}>
-            Hope your back's treating you kinder! {timeSinceVisit ? `It's been ${timeSinceVisit} since your visit.` : ''}
+          <p style={{ margin: '0 0 8px 0', lineHeight: 1.4 }}>
+            Hope your back's been treating you a little kinder since we last spoke at the store! 
+            {(() => {
+              const productPurchased = patient.productPurchased;
+              if (timeSinceVisit && productPurchased) {
+                return ` It's been ${timeSinceVisit} since you picked up your ${productPurchased} — hoping it's doing its job.`;
+              } else if (timeSinceVisit) {
+                return ` It's been ${timeSinceVisit} since your visit — hoping the recommendations are doing their job.`;
+              } else if (productPurchased) {
+                return ` Since you picked up your ${productPurchased}, I'm hoping it's doing its job.`;
+              } else {
+                return ` I'm hoping the recommendations are doing their job.`;
+              }
+            })()}
           </p>
-          <p style={{ margin: 0, lineHeight: 1.3 }}>
-            <strong style={{color: 'var(--accent)'}}>Tap glowing points</strong> on your map for the rundown on what to do and avoid.
+          <p style={{ margin: 0, lineHeight: 1.4 }}>
+            I gave you a prescription card back then with some exercises and things to avoid. <strong style={{ color: 'var(--accent)' }}>Tap the glowing points on your 3D pain map</strong> to get the full rundown again on what to do, and what to steer clear of.
           </p>
         </div>
 
@@ -234,9 +247,15 @@ export default function CustomerPortal() {
         </div>
 
         {/* Box 4: Follow-up */}
-        <div className="glass-panel" style={{ padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: 'center', background: 'linear-gradient(135deg, rgba(0,210,255,0.1) 0%, rgba(0,0,0,0) 100%)' }}>
-          <p style={{ margin: '0 0 8px 0', fontSize: '0.85rem', color: 'white', lineHeight: 1.3 }}>
-            Got questions? I do free 10-min consults in-store {patient.physioAvailability || 'every day'}. Reach out below!
+        <div className="glass-panel" style={{ padding: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: 'center', background: 'linear-gradient(135deg, rgba(0,210,255,0.1) 0%, rgba(0,0,0,0) 100%)', overflowY: 'auto' }}>
+          <p style={{ margin: '0 0 8px 0', fontSize: '0.85rem', color: 'white', lineHeight: 1.4 }}>
+            Hope that all made sense! If you'd ever like to swing by, I do free 10-minute physio consultations in-store, no appointment needed. I'm around {patient.physioAvailability || 'every day'}.
+          </p>
+          <p style={{ margin: '0 0 8px 0', fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+            Would genuinely love to see you again — even just to say hi and check in on that back of yours.
+          </p>
+          <p style={{ margin: '0 0 12px 0', fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+            Got questions before then? Just reach out below 👇
           </p>
           <a 
             href={`https://wa.me/${patient.physioPhone || ''}?text=${encodeURIComponent("Hi Dr. " + (patient.physioName || 'Physio') + ", I have a question about my recovery plan.")}`}
@@ -245,7 +264,7 @@ export default function CustomerPortal() {
             className="clinical-btn"
             style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: '4px', textDecoration: 'none', padding: '8px', fontSize: '0.9rem' }}
           >
-            Contact <ArrowRight size={14} />
+            Contact Now <ArrowRight size={14} />
           </a>
         </div>
 
