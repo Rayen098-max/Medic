@@ -106,7 +106,18 @@ export default function CustomerPortal() {
   const activePointData = activePointId ? painPointsData.find(p => p.id === activePointId) : null;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--primary-bg)', color: 'var(--text-main)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: '#050505', display: 'flex', justifyContent: 'center' }}>
+      <div style={{ 
+        width: '100%', 
+        maxWidth: '430px', 
+        minHeight: '100vh', 
+        background: 'var(--primary-bg)', 
+        color: 'var(--text-main)', 
+        display: 'flex', 
+        flexDirection: 'column',
+        boxShadow: '0 0 40px rgba(0,0,0,0.8)',
+        position: 'relative'
+      }}>
       
       {/* Header */}
       <div style={{ padding: '20px 16px', textAlign: 'center', background: 'linear-gradient(to bottom, rgba(0,210,255,0.1), transparent)', position: 'relative' }}>
@@ -124,12 +135,12 @@ export default function CustomerPortal() {
         </p>
       </div>
 
-      <div className="portal-grid">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', padding: '24px' }}>
         
         {/* 3D Visual Column */}
         <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <h2 style={{ color: 'var(--accent)', margin: '0' }}>Focus Area: {zone?.name}</h2>
-          <div className="model-container">
+          <div style={{ position: 'relative', height: '500px', width: '100%', background: 'var(--secondary-bg)', borderRadius: '12px', overflow: 'hidden' }}>
             <Canvas dpr={[1, 1.5]} camera={{ position: [0, 0, 9], fov: 45 }}>
               <ambientLight intensity={0.5} />
               <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} />
@@ -273,6 +284,7 @@ export default function CustomerPortal() {
 
         </div>
       </div>
+    </div>
     </div>
   );
 }
