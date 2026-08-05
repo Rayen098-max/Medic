@@ -64,7 +64,7 @@ export default function CaptureForm() {
       product: primaryPoint ? primaryPoint.products[0] : 'Recommended Product',
       physioName: formData.physioName,
       physioPhone: formData.physioPhone,
-      // physioAvailability: formData.physioAvailability, // TODO: Add 'physioAvailability' (text) to your 'patients' table in Supabase before uncommenting this
+      physioAvailability: formData.physioAvailability,
       consultDate: formData.consultDate,
       productPurchased: formData.productPurchased
     };
