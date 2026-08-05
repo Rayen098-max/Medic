@@ -211,28 +211,43 @@ export default function CustomerPortal() {
             {renderHotspotOverlay()}
           </div>
 
-          {/* Right Side: Decorative framing */}
-          <div style={{ 
+          {/* Right Side: SOLUTIONS Button */}
+          <div 
+            onClick={() => setShowProductsModal(true)}
+            style={{ 
               width: '48px', 
+              background: 'linear-gradient(to bottom, rgba(34,197,94,0.15), transparent)', 
+              color: '#22c55e', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              cursor: 'pointer',
               borderLeft: '1px solid var(--border-color)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '12px'
-          }}>
-            <div style={{ width: '2px', height: '20%', background: 'var(--text-muted)', opacity: 0.2, borderRadius: '2px' }} />
-            <div style={{ width: '2px', height: '10%', background: 'var(--text-muted)', opacity: 0.2, borderRadius: '2px' }} />
-            <div style={{ width: '2px', height: '20%', background: 'var(--text-muted)', opacity: 0.2, borderRadius: '2px' }} />
+              transition: 'all 0.2s ease',
+            }}
+            className="hover-brighten"
+          >
+            <div style={{ 
+              transform: 'rotate(90deg)', 
+              fontWeight: 'bold', 
+              letterSpacing: '6px',
+              fontSize: '1.2rem',
+              whiteSpace: 'nowrap'
+            }}>
+              SOLUTION
+            </div>
           </div>
         </div>
 
         {/* Bottom Follow-up Section */}
         <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', textAlign: 'center', background: 'linear-gradient(135deg, rgba(0,210,255,0.1) 0%, rgba(0,0,0,0) 100%)', borderTop: '1px solid var(--border-color)' }}>
           <p style={{ margin: '0 0 12px 0', fontSize: '0.95rem', color: 'white', lineHeight: 1.4 }}>
-            Hope that all made sense! If you'd ever like to swing by, I do free 10-minute physio consultations in-store, no appointment needed. I'm around {patient.physioAvailability || 'every day'}.
+            <strong style={{color: 'var(--accent)'}}>Tap the glowing points</strong> on your 3D pain map above to get the full rundown on what to do, and what to avoid.
           </p>
-          <p style={{ margin: '0 0 16px 0', fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+          <p style={{ margin: '0 0 8px 0', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+            I do free 10-minute physio consultations in-store if you ever want to swing by. I'm around {patient.physioAvailability || 'every day'}.
+          </p>
+          <p style={{ margin: '0 0 16px 0', fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>
             Got questions before then? Just reach out below 👇
           </p>
           <a 
