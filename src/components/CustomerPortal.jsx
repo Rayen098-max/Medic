@@ -161,15 +161,18 @@ export default function CustomerPortal() {
         <div style={{ padding: '16px', textAlign: 'center', background: 'linear-gradient(to bottom, rgba(0,210,255,0.1), transparent)', flexShrink: 0, position: 'relative' }}>
           <Link 
             to="/admin" 
-            style={{ position: 'absolute', left: '16px', top: '16px', color: 'var(--text-muted)' }}
+            style={{ position: 'absolute', left: '16px', top: '24px', color: 'var(--text-muted)' }}
           >
             <ArrowLeft size={24} />
           </Link>
-          <h1 style={{ color: 'var(--accent)', margin: 0, fontSize: '1.5rem' }}>
-            My Recovery Plan
-          </h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '1rem', margin: '4px 0 0 0' }}>
-            Prepared for {patient.name}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '8px', paddingLeft: '24px' }}>
+             <img src={patient.physioPhoto || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=150&h=150"} alt={`Dr. ${patient.physioName}`} style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--accent)' }} />
+             <h1 style={{ color: 'var(--accent)', margin: 0, fontSize: '1.3rem', textAlign: 'left', lineHeight: 1.2 }}>
+               Dr. {patient.physioName || 'Physio'}'s<br/>Recovery Plan
+             </h1>
+          </div>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', margin: 0 }}>
+            Prepared personally for {patient.name}
           </p>
         </div>
 
