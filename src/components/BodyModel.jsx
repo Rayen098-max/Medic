@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Html, useGLTF, Center } from '@react-three/drei';
+import { EffectComposer, Bloom } from '@react-three/postprocessing';
 import * as THREE from 'three';
 
 const Hotspot = ({ position, onClick, active, name }) => {
@@ -26,9 +27,10 @@ const Hotspot = ({ position, onClick, active, name }) => {
         <meshStandardMaterial
           color={active ? '#ff0000' : hovered ? '#ff4444' : '#cc0000'}
           emissive={active ? '#ff0000' : hovered ? '#ff4444' : '#cc0000'}
-          emissiveIntensity={3.0}
+          emissiveIntensity={active || hovered ? 4.0 : 1.5}
+          toneMapped={false}
           transparent
-          opacity={hovered || active ? 1 : 0}
+          opacity={hovered || active ? 1 : 0.8}
           depthTest={false}
         />
       </mesh>
@@ -146,6 +148,9 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
           onClick={() => onZoneClick(zone.id)}
         />
       ))}
+      <EffectComposer disableNormalPass>
+        <Bloom luminanceThreshold={1} mipmapBlur intensity={1.5} />
+      </EffectComposer>
     </group>
   );
 }
