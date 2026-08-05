@@ -70,21 +70,17 @@ export default function AdminPanel() {
     const timeSinceVisit = calculateTimeSince(customer.consultDate);
     const productPurchased = customer.productPurchased || customer.product;
     
-    let personalizedGreeting = "Hope your body's been treating you a little kinder since we last spoke at the store!";
+    let context = "";
     if (timeSinceVisit && productPurchased) {
-      personalizedGreeting += ` It's been ${timeSinceVisit} since you picked up your ${productPurchased} — hoping it's doing its job.`;
+      context = `It's been ${timeSinceVisit} since you picked up your ${productPurchased}. `;
     } else if (timeSinceVisit) {
-      personalizedGreeting += ` It's been ${timeSinceVisit} since your visit — hoping the recommendations are doing their job.`;
-    } else if (productPurchased) {
-      personalizedGreeting += ` Since you picked up your ${productPurchased}, I'm hoping it's doing its job.`;
-    } else {
-      personalizedGreeting += ` I'm hoping the recommendations are doing their job.`;
+      context = `It's been ${timeSinceVisit} since your visit. `;
     }
-
-    const fullMessage = `Hi ${customer.name},\n\n${personalizedGreeting}\n\nI put together a personalized 3D Recovery Plan for you based on our consultation. It includes the specific exercises you should do, things to avoid, and my priority recommendations.\n\n👉 *Click below to view your interactive 3D plan:*\n${link}\n\nLet me know if you have any questions!\n\nBest,\nDr. ${customer.physioName || 'Physio'}`;
+    
+    const fullMessage = `Hi ${customer.name},\n\n${context}Hope your body is treating you better!\n\nHere is your *Personalized 3D Recovery Plan* (including exercises and things to avoid):\n👉 ${link}\n\nLet me know if you have any questions.\n\nBest,\nDr. ${customer.physioName || 'Physio'}`;
 
     const message = encodeURIComponent(fullMessage);
-    return `https://api.whatsapp.com/send?phone=${phone}&text=${message}`;
+    return `https://wa.me/${phone}?text=${message}`;
   };
 
   const handleMarkSent = (id) => {
