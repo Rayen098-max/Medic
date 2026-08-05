@@ -97,11 +97,11 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
 
   const boneMaterial = useMemo(() => {
     return new THREE.MeshStandardMaterial({
-      color: '#00d2ff',
-      emissive: '#00d2ff',
-      emissiveIntensity: 0.5,
+      color: '#1a365d',
+      emissive: '#0f294d',
+      emissiveIntensity: 0.1,
       transparent: true,
-      opacity: 0.15,
+      opacity: 0.1,
       wireframe: true,
       depthWrite: false
     });
