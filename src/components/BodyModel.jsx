@@ -95,6 +95,18 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
     return mat;
   }, [uniforms]);
 
+  const boneMaterial = useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: '#00d2ff',
+      emissive: '#00d2ff',
+      emissiveIntensity: 0.5,
+      transparent: true,
+      opacity: 0.15,
+      wireframe: true,
+      depthWrite: false
+    });
+  }, []);
+
   const meshNode = Object.values(nodes).find(n => n.isMesh);
 
   const targetHeight = 7;
@@ -194,14 +206,22 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
     <group ref={group}>
       <Center>
         {meshNode && (
-          <mesh 
-            geometry={meshNode.geometry} 
-            material={bodyMaterial} 
-            scale={scale}
-            onClick={(e) => handlePointerInteraction(e, true)}
-            onPointerMove={(e) => handlePointerInteraction(e, false)}
-            onPointerOut={() => setHovered(false)}
-          />
+          <group>
+            <mesh 
+              geometry={meshNode.geometry} 
+              material={bodyMaterial} 
+              scale={scale}
+              onClick={(e) => handlePointerInteraction(e, true)}
+              onPointerMove={(e) => handlePointerInteraction(e, false)}
+              onPointerOut={() => setHovered(false)}
+            />
+            {/* Inner "Bones" structure */}
+            <mesh 
+              geometry={meshNode.geometry} 
+              material={boneMaterial} 
+              scale={scale * 0.96}
+            />
+          </group>
         )}
       </Center>
       
