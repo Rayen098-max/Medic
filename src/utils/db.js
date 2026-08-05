@@ -55,10 +55,15 @@ export const updatePatientStatus = async (id, statusData) => {
 
 export const deletePatient = async (id) => {
   if (!supabase) throw new Error("Supabase is not configured.");
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('patients')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .select();
 
   if (error) throw error;
+  
+  if (!data || data.length === 0) {
+    throw new Error("Action blocked by database. Please go to your Supabase dashboard and add a DELETE policy for the 'patients' table allowing the anon role to delete rows.");
+  }
 };
