@@ -109,10 +109,10 @@ export default function CustomerPortal() {
     <div style={{ minHeight: '100vh', background: 'var(--primary-bg)', color: 'var(--text-main)', display: 'flex', flexDirection: 'column' }}>
       
       {/* Header */}
-      <div style={{ padding: '32px 24px', textAlign: 'center', background: 'linear-gradient(to bottom, rgba(0,210,255,0.1), transparent)', position: 'relative' }}>
+      <div style={{ padding: '20px 16px', textAlign: 'center', background: 'linear-gradient(to bottom, rgba(0,210,255,0.1), transparent)', position: 'relative' }}>
         <Link 
           to="/admin" 
-          style={{ position: 'absolute', left: '24px', top: '32px', color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}
+          style={{ position: 'absolute', left: '16px', top: '24px', color: 'var(--text-muted)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}
         >
           <ArrowLeft size={24} /> <span style={{ display: 'none', '@media (minWidth: 768px)': { display: 'inline' } }}>Back</span>
         </Link>
@@ -156,11 +156,11 @@ export default function CustomerPortal() {
         {/* Content Column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          <div className="glass-panel" style={{ padding: '24px' }}>
+          <div className="glass-panel" style={{ padding: '20px' }}>
             <h3 style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Clinical Assessment</h3>
             
             <p style={{ margin: '0 0 16px 0', lineHeight: 1.6, fontSize: '1.05rem', color: 'white' }}>
-              Hi, Dr. {patient.physioName || 'Physio'} here 👋 (yes, {patient.name}, it's really me and not a robot pretending to be your physio).
+              Hi, Dr. {patient.physioName || 'Physio'} here 👋
             </p>
 
             <p style={{ margin: '0 0 16px 0', lineHeight: 1.6 }}>
@@ -170,30 +170,20 @@ export default function CustomerPortal() {
                 const productPurchased = patient.productPurchased;
                 
                 if (timeSinceVisit && productPurchased) {
-                  return ` It's been ${timeSinceVisit} since you picked up your ${productPurchased} — hoping it's doing its job and you're not still sneaking off to the couch at 2am because it's "just more comfortable" 😄`;
+                  return ` It's been ${timeSinceVisit} since you picked up your ${productPurchased} — hoping it's doing its job.`;
                 } else if (timeSinceVisit) {
-                  return ` It's been ${timeSinceVisit} since your visit — hoping the recommendations are doing their job and you're not still sneaking off to the couch at 2am because it's "just more comfortable" 😄`;
+                  return ` It's been ${timeSinceVisit} since your visit — hoping the recommendations are doing their job.`;
                 } else if (productPurchased) {
-                  return ` Since you picked up your ${productPurchased}, I'm hoping it's doing its job and you're not still sneaking off to the couch at 2am because it's "just more comfortable" 😄`;
+                  return ` Since you picked up your ${productPurchased}, I'm hoping it's doing its job.`;
                 } else {
-                  return ` I'm hoping the recommendations are doing their job and you're not still sneaking off to the couch at 2am because it's "just more comfortable" 😄`;
+                  return ` I'm hoping the recommendations are doing their job.`;
                 }
               })()}
             </p>
 
             <p style={{ margin: '0 0 16px 0', lineHeight: 1.6 }}>
-              I gave you a prescription card back then with some exercises and things to avoid — if you've lost it somewhere between your bag and the washing machine (no judgment, happens to everyone), don't stress. Below is your personal 3D pain map — just tap on any of the glowing points and you'll get the full rundown again: what's going on, what to do, and what to steer clear of.
+              I gave you a prescription card back then with some exercises and things to avoid, don't stress. <strong style={{ color: 'var(--accent)', fontSize: '1.1rem' }}>Below is your personal 3D pain map — just tap on any of the glowing points</strong> and you'll get the full rundown again: what's going on, what to do, and what to steer clear of.
             </p>
-            
-            <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-              <h4 style={{ color: 'var(--text-muted)', marginBottom: '8px', fontSize: '0.9rem', textTransform: 'uppercase' }}>Clinical Details</h4>
-              <p style={{ margin: 0, lineHeight: 1.6 }}>{zone.description}</p>
-            </div>
-            {patient.transcription && (
-              <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', borderLeft: '2px solid var(--border-color)', fontStyle: 'italic', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                <strong>Physio's Notes:</strong> {patient.transcription}
-              </div>
-            )}
           </div>
 
           {activePointData ? (
@@ -216,11 +206,7 @@ export default function CustomerPortal() {
                 </ul>
               </div>
             </>
-          ) : (
-            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', border: '1px dashed var(--border-color)', borderRadius: '12px', background: 'rgba(255,255,255,0.02)' }}>
-              Click on a glowing red point on the 3D model to view specific recommended actions and things to avoid for that area.
-            </div>
-          )}
+          ) : null}
 
           <div className="glass-panel" style={{ background: 'rgba(0, 210, 255, 0.05)', padding: '24px', border: '1px solid rgba(0, 210, 255, 0.3)' }}>
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent)', margin: '0 0 16px 0' }}>
