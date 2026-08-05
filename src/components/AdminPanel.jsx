@@ -10,6 +10,21 @@ const getDaysAgo = (days) => {
   return d.toISOString().split('T')[0];
 };
 
+const calculateTimeSince = (dateString) => {
+  if (!dateString) return null;
+  const consultDate = new Date(dateString);
+  const now = new Date();
+  const diffTime = Math.abs(now - consultDate);
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return 'today';
+  if (diffDays === 1) return 'yesterday';
+  if (diffDays < 7) return `${diffDays} days`;
+  if (diffDays < 14) return 'a week';
+  const diffWeeks = Math.floor(diffDays / 7);
+  return `${diffWeeks} weeks`;
+};
+
 // Mock Data mimicking a Google Sheet
 const mockSheetData = [
   { id: 1, name: "Alice Johnson", phone: "1234567890", painArea: "lower_back", sleepPosition: "Side", product: "SmartGrid Ortho Pro Mattress", consultDate: getDaysAgo(4) },
@@ -51,7 +66,24 @@ export default function AdminPanel() {
   const generateWhatsAppLink = (customer) => {
     const phone = customer.phone.replace(/\D/g, '');
     const link = `${window.location.origin}/r/${customer.id}`;
-    const message = encodeURIComponent(link);
+    
+    const timeSinceVisit = calculateTimeSince(customer.consultDate);
+    const productPurchased = customer.productPurchased || customer.product;
+    
+    let personalizedGreeting = "Hope your body's been treating you a little kinder since we last spoke at the store!";
+    if (timeSinceVisit && productPurchased) {
+      personalizedGreeting += ` It's been ${timeSinceVisit} since you picked up your ${productPurchased} — hoping it's doing its job.`;
+    } else if (timeSinceVisit) {
+      personalizedGreeting += ` It's been ${timeSinceVisit} since your visit — hoping the recommendations are doing their job.`;
+    } else if (productPurchased) {
+      personalizedGreeting += ` Since you picked up your ${productPurchased}, I'm hoping it's doing its job.`;
+    } else {
+      personalizedGreeting += ` I'm hoping the recommendations are doing their job.`;
+    }
+
+    const fullMessage = `Hi ${customer.name},\n\n${personalizedGreeting}\n\nI put together a personalized 3D Recovery Plan for you based on our consultation. It includes the specific exercises you should do, things to avoid, and my priority recommendations.\n\n👉 *Click below to view your interactive 3D plan:*\n${link}\n\nLet me know if you have any questions!\n\nBest,\nDr. ${customer.physioName || 'Physio'}`;
+
+    const message = encodeURIComponent(fullMessage);
     return `https://api.whatsapp.com/send?phone=${phone}&text=${message}`;
   };
 
