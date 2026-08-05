@@ -219,12 +219,12 @@ export default function CustomerPortal() {
         </div>
 
         {/* Box 2: 3D Visual */}
-        <div className="glass-panel" style={{ position: 'relative', overflow: 'hidden', background: 'var(--secondary-bg)', display: 'flex' }}>
+        <div className="glass-panel" style={{ position: 'relative', overflow: 'hidden', background: 'var(--secondary-bg)' }}>
           <button onClick={() => setIsEnlarged(true)} style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, background: 'rgba(0,0,0,0.5)', border: 'none', borderRadius: '4px', color: 'white', padding: '4px', cursor: 'pointer' }}>
             <Maximize2 size={16} />
           </button>
-          <div style={{ flex: 1, position: 'relative' }} onClick={(e) => { if(e.target === e.currentTarget) setActivePointId(null); }}>
-            <Canvas dpr={[1, 1.5]} camera={{ position: [0, 0, 9], fov: 45 }}>
+          <div style={{ position: 'absolute', inset: 0 }} onClick={(e) => { if(e.target === e.currentTarget) setActivePointId(null); }}>
+            <Canvas style={{ width: '100%', height: '100%', touchAction: 'none' }} dpr={[1, 1.5]} camera={{ position: [0, 0, 9], fov: 45 }}>
               {renderScene()}
             </Canvas>
             {!isEnlarged && renderHotspotOverlay()}
