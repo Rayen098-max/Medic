@@ -157,11 +157,27 @@ export default function CustomerPortal() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
           <div className="glass-panel" style={{ padding: '20px' }}>
-            <h3 style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Clinical Assessment</h3>
+            <h3 style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '1px' }}>Physiotherapist Note</h3>
             
-            <p style={{ margin: '0 0 16px 0', lineHeight: 1.6, fontSize: '1.05rem', color: 'white' }}>
-              Hi, Dr. {patient.physioName || 'Physio'} here 👋
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+              <div style={{ 
+                width: '56px', 
+                height: '56px', 
+                borderRadius: '50%', 
+                overflow: 'hidden',
+                border: '2px solid var(--accent)',
+                flexShrink: 0
+              }}>
+                <img 
+                  src={patient.physioPhoto || "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?auto=format&fit=crop&q=80&w=150&h=150"} 
+                  alt={`Dr. ${patient.physioName || 'Physio'}`} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
+              <p style={{ margin: 0, lineHeight: 1.4, fontSize: '1.1rem', color: 'white', fontWeight: '500' }}>
+                Hi, Dr. {patient.physioName || 'Physio'} here 👋
+              </p>
+            </div>
 
             <p style={{ margin: '0 0 16px 0', lineHeight: 1.6 }}>
               Hope your back's been treating you a little kinder since we last spoke at the store! 

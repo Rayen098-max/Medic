@@ -41,7 +41,7 @@ export default function DetailPanel({ zone, onClose }) {
       </div>
 
       <div>
-        <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>Clinical Assessment</h3>
+        <h3 style={{ fontSize: '1rem', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>Physiotherapist Note</h3>
         <p style={{ color: 'var(--text-main)', margin: 0, lineHeight: 1.6 }}>
           {zone.description}
         </p>
