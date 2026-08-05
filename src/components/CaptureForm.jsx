@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Camera, ArrowLeft, Loader2 } from 'lucide-react';
 import { addPatient } from '../utils/db';
-import { transcribeCardWithOpenAI } from '../utils/ai';
 import painPointsData from '../data/painPoints.json';
 
 export default function CaptureForm() {
@@ -12,12 +11,11 @@ export default function CaptureForm() {
     phone: '',
     physioName: '',
     physioPhone: '',
-    physioAvailability: '',
+    physioAvailability: '1 PM - 9 PM, every day except Wednesday',
     consultDate: new Date().toISOString().split('T')[0],
     productPurchased: '',
     painPointIds: ['L01'], // Default to generic lower back
-    consent: false,
-    photo: null
+    consent: false
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -32,25 +30,9 @@ export default function CaptureForm() {
 
     // Setup Base Fallback
     let matchedPointIds = formData.painPointIds;
-    let finalTranscription = "No photo provided. Used manual fallback selection.";
+    let finalTranscription = "Manual condition selection.";
 
-    if (formData.photo) {
-      try {
-        finalTranscription = await transcribeCardWithOpenAI(formData.photo);
-        
-        const lowerTrans = finalTranscription.toLowerCase();
-        
-        let foundMatches = painPointsData.filter(p => lowerTrans.includes(p.name.toLowerCase()));
-        
-        if (foundMatches.length > 0) {
-          matchedPointIds = foundMatches.slice(0, 5).map(m => m.id);
-        }
-      } catch (err) {
-        alert("AI Transcription Failed (using fallback instead): " + err.message);
-      }
-    } else {
-      await new Promise(r => setTimeout(r, 600));
-    }
+    await new Promise(r => setTimeout(r, 600));
 
     const primaryPoint = painPointsData.find(p => p.id === matchedPointIds[0]);
 
@@ -93,30 +75,6 @@ export default function CaptureForm() {
         <form onSubmit={handleSubmit} className="glass-panel" style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Care Card Photo</label>
-            <div style={{ 
-              position: 'relative',
-              border: '2px dashed var(--border-color)', 
-              borderRadius: '8px', 
-              padding: '40px', 
-              textAlign: 'center',
-              cursor: 'pointer',
-              background: 'rgba(255,255,255,0.02)'
-            }}>
-              <Camera size={32} color="var(--accent)" style={{ marginBottom: '12px' }} />
-              <div>Tap to take photo or upload</div>
-              <input 
-                type="file" 
-                accept="image/*" 
-                capture="environment"
-                style={{ display: 'block', width: '100%', opacity: 0, position: 'absolute', top: 0, left: 0, bottom: 0, right: 0, cursor: 'pointer' }}
-                onChange={(e) => setFormData({...formData, photo: e.target.files[0]})}
-              />
-              {formData.photo && <div style={{ position: 'relative', zIndex: 10, marginTop: '12px', color: '#22c55e' }}>{formData.photo.name} attached</div>}
-            </div>
-          </div>
-
-          <div>
             <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Customer Name</label>
             <input 
               required
@@ -158,18 +116,6 @@ export default function CaptureForm() {
               value={formData.physioPhone}
               onChange={e => setFormData({...formData, physioPhone: e.target.value})}
               placeholder="e.g. +1234567890"
-              style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white' }} 
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Physio Availability</label>
-            <input 
-              required
-              type="text" 
-              value={formData.physioAvailability}
-              onChange={e => setFormData({...formData, physioAvailability: e.target.value})}
-              placeholder="e.g. 1 PM - 9 PM, every day except Wednesday"
               style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white' }} 
             />
           </div>
