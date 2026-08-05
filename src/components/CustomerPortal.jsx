@@ -10,6 +10,21 @@ import { getPatientById } from '../utils/db';
 import { CheckCircle2, XCircle, ShoppingBag, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+const calculateTimeSince = (dateString) => {
+  if (!dateString) return null;
+  const consultDate = new Date(dateString);
+  const now = new Date();
+  const diffTime = Math.abs(now - consultDate);
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return 'today';
+  if (diffDays === 1) return 'yesterday';
+  if (diffDays < 7) return `${diffDays} days`;
+  if (diffDays < 14) return 'a week';
+  const diffWeeks = Math.floor(diffDays / 7);
+  return `${diffWeeks} weeks`;
+};
+
 export default function CustomerPortal() {
   const { id } = useParams();
   const [patient, setPatient] = useState(null);
@@ -143,7 +158,37 @@ export default function CustomerPortal() {
           
           <div className="glass-panel" style={{ padding: '24px' }}>
             <h3 style={{ fontSize: '1.1rem', color: 'var(--text-muted)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '1px' }}>Clinical Assessment</h3>
-            <p style={{ margin: 0, lineHeight: 1.6 }}>{zone.description}</p>
+            
+            <p style={{ margin: '0 0 16px 0', lineHeight: 1.6, fontSize: '1.05rem', color: 'white' }}>
+              Hi, Dr. {patient.physioName || 'Physio'} here 👋 (yes, {patient.name}, it's really me and not a robot pretending to be your physio).
+            </p>
+
+            <p style={{ margin: '0 0 16px 0', lineHeight: 1.6 }}>
+              Hope your back's been treating you a little kinder since we last spoke at the store! 
+              {(() => {
+                const timeSinceVisit = calculateTimeSince(patient.consultDate);
+                const productPurchased = patient.productPurchased;
+                
+                if (timeSinceVisit && productPurchased) {
+                  return ` It's been ${timeSinceVisit} since you picked up your ${productPurchased} — hoping it's doing its job and you're not still sneaking off to the couch at 2am because it's "just more comfortable" 😄`;
+                } else if (timeSinceVisit) {
+                  return ` It's been ${timeSinceVisit} since your visit — hoping the recommendations are doing their job and you're not still sneaking off to the couch at 2am because it's "just more comfortable" 😄`;
+                } else if (productPurchased) {
+                  return ` Since you picked up your ${productPurchased}, I'm hoping it's doing its job and you're not still sneaking off to the couch at 2am because it's "just more comfortable" 😄`;
+                } else {
+                  return ` I'm hoping the recommendations are doing their job and you're not still sneaking off to the couch at 2am because it's "just more comfortable" 😄`;
+                }
+              })()}
+            </p>
+
+            <p style={{ margin: '0 0 16px 0', lineHeight: 1.6 }}>
+              I gave you a prescription card back then with some exercises and things to avoid — if you've lost it somewhere between your bag and the washing machine (no judgment, happens to everyone), don't stress. Below is your personal 3D pain map — just tap on any of the glowing points and you'll get the full rundown again: what's going on, what to do, and what to steer clear of.
+            </p>
+            
+            <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <h4 style={{ color: 'var(--text-muted)', marginBottom: '8px', fontSize: '0.9rem', textTransform: 'uppercase' }}>Clinical Details</h4>
+              <p style={{ margin: 0, lineHeight: 1.6 }}>{zone.description}</p>
+            </div>
             {patient.transcription && (
               <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', borderLeft: '2px solid var(--border-color)', fontStyle: 'italic', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                 <strong>Physio's Notes:</strong> {patient.transcription}
@@ -204,16 +249,23 @@ export default function CustomerPortal() {
           </div>
 
           <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', marginTop: '16px', background: 'linear-gradient(135deg, rgba(0,210,255,0.1) 0%, rgba(0,0,0,0) 100%)' }}>
-            <h3 style={{ margin: '0 0 12px 0', fontSize: '1.5rem', color: 'white' }}>How are you feeling?</h3>
-            <p style={{ margin: '0 0 24px 0', color: 'var(--text-muted)' }}>Book a free 10-minute follow-up session with our in-store physiotherapist to check on your progress.</p>
+            <p style={{ margin: '0 0 16px 0', fontSize: '1.1rem', color: 'white', lineHeight: 1.6 }}>
+              Hope that all made sense! If you'd ever like to swing by, I do free 10-minute physio consultations in-store, no appointment needed. I'm around {patient.physioAvailability || 'every day'}.
+            </p>
+            <p style={{ margin: '0 0 16px 0', fontSize: '1.05rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              Would genuinely love to see you again — even just to say hi and check in on that back of yours.
+            </p>
+            <p style={{ margin: '0 0 24px 0', fontSize: '1.05rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              Got questions before then? Just reach out below 👇
+            </p>
             <a 
-              href={`https://api.whatsapp.com/send?text=${encodeURIComponent("I need a follow up")}`}
+              href={`https://wa.me/${patient.physioPhone || ''}?text=${encodeURIComponent("Hi Dr. " + (patient.physioName || 'Physio') + ", I have a question about my recovery plan.")}`}
               target="_blank"
               rel="noreferrer"
               className="clinical-btn"
               style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', textDecoration: 'none', padding: '16px 32px', fontSize: '1.1rem' }}
             >
-              Book Follow-up <ArrowRight size={20} />
+              Contact Now <ArrowRight size={20} />
             </a>
           </div>
 

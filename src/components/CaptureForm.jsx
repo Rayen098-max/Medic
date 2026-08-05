@@ -10,6 +10,11 @@ export default function CaptureForm() {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    physioName: '',
+    physioPhone: '',
+    physioAvailability: '',
+    consultDate: new Date().toISOString().split('T')[0],
+    productPurchased: '',
     painPointIds: ['L01'], // Default to generic lower back
     consent: false,
     photo: null
@@ -56,7 +61,12 @@ export default function CaptureForm() {
       painPointId: matchedPointIds.join(','),
       transcription: finalTranscription,
       sleepPosition: 'Unknown',
-      product: primaryPoint ? primaryPoint.products[0] : 'Recommended Product'
+      product: primaryPoint ? primaryPoint.products[0] : 'Recommended Product',
+      physioName: formData.physioName,
+      physioPhone: formData.physioPhone,
+      physioAvailability: formData.physioAvailability,
+      consultDate: formData.consultDate,
+      productPurchased: formData.productPurchased
     };
 
     try {
@@ -124,6 +134,64 @@ export default function CaptureForm() {
               type="tel" 
               value={formData.phone}
               onChange={e => setFormData({...formData, phone: e.target.value})}
+              style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white' }} 
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Physio Name</label>
+            <input 
+              required
+              type="text" 
+              value={formData.physioName}
+              onChange={e => setFormData({...formData, physioName: e.target.value})}
+              placeholder="e.g. Sarah"
+              style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white' }} 
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Physio Phone (WhatsApp)</label>
+            <input 
+              required
+              type="tel" 
+              value={formData.physioPhone}
+              onChange={e => setFormData({...formData, physioPhone: e.target.value})}
+              placeholder="e.g. +1234567890"
+              style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white' }} 
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Physio Availability</label>
+            <input 
+              required
+              type="text" 
+              value={formData.physioAvailability}
+              onChange={e => setFormData({...formData, physioAvailability: e.target.value})}
+              placeholder="e.g. 1 PM - 9 PM, every day except Wednesday"
+              style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white' }} 
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Consult Date</label>
+            <input 
+              required
+              type="date" 
+              value={formData.consultDate}
+              onChange={e => setFormData({...formData, consultDate: e.target.value})}
+              style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }} 
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Product Purchased (Optional)</label>
+            <input 
+              type="text" 
+              value={formData.productPurchased}
+              onChange={e => setFormData({...formData, productPurchased: e.target.value})}
+              placeholder="e.g. Lumbar Support Cushion"
               style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white' }} 
             />
           </div>
