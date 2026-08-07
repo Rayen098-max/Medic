@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
-import { Center, Decal } from '@react-three/drei';
+import { Center, Sphere } from '@react-three/drei';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import initialZoneCoordinates from '../data/zoneCoordinates.json';
@@ -110,23 +110,25 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
             geometry={meshNode.geometry} 
             material={bodyMaterial} 
             scale={scale}
-          >
-            {/* Simple red glowing decal for pain points instead of dots or pointLights */}
-            {activeZonePositions.map((zone, i) => (
-              <Decal 
-                key={zone.id || i}
-                position={zone.position} 
-                rotation={zone.rotation} 
-                scale={[zone.scale, zone.scale, zone.scale]}
-                onClick={(e) => handlePointerInteraction(e, true, zone.id)}
-                onPointerMove={(e) => handlePointerInteraction(e, false, zone.id)}
-                onPointerOut={() => setHovered(false)}
-              >
-                <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={2} transparent opacity={0.8} depthTest={true} depthWrite={false} polygonOffset={true} polygonOffsetFactor={-4} />
-              </Decal>
-            ))}
-          </mesh>
+          />
         )}
+        
+        {/* Soft glowing light for pain points, respecting surface normal */}
+        {activeZonePositions.map((zone, i) => (
+          <group position={zone.position} rotation={zone.rotation} key={zone.id || i}>
+            {/* Invisible interactive hit area */}
+            <mesh 
+              visible={false}
+              onClick={(e) => handlePointerInteraction(e, true, zone.id)}
+              onPointerMove={(e) => handlePointerInteraction(e, false, zone.id)}
+              onPointerOut={() => setHovered(false)}
+            >
+              <sphereGeometry args={[0.4, 8, 8]} />
+            </mesh>
+            {/* Red glow effect pushed outward along the normal */}
+            <pointLight color="#ff0000" intensity={40} distance={2.5} decay={2} position={[0, 0, 0.3]} />
+          </group>
+        ))}
       </Center>
     </group>
   );

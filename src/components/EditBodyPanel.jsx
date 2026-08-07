@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Canvas, useLoader } from '@react-three/fiber';
-import { OrbitControls, Center, Environment, Decal } from '@react-three/drei';
+import { OrbitControls, Center, Environment } from '@react-three/drei';
 import { Link } from 'react-router-dom';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
@@ -84,21 +84,19 @@ function EditBody3D({ coordinates, activeZone, onCoordinateUpdate }) {
           material={bodyMaterial} 
           scale={scale}
           onPointerDown={handlePointerDown}
-        >
-          {Object.entries(coordinates).map(([zone, data]) => {
-            const pos = Array.isArray(data) ? data : data.position;
-            const rot = data.rotation || [0, 0, 0];
-            const s = data.scale || 1.0;
-            const color = activeZone === zone ? "#00ff00" : "#ff0000";
-            
-            return (
-              <Decal key={zone} position={pos} rotation={rot} scale={[s, s, s]}>
-                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} transparent opacity={0.8} depthTest={true} depthWrite={false} polygonOffset={true} polygonOffsetFactor={-4} />
-              </Decal>
-            );
-          })}
-        </mesh>
+        />
       )}
+      {Object.entries(coordinates).map(([zone, data]) => {
+        const pos = Array.isArray(data) ? data : data.position;
+        const rot = data.rotation || [0, 0, 0];
+        const color = activeZone === zone ? "#00ff00" : "#ff0000";
+        
+        return (
+          <group position={pos} rotation={rot} key={zone}>
+            <pointLight color={color} intensity={40} distance={2.5} decay={2} position={[0, 0, 0.3]} />
+          </group>
+        );
+      })}
     </Center>
   );
 }
