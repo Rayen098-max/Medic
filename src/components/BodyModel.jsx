@@ -110,25 +110,25 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
             geometry={meshNode.geometry} 
             material={bodyMaterial} 
             scale={scale}
-          />
+          >
+            {/* Soft glowing light for pain points, respecting surface normal */}
+            {activeZonePositions.map((zone, i) => (
+              <group position={zone.position} rotation={zone.rotation} key={zone.id || i}>
+                {/* Invisible interactive hit area */}
+                <mesh 
+                  visible={false}
+                  onClick={(e) => handlePointerInteraction(e, true, zone.id)}
+                  onPointerMove={(e) => handlePointerInteraction(e, false, zone.id)}
+                  onPointerOut={() => setHovered(false)}
+                >
+                  <sphereGeometry args={[0.4 / scale, 8, 8]} />
+                </mesh>
+                {/* Red glow effect pushed outward along the normal */}
+                <pointLight color="#ff0000" intensity={40} distance={2.5 / scale} decay={2} position={[0, 0, 0.3 / scale]} />
+              </group>
+            ))}
+          </mesh>
         )}
-        
-        {/* Soft glowing light for pain points, respecting surface normal */}
-        {activeZonePositions.map((zone, i) => (
-          <group position={zone.position} rotation={zone.rotation} key={zone.id || i}>
-            {/* Invisible interactive hit area */}
-            <mesh 
-              visible={false}
-              onClick={(e) => handlePointerInteraction(e, true, zone.id)}
-              onPointerMove={(e) => handlePointerInteraction(e, false, zone.id)}
-              onPointerOut={() => setHovered(false)}
-            >
-              <sphereGeometry args={[0.4, 8, 8]} />
-            </mesh>
-            {/* Red glow effect pushed outward along the normal */}
-            <pointLight color="#ff0000" intensity={40} distance={2.5} decay={2} position={[0, 0, 0.3]} />
-          </group>
-        ))}
       </Center>
     </group>
   );

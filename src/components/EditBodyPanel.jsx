@@ -51,7 +51,7 @@ function EditBody3D({ coordinates, activeZone, onCoordinateUpdate }) {
     if (!activeZone) return;
     e.stopPropagation();
     
-    // Get precise local point and normal on the mesh
+    // Get precise local point on the unscaled OBJ mesh itself
     const localPoint = e.eventObject.worldToLocal(e.point.clone());
     const localNormal = e.face.normal.clone();
     
@@ -84,19 +84,21 @@ function EditBody3D({ coordinates, activeZone, onCoordinateUpdate }) {
           material={bodyMaterial} 
           scale={scale}
           onPointerDown={handlePointerDown}
-        />
+        >
+          {Object.entries(coordinates).map(([zone, data]) => {
+            const pos = Array.isArray(data) ? data : data.position;
+            const rot = data.rotation || [0, 0, 0];
+            const color = activeZone === zone ? "#00ff00" : "#ff0000";
+            
+            // Adjust offset to counteract the mesh scale so it hovers slightly above the surface
+            return (
+              <group position={pos} rotation={rot} key={zone}>
+                <pointLight color={color} intensity={40} distance={2.5 / scale} decay={2} position={[0, 0, 0.3 / scale]} />
+              </group>
+            );
+          })}
+        </mesh>
       )}
-      {Object.entries(coordinates).map(([zone, data]) => {
-        const pos = Array.isArray(data) ? data : data.position;
-        const rot = data.rotation || [0, 0, 0];
-        const color = activeZone === zone ? "#00ff00" : "#ff0000";
-        
-        return (
-          <group position={pos} rotation={rot} key={zone}>
-            <pointLight color={color} intensity={40} distance={2.5} decay={2} position={[0, 0, 0.3]} />
-          </group>
-        );
-      })}
     </Center>
   );
 }
