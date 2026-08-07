@@ -18,13 +18,9 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
     return new THREE.MeshStandardMaterial({
       color: '#0a3d91', // Deep blue
       emissive: '#051b47',
-      emissiveIntensity: 0.5,
-      transparent: true,
-      opacity: 0.5,
-      roughness: 0.2,
+      emissiveIntensity: 0.2,
+      roughness: 0.3,
       metalness: 0.8,
-      wireframe: false,
-      depthWrite: false
     });
   }, []);
 
@@ -103,20 +99,20 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
           />
         )}
         
-        {/* Simple red glowing spheres for pain points instead of shader */}
+        {/* Simple red glowing light for pain points instead of dots */}
         {activeZonePositions.map((zone, i) => (
           <group position={zone.pos} key={zone.id || i}>
-            <Sphere 
-              args={[0.2, 16, 16]} 
+            {/* Invisible interactive hit area */}
+            <mesh 
+              visible={false}
               onClick={(e) => handlePointerInteraction(e, true, zone.id)}
               onPointerMove={(e) => handlePointerInteraction(e, false, zone.id)}
               onPointerOut={() => setHovered(false)}
             >
-              <meshBasicMaterial color="#ff0000" transparent opacity={0.8} />
-            </Sphere>
-            <Sphere args={[0.3, 16, 16]}>
-              <meshBasicMaterial color="#ff3333" transparent opacity={0.3} />
-            </Sphere>
+              <sphereGeometry args={[0.4, 8, 8]} />
+            </mesh>
+            {/* Red glow effect on the body surface */}
+            <pointLight color="#ff0000" intensity={40} distance={2.5} decay={2} position={[0, 0, 0.3]} />
           </group>
         ))}
       </Center>

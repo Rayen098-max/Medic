@@ -159,11 +159,15 @@ export default function CaptureForm() {
                         checked={formData.painPointIds.includes(p.id)}
                         onChange={(e) => {
                           if (e.target.checked) {
-                            if (formData.painPointIds.length >= 5) {
-                              alert("Maximum 5 conditions allowed.");
-                              return;
+                            // Check if another point in this zoneName is already selected
+                            const existingInZone = formData.painPointIds.find(id => points.find(pt => pt.id === id));
+                            
+                            let newIds = [...formData.painPointIds];
+                            if (existingInZone) {
+                              alert(`You can only select one condition for the ${zoneName}. Replacing previous selection.`);
+                              newIds = newIds.filter(id => id !== existingInZone);
                             }
-                            setFormData({...formData, painPointIds: [...formData.painPointIds, p.id]});
+                            setFormData({...formData, painPointIds: [...newIds, p.id]});
                           } else {
                             setFormData({...formData, painPointIds: formData.painPointIds.filter(id => id !== p.id)});
                           }
