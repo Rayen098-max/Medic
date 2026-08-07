@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
-import { Center, Sphere, Html } from '@react-three/drei';
+import { Center, Sphere } from '@react-three/drei';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import initialZoneCoordinates from '../data/zoneCoordinates.json';
@@ -103,23 +103,7 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
   };
 
   return (
-    <group>
-      {/* Futuristic Background Logo */}
-      <Html transform position={[-2.5, 2.5, -2]} scale={0.4} occlude="blending">
-        <div className="futuristic-logo-container">
-          <div className="logo-icon">
-             <div className="square-1"></div>
-             <div className="square-2"></div>
-          </div>
-          <div className="logo-text">
-             THE SLEEP<br/>COMPANY
-          </div>
-          <div className="circuit-lines"></div>
-        </div>
-      </Html>
-
-      {/* Revolving Body Group */}
-      <group ref={group}>
+    <group ref={group}>
       <Center>
         {meshNode && (
           <mesh 
@@ -154,7 +138,6 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
           </mesh>
         )}
       </Center>
-      </group>
     </group>
   );
 }
