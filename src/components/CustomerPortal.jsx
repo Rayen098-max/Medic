@@ -180,6 +180,18 @@ export default function CustomerPortal() {
       flexDirection: 'column'
     }}>
       <div style={{ flex: 1, position: 'relative' }} onClick={(e) => { if(e.target === e.currentTarget) setActivePointId(null); }}>
+        {/* Static Overlay Logo */}
+        <div className="futuristic-logo-container overlay-logo" style={{ position: 'absolute', top: '40px', left: '40px', zIndex: 10 }}>
+          <div className="logo-icon">
+             <div className="square-1"></div>
+             <div className="square-2"></div>
+          </div>
+          <div className="logo-text">
+             THE SLEEP<br/>COMPANY
+          </div>
+          <div className="circuit-lines"></div>
+        </div>
+
         <Canvas style={{ position: 'absolute', inset: 0, touchAction: 'none' }} dpr={[1, 1.5]} camera={{ position: [0, 0, 9], fov: 45 }}>
           {renderScene()}
         </Canvas>
