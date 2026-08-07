@@ -51,11 +51,14 @@ function EditBody3D({ coordinates, activeZone, onCoordinateUpdate }) {
     if (!activeZone) return;
     e.stopPropagation();
     
-    // Save the exact intersection point
+    // e.point is the world coordinate. We need it relative to the <Center> group
+    // so it renders accurately when passed as a position property inside <Center>
+    const localPoint = e.eventObject.parent.worldToLocal(e.point.clone());
+    
     const point = [
-      parseFloat(e.point.x.toFixed(3)),
-      parseFloat(e.point.y.toFixed(3)),
-      parseFloat(e.point.z.toFixed(3))
+      parseFloat(localPoint.x.toFixed(3)),
+      parseFloat(localPoint.y.toFixed(3)),
+      parseFloat(localPoint.z.toFixed(3))
     ];
     onCoordinateUpdate(activeZone, point);
   };
