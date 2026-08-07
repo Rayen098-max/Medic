@@ -93,7 +93,15 @@ function EditBody3D({ coordinates, activeZone, onCoordinateUpdate }) {
             // Adjust offset to counteract the mesh scale so it hovers slightly above the surface
             return (
               <group position={pos} rotation={rot} key={zone}>
-                <pointLight color={color} intensity={40} distance={2.5 / scale} decay={2} position={[0, 0, 0.3 / scale]} />
+                <mesh position={[0, 0, 0.05 / scale]}>
+                  <sphereGeometry args={[0.06 / scale, 16, 16]} />
+                  <meshBasicMaterial color={color} transparent opacity={0.6} />
+                </mesh>
+                <mesh position={[0, 0, 0.05 / scale]}>
+                  <sphereGeometry args={[0.03 / scale, 16, 16]} />
+                  <meshBasicMaterial color="#ffffff" />
+                </mesh>
+                <pointLight color={color} intensity={50} distance={3.0 / scale} decay={2} position={[0, 0, 0.1 / scale]} />
               </group>
             );
           })}
@@ -108,7 +116,7 @@ export default function EditBodyPanel() {
   
   // Load initial coordinates from file, or empty if not present
   const [coordinates, setCoordinates] = useState(() => {
-    const saved = localStorage.getItem('medic_zone_coords');
+    const saved = localStorage.getItem('medic_zone_coords_v3');
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
@@ -121,7 +129,7 @@ export default function EditBodyPanel() {
   const handleCoordinateUpdate = (zone, point) => {
     const newCoords = { ...coordinates, [zone]: point };
     setCoordinates(newCoords);
-    localStorage.setItem('medic_zone_coords', JSON.stringify(newCoords));
+    localStorage.setItem('medic_zone_coords_v3', JSON.stringify(newCoords));
   };
 
   const handleCopy = () => {

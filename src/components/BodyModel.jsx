@@ -49,7 +49,7 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
     // Check localStorage first, then fallback to initial config
     let savedCoords = null;
     try {
-      const ls = localStorage.getItem('medic_zone_coords');
+      const ls = localStorage.getItem('medic_zone_coords_v3');
       if (ls) savedCoords = JSON.parse(ls);
     } catch(e) {}
     
@@ -123,8 +123,16 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
                 >
                   <sphereGeometry args={[0.4 / scale, 8, 8]} />
                 </mesh>
-                {/* Red glow effect pushed outward along the normal */}
-                <pointLight color="#ff0000" intensity={40} distance={2.5 / scale} decay={2} position={[0, 0, 0.3 / scale]} />
+                {/* Red glow effect mimicking a bright internal/surface node */}
+                <mesh position={[0, 0, 0.05 / scale]}>
+                  <sphereGeometry args={[0.06 / scale, 16, 16]} />
+                  <meshBasicMaterial color="#ff0000" transparent opacity={0.6} />
+                </mesh>
+                <mesh position={[0, 0, 0.05 / scale]}>
+                  <sphereGeometry args={[0.03 / scale, 16, 16]} />
+                  <meshBasicMaterial color="#ffffff" />
+                </mesh>
+                <pointLight color="#ff0000" intensity={50} distance={3.0 / scale} decay={2} position={[0, 0, 0.1 / scale]} />
               </group>
             ))}
           </mesh>
