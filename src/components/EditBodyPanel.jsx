@@ -1,0 +1,190 @@
+import React, { useState, useMemo, useRef } from 'react';
+import { Canvas, useLoader } from '@react-three/fiber';
+import { OrbitControls, Center, Environment } from '@react-three/drei';
+import { Link } from 'react-router-dom';
+import * as THREE from 'three';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { ArrowLeft, Save, Copy, CheckCircle } from 'lucide-react';
+import painPointsData from '../data/painPoints.json';
+import initialZoneCoordinates from '../data/zoneCoordinates.json';
+
+const getUniqueZones = () => {
+  const zones = new Set();
+  painPointsData.forEach(p => {
+    if (p.zone) zones.add(p.zone.toLowerCase());
+  });
+  return Array.from(zones);
+};
+
+function EditBody3D({ coordinates, activeZone, onCoordinateUpdate }) {
+  const obj = useLoader(OBJLoader, '/model.obj');
+  
+  const bodyMaterial = useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: '#0a3d91',
+      emissive: '#051b47',
+      emissiveIntensity: 0.2,
+      roughness: 0.3,
+      metalness: 0.8,
+    });
+  }, []);
+
+  const meshNode = useMemo(() => {
+    let mesh = null;
+    obj.traverse((child) => {
+      if (child.isMesh && !mesh) mesh = child;
+    });
+    return mesh;
+  }, [obj]);
+
+  const targetHeight = 7;
+  const { scale } = useMemo(() => {
+    if (!meshNode) return { scale: 1 };
+    meshNode.geometry.computeBoundingBox();
+    const box = meshNode.geometry.boundingBox;
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    return { scale: targetHeight / size.y };
+  }, [meshNode]);
+
+  const handlePointerDown = (e) => {
+    if (!activeZone) return;
+    e.stopPropagation();
+    
+    // Save the exact intersection point
+    const point = [
+      parseFloat(e.point.x.toFixed(3)),
+      parseFloat(e.point.y.toFixed(3)),
+      parseFloat(e.point.z.toFixed(3))
+    ];
+    onCoordinateUpdate(activeZone, point);
+  };
+
+  return (
+    <Center>
+      {meshNode && (
+        <mesh 
+          geometry={meshNode.geometry} 
+          material={bodyMaterial} 
+          scale={scale}
+          onPointerDown={handlePointerDown}
+        />
+      )}
+      {Object.entries(coordinates).map(([zone, pos]) => (
+        <group position={pos} key={zone}>
+          <pointLight color={activeZone === zone ? "#00ff00" : "#ff0000"} intensity={40} distance={2.5} decay={2} position={[0, 0, 0.3]} />
+        </group>
+      ))}
+    </Center>
+  );
+}
+
+export default function EditBodyPanel() {
+  const uniqueZones = useMemo(() => getUniqueZones(), []);
+  
+  // Load initial coordinates from file, or empty if not present
+  const [coordinates, setCoordinates] = useState(() => {
+    const saved = localStorage.getItem('medic_zone_coords');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return { ...initialZoneCoordinates };
+  });
+
+  const [activeZone, setActiveZone] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCoordinateUpdate = (zone, point) => {
+    const newCoords = { ...coordinates, [zone]: point };
+    setCoordinates(newCoords);
+    localStorage.setItem('medic_zone_coords', JSON.stringify(newCoords));
+  };
+
+  const handleCopy = () => {
+    const jsonStr = JSON.stringify(coordinates, null, 2);
+    navigator.clipboard.writeText(jsonStr);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div style={{ display: 'flex', width: '100vw', height: '100vh', background: 'var(--primary-bg)', color: 'white' }}>
+      
+      {/* 3D Canvas Area */}
+      <div style={{ flex: 1, position: 'relative' }}>
+        <Canvas dpr={[1, 1.5]} camera={{ position: [0, 0, 9], fov: 45 }}>
+          <ambientLight intensity={0.5} />
+          <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} />
+          <EditBody3D 
+            coordinates={coordinates} 
+            activeZone={activeZone} 
+            onCoordinateUpdate={handleCoordinateUpdate} 
+          />
+          <OrbitControls enablePan={true} enableZoom={true} />
+          <Environment preset="city" />
+        </Canvas>
+        
+        {/* Instructions overlay */}
+        <div style={{ position: 'absolute', top: 20, left: 20, pointerEvents: 'none', background: 'rgba(0,0,0,0.5)', padding: '16px', borderRadius: '8px' }}>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '1.2rem', color: 'var(--accent)' }}>3D Coordinate Mapper</h2>
+          <p style={{ margin: 0, color: '#ccc', fontSize: '0.9rem' }}>
+            1. Select a body part from the right panel.<br/>
+            2. Click on the 3D model to place the glow marker.<br/>
+            3. Copy the JSON and paste it to the developer.
+          </p>
+        </div>
+      </div>
+
+      {/* Control Panel */}
+      <div style={{ width: '350px', background: 'rgba(0,0,0,0.8)', borderLeft: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
+        
+        {/* Header */}
+        <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <Link to="/" style={{ color: 'var(--text-muted)' }}><ArrowLeft size={20} /></Link>
+          <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Map Body Parts</h2>
+        </div>
+
+        {/* Zone List */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+          <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '16px', textTransform: 'uppercase' }}>Available Parts</h3>
+          {uniqueZones.map(zone => (
+            <div 
+              key={zone} 
+              onClick={() => setActiveZone(zone)}
+              style={{
+                padding: '12px 16px',
+                marginBottom: '8px',
+                background: activeZone === zone ? 'rgba(0, 210, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                border: `1px solid ${activeZone === zone ? 'var(--accent)' : 'transparent'}`,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <span style={{ textTransform: 'capitalize', fontWeight: activeZone === zone ? 'bold' : 'normal' }}>
+                {zone}
+              </span>
+              {coordinates[zone] && (
+                <span style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>Mapped</span>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Footer actions */}
+        <div style={{ padding: '20px', borderTop: '1px solid var(--border-color)' }}>
+          <button 
+            onClick={handleCopy}
+            className="clinical-btn"
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px' }}
+          >
+            {copied ? <CheckCircle size={18} /> : <Copy size={18} />}
+            {copied ? 'Copied to Clipboard!' : 'Copy JSON Configuration'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

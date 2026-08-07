@@ -7,6 +7,7 @@ import DetailPanel from './components/DetailPanel';
 import AdminPanel from './components/AdminPanel';
 import CaptureForm from './components/CaptureForm';
 import CustomerPortal from './components/CustomerPortal';
+import EditBodyPanel from './components/EditBodyPanel';
 import contentData from './data/content.json';
 import painPointsData from './data/painPoints.json';
 
@@ -77,6 +78,9 @@ function MapView() {
         <Link to="/admin" className="clinical-btn" style={{ textDecoration: 'none', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', borderColor: 'var(--border-color)' }}>
           Follow-up Admin
         </Link>
+        <Link to="/edit-body" className="clinical-btn" style={{ textDecoration: 'none', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', borderColor: 'var(--border-color)' }}>
+          Edit Body
+        </Link>
       </div>
 
       {/* Attribution */}
@@ -94,6 +98,7 @@ export default function App() {
         <Route path="/" element={<MapView />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/capture" element={<CaptureForm />} />
+        <Route path="/edit-body" element={<EditBodyPanel />} />
         <Route path="/r/:id" element={<CustomerPortal />} />
       </Routes>
     </BrowserRouter>

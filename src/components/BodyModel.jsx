@@ -3,6 +3,7 @@ import { useFrame, useLoader } from '@react-three/fiber';
 import { Center, Sphere } from '@react-three/drei';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import initialZoneCoordinates from '../data/zoneCoordinates.json';
 
 export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
   const group = useRef();
@@ -44,11 +45,19 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
 
   const getHotspotPosition = (zoneCategory, id, origPos) => {
     let base = origPos || [0, 0, 0];
-    switch (zoneCategory?.toLowerCase()) {
-      case 'neck': base = [0, 2.2, -0.1]; break;
-      case 'shoulder': base = [0.7, 1.7, -0.1]; break;
-      case 'upper back': base = [0, 1.3, -0.55]; break;
-      case 'lower back': base = [0, 0.1, -0.55]; break;
+    
+    // Check localStorage first, then fallback to initial config
+    let savedCoords = null;
+    try {
+      const ls = localStorage.getItem('medic_zone_coords');
+      if (ls) savedCoords = JSON.parse(ls);
+    } catch(e) {}
+    
+    const coordsMap = savedCoords || initialZoneCoordinates;
+    const catKey = zoneCategory?.toLowerCase();
+    
+    if (catKey && coordsMap[catKey]) {
+      base = coordsMap[catKey];
     }
 
     if (id) {
