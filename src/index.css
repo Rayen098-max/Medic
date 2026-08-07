@@ -126,3 +126,53 @@ h1, h2, h3, h4, h5, h6 {
     top: 24px;
   }
 }
+
+.futuristic-logo-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  position: relative;
+  color: #00e5ff;
+  font-family: "Inter", sans-serif;
+  text-shadow: 0 0 10px rgba(0, 229, 255, 0.8), 0 0 20px rgba(0, 229, 255, 0.4);
+  pointer-events: none;
+  user-select: none;
+}
+.logo-icon {
+  position: relative;
+  width: 50px;
+  height: 50px;
+}
+.square-1, .square-2 {
+  position: absolute;
+  width: 35px;
+  height: 35px;
+  border: 2px solid #00e5ff;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.6), inset 0 0 10px rgba(0, 229, 255, 0.6);
+}
+.square-1 { top: 0; left: 0; }
+.square-2 { bottom: 0; right: 0; background: rgba(0, 229, 255, 0.2); }
+.logo-text {
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 2px;
+}
+.circuit-lines {
+  position: absolute;
+  top: 60px;
+  left: 25px;
+  width: 2px;
+  height: 200px;
+  background: linear-gradient(to bottom, #00e5ff, transparent);
+  box-shadow: 0 0 10px #00e5ff;
+}
+.circuit-lines::before, .circuit-lines::after {
+  content: "";
+  position: absolute;
+  width: 1px;
+  background: linear-gradient(to bottom, rgba(0,229,255,0.6), transparent);
+}
+.circuit-lines::before { left: -15px; height: 150px; top: 20px; }
+.circuit-lines::after { left: 15px; height: 120px; top: 10px; }
+
