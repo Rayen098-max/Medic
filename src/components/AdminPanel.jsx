@@ -65,7 +65,8 @@ export default function AdminPanel() {
 
   const generateWhatsAppLink = (customer) => {
     const phone = customer.phone.replace(/\D/g, '');
-    const link = `${window.location.origin}/r/${customer.id}`;
+    const cacheBuster = new Date().getTime();
+    const link = `${window.location.origin}/r/${customer.id}?v=${cacheBuster}`;
     
     const timeSinceVisit = calculateTimeSince(customer.consultDate);
     const productPurchased = customer.productPurchased || customer.product;
