@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { useFrame, useLoader } from '@react-three/fiber';
-import { Center, Sphere } from '@react-three/drei';
+import { Center, Decal } from '@react-three/drei';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import initialZoneCoordinates from '../data/zoneCoordinates.json';
@@ -43,8 +43,8 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
     return { scale: targetHeight / size.y };
   }, [meshNode]);
 
-  const getHotspotPosition = (zoneCategory, id, origPos) => {
-    let base = origPos || [0, 0, 0];
+  const getHotspotData = (zoneCategory, id, origPos) => {
+    let data = { position: origPos || [0, 0, 0], rotation: [0, 0, 0], scale: 1.0 };
     
     // Check localStorage first, then fallback to initial config
     let savedCoords = null;
@@ -57,18 +57,23 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
     const catKey = zoneCategory?.toLowerCase();
     
     if (catKey && coordsMap[catKey]) {
-      base = coordsMap[catKey];
+      const savedData = coordsMap[catKey];
+      // Handle legacy array format
+      if (Array.isArray(savedData)) {
+        data.position = savedData;
+      } else {
+        data = { ...data, ...savedData };
+      }
     }
 
     if (id) {
       const num = parseInt(id.replace(/\D/g, '')) || 0;
       if (num > 0) {
-        const radius = 0.04 + (num % 4) * 0.04;
-        const angle = num * 2.399;
-        return [base[0] + Math.cos(angle) * radius, base[1] + Math.sin(angle) * radius, base[2]];
+        // We do not add the arbitrary rotation offset for decals since they rely on accurate normals
+        // The scale and rotation will handle it
       }
     }
-    return base;
+    return data;
   };
 
   const activeZonePositions = useMemo(() => {
@@ -76,7 +81,7 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
       .filter(z => activeZones.length === 0 || activeZones.includes(z.id))
       .map(z => ({
          id: z.id, 
-         pos: getHotspotPosition(z.zone, z.id, z.position)
+         ...getHotspotData(z.zone, z.id, z.position)
       }));
   }, [zones, activeZones]);
 
@@ -105,25 +110,23 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
             geometry={meshNode.geometry} 
             material={bodyMaterial} 
             scale={scale}
-          />
+          >
+            {/* Simple red glowing decal for pain points instead of dots or pointLights */}
+            {activeZonePositions.map((zone, i) => (
+              <Decal 
+                key={zone.id || i}
+                position={zone.position} 
+                rotation={zone.rotation} 
+                scale={[zone.scale, zone.scale, zone.scale]}
+                onClick={(e) => handlePointerInteraction(e, true, zone.id)}
+                onPointerMove={(e) => handlePointerInteraction(e, false, zone.id)}
+                onPointerOut={() => setHovered(false)}
+              >
+                <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={2} transparent opacity={0.8} depthTest={true} depthWrite={false} polygonOffset={true} polygonOffsetFactor={-4} />
+              </Decal>
+            ))}
+          </mesh>
         )}
-        
-        {/* Simple red glowing light for pain points instead of dots */}
-        {activeZonePositions.map((zone, i) => (
-          <group position={zone.pos} key={zone.id || i}>
-            {/* Invisible interactive hit area */}
-            <mesh 
-              visible={false}
-              onClick={(e) => handlePointerInteraction(e, true, zone.id)}
-              onPointerMove={(e) => handlePointerInteraction(e, false, zone.id)}
-              onPointerOut={() => setHovered(false)}
-            >
-              <sphereGeometry args={[0.4, 8, 8]} />
-            </mesh>
-            {/* Red glow effect on the body surface */}
-            <pointLight color="#ff0000" intensity={40} distance={2.5} decay={2} position={[0, 0, 0.3]} />
-          </group>
-        ))}
       </Center>
     </group>
   );

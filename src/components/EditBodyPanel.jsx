@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Canvas, useLoader } from '@react-three/fiber';
-import { OrbitControls, Center, Environment } from '@react-three/drei';
+import { OrbitControls, Center, Environment, Decal } from '@react-three/drei';
 import { Link } from 'react-router-dom';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
@@ -51,16 +51,29 @@ function EditBody3D({ coordinates, activeZone, onCoordinateUpdate }) {
     if (!activeZone) return;
     e.stopPropagation();
     
-    // e.point is the world coordinate. We need it relative to the <Center> group
-    // so it renders accurately when passed as a position property inside <Center>
-    const localPoint = e.eventObject.parent.worldToLocal(e.point.clone());
+    // Get precise local point and normal on the mesh
+    const localPoint = e.eventObject.worldToLocal(e.point.clone());
+    const localNormal = e.face.normal.clone();
     
-    const point = [
-      parseFloat(localPoint.x.toFixed(3)),
-      parseFloat(localPoint.y.toFixed(3)),
-      parseFloat(localPoint.z.toFixed(3))
-    ];
-    onCoordinateUpdate(activeZone, point);
+    // Calculate rotation to align decal with surface normal
+    const dummy = new THREE.Object3D();
+    dummy.position.copy(localPoint);
+    dummy.lookAt(localPoint.clone().add(localNormal));
+    
+    const coordData = {
+      position: [
+        parseFloat(localPoint.x.toFixed(3)),
+        parseFloat(localPoint.y.toFixed(3)),
+        parseFloat(localPoint.z.toFixed(3))
+      ],
+      rotation: [
+        parseFloat(dummy.rotation.x.toFixed(3)),
+        parseFloat(dummy.rotation.y.toFixed(3)),
+        parseFloat(dummy.rotation.z.toFixed(3))
+      ],
+      scale: coordinates[activeZone]?.scale || 1.0
+    };
+    onCoordinateUpdate(activeZone, coordData);
   };
 
   return (
@@ -71,13 +84,21 @@ function EditBody3D({ coordinates, activeZone, onCoordinateUpdate }) {
           material={bodyMaterial} 
           scale={scale}
           onPointerDown={handlePointerDown}
-        />
+        >
+          {Object.entries(coordinates).map(([zone, data]) => {
+            const pos = Array.isArray(data) ? data : data.position;
+            const rot = data.rotation || [0, 0, 0];
+            const s = data.scale || 1.0;
+            const color = activeZone === zone ? "#00ff00" : "#ff0000";
+            
+            return (
+              <Decal key={zone} position={pos} rotation={rot} scale={[s, s, s]}>
+                <meshStandardMaterial color={color} emissive={color} emissiveIntensity={2} transparent opacity={0.8} depthTest={true} depthWrite={false} polygonOffset={true} polygonOffsetFactor={-4} />
+              </Decal>
+            );
+          })}
+        </mesh>
       )}
-      {Object.entries(coordinates).map(([zone, pos]) => (
-        <group position={pos} key={zone}>
-          <pointLight color={activeZone === zone ? "#00ff00" : "#ff0000"} intensity={40} distance={2.5} decay={2} position={[0, 0, 0.3]} />
-        </group>
-      ))}
     </Center>
   );
 }
@@ -175,6 +196,25 @@ export default function EditBodyPanel() {
             </div>
           ))}
         </div>
+        
+        {/* Scale Slider */}
+        {activeZone && coordinates[activeZone] && !Array.isArray(coordinates[activeZone]) && (
+          <div style={{ padding: '20px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.4)' }}>
+            <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Adjust Glow Size</label>
+            <input 
+              type="range" 
+              min="0.2" 
+              max="5" 
+              step="0.1" 
+              value={coordinates[activeZone].scale || 1.0}
+              onChange={(e) => {
+                const newScale = parseFloat(e.target.value);
+                handleCoordinateUpdate(activeZone, { ...coordinates[activeZone], scale: newScale });
+              }}
+              style={{ width: '100%', accentColor: 'var(--accent)' }}
+            />
+          </div>
+        )}
 
         {/* Footer actions */}
         <div style={{ padding: '20px', borderTop: '1px solid var(--border-color)' }}>
