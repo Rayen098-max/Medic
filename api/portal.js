@@ -45,7 +45,7 @@ export default async function handler(req) {
     try {
       const res = await fetch(
         `${supabaseUrl}/rest/v1/patients?select=name,consultDate&id=eq.${encodeURIComponent(id)}`,
-        { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
+        { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` }, signal: AbortSignal.timeout(5000) }
       );
       if (res.ok) {
         const rows = await res.json();
