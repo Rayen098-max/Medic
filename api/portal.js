@@ -5,7 +5,7 @@ import { SHELL_HTML } from './_shell.mjs';
 
 export const config = { runtime: 'edge' };
 
-function clean(s, max = 30) {
+function clean(s, max = 40) {
   if (!s) return '';
   return String(s).replace(/[<>&"'`]/g, '').trim().slice(0, max);
 }
