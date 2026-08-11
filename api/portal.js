@@ -89,8 +89,8 @@ export default async function handler(req) {
         .replace(/<meta property="og:title"[^>]*\/>/, `<meta property="og:title" content="${titleT}" />`)
         .replace(/<meta property="og:description"[^>]*\/>/, `<meta property="og:description" content="${descT}" />`)
         .replace(/<meta property="og:image"[^>]*\/>/, `<meta property="og:image" content="${imgT}" />`)
-        .replace(/<meta property="og:image:width"[^>]*\/>/, `<meta property="og:image:width" content="1200" />`)
-        .replace(/<meta property="og:image:height"[^>]*\/>/, `<meta property="og:image:height" content="630" />`)
+        .replace(/<meta property="og:image:width"[^>]*\/>/, `<meta property="og:image:width" content="800" />`)
+        .replace(/<meta property="og:image:height"[^>]*\/>/, `<meta property="og:image:height" content="418" />`)
         .replace(/<meta property="og:url"[^>]*\/>/, `<meta property="og:url" content="${urlT}" />`);
 
       return new Response(html, {

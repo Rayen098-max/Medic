@@ -39,7 +39,7 @@ function Poster({ line1, line2, sub, fsize, gridSrc, bodySrc }) {
     'div',
     {
       style: {
-        width: '1200px', height: '630px', display: 'flex', position: 'relative',
+        width: '800px', height: '418px', display: 'flex', position: 'relative',
         backgroundColor: BG, overflow: 'hidden', fontFamily: 'sans-serif',
       },
     },
@@ -163,10 +163,10 @@ export default async function handler(req) {
         gridSrc: `${origin}/grid_background.jpg`,
         bodySrc: `${origin}/3d_preview.png`,
       }),
-      { width: 1200, height: 630 }
+      { width: 800, height: 418 }
     );
   } catch (e) {
-    res = new ImageResponse(h(FallbackPoster, copy), { width: 1200, height: 630 });
+    res = new ImageResponse(h(FallbackPoster, copy), { width: 800, height: 418 });
   }
 
   // Cache per-URL (each ?v= is a distinct URL, so per-send cache-busting still works)
