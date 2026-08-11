@@ -1,8 +1,8 @@
 // api/og.jsx — dynamic 1200x630 Open Graph poster for patient recovery plans.
-// Runs as a Vercel serverless function on the edge (fast for crawlers).
+// Node runtime (most compatible with api/ bundling; still fast for crawlers).
 import { ImageResponse } from '@vercel/og';
 
-export const config = { runtime: 'edge' };
+export const config = { runtime: 'nodejs' };
 
 const BG = '#0a1120';
 const CYAN = '#00d2ff';

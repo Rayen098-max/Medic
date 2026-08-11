@@ -1,7 +1,7 @@
 // api/portal.js — serverless wrapper for /r/:id that injects per-patient Open Graph
 // metadata into the SPA shell, so messengers render a rich banner card instead of
-// a small square thumbnail. Node runtime (reads the built shell + Supabase lookup).
-import fs from 'node:fs';
+// a small square thumbnail. The shell is baked in at build time (api/_shell.mjs).
+import { SHELL_HTML } from './_shell.mjs';
 
 export const config = { runtime: 'nodejs' };
 
@@ -22,30 +22,6 @@ function dayFromConsult(consultDate) {
   if (Number.isNaN(t)) return '';
   const diff = Math.floor((Date.now() - t) / 86400000) + 1;
   return diff > 0 ? String(diff) : '1';
-}
-
-function readShell(origin) {
-  // 1) Bundled via vercel.json includeFiles (fastest)
-  for (const p of [`${process.cwd()}/dist/index.html`, `${process.cwd()}/../dist/index.html`]) {
-    try {
-      const s = fs.readFileSync(p, 'utf8');
-      if (s) return s;
-    } catch (e) {
-      /* try next */
-    }
-  }
-  return null;
-}
-
-async function fetchShell(origin) {
-  // 2) Same-origin static shell (always present on Vercel)
-  try {
-    const res = await fetch(`${origin}/index.html`);
-    if (res.ok) return await res.text();
-  } catch (e) {
-    /* ignore */
-  }
-  return null;
 }
 
 export default async function handler(req) {
@@ -99,10 +75,7 @@ export default async function handler(req) {
   const ogImage = `${url.origin}/api/og${imgQuery.size ? '?' + imgQuery.toString() : ''}`;
   const ogUrl = `${url.origin}/r/${id}${v ? '?v=' + v : ''}`;
 
-  // Read the built SPA shell, then inject the dynamic meta.
-  let html = readShell(url.origin);
-  if (!html) html = await fetchShell(url.origin);
-
+  let html = SHELL_HTML;
   if (html) {
     try {
       const titleT = escAttr(title);
@@ -128,8 +101,7 @@ export default async function handler(req) {
     }
   }
 
-  // Safety net: return the plain shell (generic meta) if anything above failed.
-  if (!html) html = await fetchShell(url.origin);
+  // Safety net: return the unmodified shell with generic meta.
   if (html) {
     return new Response(html, {
       status: 200,
