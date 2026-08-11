@@ -1,8 +1,11 @@
 {
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
+    { "source": "/r/(.*)", "destination": "/api/portal?id=$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "functions": {
+    "api/portal.js": {
+      "includeFiles": "dist/index.html"
     }
-  ]
+  }
 }

@@ -118,6 +118,21 @@ export default function CustomerPortal() {
     return () => window.removeEventListener('keydown', onKey);
   }, [showProductsModal]);
 
+  // Personalized browser tab title, mirroring the server-side og:title
+  useEffect(() => {
+    if (!patient) return;
+    const person = patient.name ? `${patient.name}'s` : 'Your';
+    let day = '';
+    if (patient.consultDate) {
+      const t = new Date(`${patient.consultDate}T00:00:00`).getTime();
+      if (!Number.isNaN(t)) {
+        const diff = Math.floor((Date.now() - t) / 86400000) + 1;
+        if (diff > 0) day = String(diff);
+      }
+    }
+    document.title = day ? `${person} Recovery Plan — Day ${day}` : `${person} Personalized Recovery Plan`;
+  }, [patient]);
+
   if (loading) {
     return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--primary-bg)', color: 'var(--accent)' }}>Loading portal data...</div>;
   }
