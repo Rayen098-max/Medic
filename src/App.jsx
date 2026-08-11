@@ -37,7 +37,7 @@ function MapView() {
           MEDIC
         </h1>
         <p style={{ color: 'var(--text-muted)', margin: '8px 0 0 4px', fontSize: '1rem', fontWeight: '500', letterSpacing: '1px' }}>
-          Hover over the body to explore pain points
+          Interactive 3D body preview
         </p>
       </div>
 
@@ -47,7 +47,7 @@ function MapView() {
         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} />
         
         <BodyModel 
-          zones={painPointsData}
+          zones={[]}
           activeZones={activeZone ? [activeZone] : []}
           onZoneClick={setActiveZone}
         />

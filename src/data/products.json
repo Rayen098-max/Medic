@@ -5,7 +5,7 @@
     "url": "https://thesleepcompany.in/products/smart-ortho-pro-snowtec-cooling-technology?variant=46696510783717",
     "category": "Mattress",
     "priority": 1,
-    "image": "https://placehold.co/400x300?text=Product+Image"
+    "image": "https://cdn.shopify.com/s/files/1/0635/6929/7637/files/01_c1165045-8fd9-4080-abdb-4e584538db53.webp?v=1758620381&width=400"
   },
   {
     "id": "MAT_ORTHOPRO",
@@ -13,7 +13,7 @@
     "url": "https://thesleepcompany.in/products/smart-ortho-pro-mattress?variant=46696542994661",
     "category": "Mattress",
     "priority": 2,
-    "image": "https://placehold.co/400x300?text=Product+Image"
+    "image": "https://cdn.shopify.com/s/files/1/0635/6929/7637/files/1_1_7b934426-0d3b-4472-b7d7-6bc9014ed7eb.webp?v=1785301667&width=400"
   },
   {
     "id": "MAT_ORTHO",
@@ -21,7 +21,7 @@
     "url": "https://thesleepcompany.in/products/smart-ortho-mattress?variant=46696554070245",
     "category": "Mattress",
     "priority": 3,
-    "image": "https://placehold.co/400x300?text=Product+Image"
+    "image": "https://cdn.shopify.com/s/files/1/0635/6929/7637/files/1_c0f7d0cb-f570-4384-a1b6-cf8a9e72bfb2.webp?v=1758619707&width=400"
   },
   {
     "id": "MAT_HYBRID",
@@ -29,7 +29,7 @@
     "url": "https://thesleepcompany.in/products/smart-ortho-hybrid-pocketed-spring-mattress?variant=44048086827237",
     "category": "Mattress",
     "priority": 4,
-    "image": "https://placehold.co/400x300?text=Product+Image"
+    "image": "https://cdn.shopify.com/s/files/1/0635/6929/7637/files/01_858f7491-33d3-41c0-a829-88f38a6d1a2c.webp?v=1758620014&width=400"
   },
   {
     "id": "CHR_STYLUX",
@@ -37,7 +37,7 @@
     "url": "https://thesleepcompany.in/products/stylux-ergonomic-office-chair",
     "category": "Chair",
     "priority": 5,
-    "image": "https://placehold.co/400x300?text=Product+Image"
+    "image": "https://cdn.shopify.com/s/files/1/0635/6929/7637/files/StyluxErgo_Desktop_Grey_Black_1_24596f3e-687d-4477-a6e6-fdeab553e9a5.webp?v=1776840023&width=400"
   },
   {
     "id": "CHR_AURA",
@@ -45,7 +45,7 @@
     "url": "https://thesleepcompany.in/products/aura-executive-chair?variant=46753362608357",
     "category": "Chair",
     "priority": 6,
-    "image": "https://placehold.co/400x300?text=Product+Image"
+    "image": "https://cdn.shopify.com/s/files/1/0635/6929/7637/files/flexergonomicmobilebrown_1.webp?v=1774003970&width=400"
   },
   {
     "id": "CHR_ELITE",
@@ -53,7 +53,7 @@
     "url": "https://thesleepcompany.in/products/elite-premium-office-chair",
     "category": "Chair",
     "priority": 7,
-    "image": "https://placehold.co/400x300?text=Product+Image"
+    "image": "https://cdn.shopify.com/s/files/1/0635/6929/7637/files/ElitePremiummobileblack_1_f2de38a0-dc36-4281-b4e7-a28049d14b48.webp?v=1782986538&width=400"
   },
   {
     "id": "PIL_HYBRID",
@@ -61,7 +61,7 @@
     "url": "https://thesleepcompany.in/products/hybrid-pillow",
     "category": "Pillow",
     "priority": 8,
-    "image": "https://placehold.co/400x300?text=Product+Image"
+    "image": "https://cdn.shopify.com/s/files/1/0635/6929/7637/files/1_8b3e8ab5-0bce-436b-ab36-08e2708fe664.webp?v=1762338210&width=400"
   },
   {
     "id": "PIL_CERVICAL",
@@ -69,7 +69,7 @@
     "url": "https://thesleepcompany.in/products/cervical-pillow",
     "category": "Pillow",
     "priority": 9,
-    "image": "https://placehold.co/400x300?text=Product+Image"
+    "image": "https://cdn.shopify.com/s/files/1/0635/6929/7637/files/Cervical_Pillow_01_1ff9afe8-0faf-4986-86bf-6df612b37db0.webp?v=1750963100&width=400"
   },
   {
     "id": "PIL_RELIEF",
@@ -77,6 +77,6 @@
     "url": "https://thesleepcompany.in/products/smart-ortho-relief-pillow",
     "category": "Pillow",
     "priority": 10,
-    "image": "https://placehold.co/400x300?text=Product+Image"
+    "image": "https://cdn.shopify.com/s/files/1/0635/6929/7637/files/1_c4cac680-3337-404b-a4f8-3615b1f4fa95.jpg?v=1772001124&width=400"
   }
 ]
