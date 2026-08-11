@@ -2,7 +2,6 @@
 // metadata into the SPA shell, so messengers render a rich banner card instead of
 // a small square thumbnail. Node runtime (reads the built shell + Supabase lookup).
 import fs from 'node:fs';
-import { createClient } from '@supabase/supabase-js';
 
 export const config = { runtime: 'nodejs' };
 
@@ -60,18 +59,25 @@ export default async function handler(req) {
   const id = clean(url.searchParams.get('id') || '');
   const v = clean(url.searchParams.get('v') || '');
 
-  // Look up the patient from the same Supabase source the SPA uses.
+  // Look up the patient via the Supabase REST API (plain fetch — no client deps
+  // in the function bundle). Same source the SPA uses.
   let name = '';
   let day = '';
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
   if (supabaseUrl && supabaseKey && id) {
     try {
-      const supabase = createClient(supabaseUrl, supabaseKey);
-      const { data } = await supabase.from('patients').select('name, consultDate').eq('id', id).single();
-      if (data) {
-        name = clean(data.name || '');
-        day = dayFromConsult(data.consultDate);
+      const res = await fetch(
+        `${supabaseUrl}/rest/v1/patients?select=name,consultDate&id=eq.${encodeURIComponent(id)}`,
+        { headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` } }
+      );
+      if (res.ok) {
+        const rows = await res.json();
+        const data = Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+        if (data) {
+          name = clean(data.name || '');
+          day = dayFromConsult(data.consultDate);
+        }
       }
     } catch (err) {
       // No patient / DB issue -> fall through to generic tags
