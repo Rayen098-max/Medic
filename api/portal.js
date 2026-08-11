@@ -18,7 +18,8 @@ function escAttr(s) {
 // Recovery day = days since consult (consult day = Day 1)
 function dayFromConsult(consultDate) {
   if (!consultDate) return '';
-  const t = new Date(`${consultDate}T00:00:00`).getTime();
+  let t = new Date(consultDate).getTime();
+  if (Number.isNaN(t)) t = new Date(`${consultDate}T00:00:00`).getTime();
   if (Number.isNaN(t)) return '';
   const diff = Math.floor((Date.now() - t) / 86400000) + 1;
   return diff > 0 ? String(diff) : '1';
