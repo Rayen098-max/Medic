@@ -44,11 +44,6 @@ function Poster({ line1, line2, sub, fsize, gridSrc, bodySrc }) {
       },
     },
     [
-      h('img', {
-        key: 'grid',
-        src: gridSrc,
-        style: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.16 },
-      }),
       h('div', {
         key: 'tint',
         style: {
