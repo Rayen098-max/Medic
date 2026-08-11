@@ -1,6 +1,7 @@
 {
   "buildCommand": "npm run build && node scripts/bake-shell.mjs",
   "rewrites": [
+    { "source": "/r/(.*)", "destination": "/api/portal?id=$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

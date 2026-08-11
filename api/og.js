@@ -3,7 +3,7 @@
 import { ImageResponse } from '@vercel/og';
 import { createElement as h } from 'react';
 
-export const config = { runtime: 'nodejs' };
+export const config = { runtime: 'edge' };
 
 const BG = '#0a1120';
 const CYAN = '#00d2ff';

@@ -3,7 +3,7 @@
 // a small square thumbnail. The shell is baked in at build time (api/_shell.mjs).
 import { SHELL_HTML } from './_shell.mjs';
 
-export const config = { runtime: 'nodejs' };
+export const config = { runtime: 'edge' };
 
 function clean(s, max = 30) {
   if (!s) return '';
