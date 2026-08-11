@@ -4,7 +4,11 @@
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "functions": {
+    "api/og.jsx": {
+      "runtime": "edge"
+    },
     "api/portal.js": {
+      "runtime": "nodejs20.x",
       "includeFiles": "dist/index.html"
     }
   }

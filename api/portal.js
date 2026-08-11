@@ -1,6 +1,7 @@
 // api/portal.js — serverless wrapper for /r/:id that injects per-patient Open Graph
 // metadata into the SPA shell, so messengers render a rich banner card instead of
 // a small square thumbnail. Node runtime (reads the built shell + Supabase lookup).
+import fs from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 
 export const config = { runtime: 'nodejs' };
@@ -24,8 +25,38 @@ function dayFromConsult(consultDate) {
   return diff > 0 ? String(diff) : '1';
 }
 
+function readShell(origin) {
+  // 1) Bundled via vercel.json includeFiles (fastest)
+  for (const p of [`${process.cwd()}/dist/index.html`, `${process.cwd()}/../dist/index.html`]) {
+    try {
+      const s = fs.readFileSync(p, 'utf8');
+      if (s) return s;
+    } catch (e) {
+      /* try next */
+    }
+  }
+  return null;
+}
+
+async function fetchShell(origin) {
+  // 2) Same-origin static shell (always present on Vercel)
+  try {
+    const res = await fetch(`${origin}/index.html`);
+    if (res.ok) return await res.text();
+  } catch (e) {
+    /* ignore */
+  }
+  return null;
+}
+
 export default async function handler(req) {
-  const url = new URL(req.url);
+  let url;
+  try {
+    url = new URL(req.url);
+  } catch (e) {
+    url = new URL('https://medic-tau.vercel.app/');
+  }
+
   const id = clean(url.searchParams.get('id') || '');
   const v = clean(url.searchParams.get('v') || '');
 
@@ -62,50 +93,42 @@ export default async function handler(req) {
   const ogImage = `${url.origin}/api/og${imgQuery.size ? '?' + imgQuery.toString() : ''}`;
   const ogUrl = `${url.origin}/r/${id}${v ? '?v=' + v : ''}`;
 
-  // Read the built SPA shell. Primary: file bundled via vercel.json includeFiles.
-  // Fallback: fetch the same-origin static index.html (always present on Vercel).
-  let html = null;
-  try {
-    const fs = await import('node:fs');
-    for (const p of [`${process.cwd()}/dist/index.html`, `${process.cwd()}/../dist/index.html`]) {
-      try {
-        html = fs.readFileSync(p, 'utf8');
-        break;
-      } catch (e) {
-        /* try next candidate */
-      }
-    }
-  } catch (e) {
-    /* ignore */
-  }
-  if (!html) {
+  // Read the built SPA shell, then inject the dynamic meta.
+  let html = readShell(url.origin);
+  if (!html) html = await fetchShell(url.origin);
+
+  if (html) {
     try {
-      const res = await fetch(`${url.origin}/index.html`);
-      if (res.ok) html = await res.text();
-    } catch (e) {
-      /* ignore */
+      const titleT = escAttr(title);
+      const descT = escAttr(desc);
+      const imgT = escAttr(ogImage);
+      const urlT = escAttr(ogUrl);
+
+      html = html
+        .replace(/<title>[^<]*<\/title>/, `<title>${titleT}</title>`)
+        .replace(/<meta property="og:title"[^>]*\/>/, `<meta property="og:title" content="${titleT}" />`)
+        .replace(/<meta property="og:description"[^>]*\/>/, `<meta property="og:description" content="${descT}" />`)
+        .replace(/<meta property="og:image"[^>]*\/>/, `<meta property="og:image" content="${imgT}" />`)
+        .replace(/<meta property="og:image:width"[^>]*\/>/, `<meta property="og:image:width" content="1200" />`)
+        .replace(/<meta property="og:image:height"[^>]*\/>/, `<meta property="og:image:height" content="630" />`)
+        .replace(/<meta property="og:url"[^>]*\/>/, `<meta property="og:url" content="${urlT}" />`);
+
+      return new Response(html, {
+        status: 200,
+        headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' },
+      });
+    } catch (err) {
+      // Fall through to the unmodified shell — never 500 a patient link
     }
   }
-  if (!html) {
-    return new Response('Portal not found', { status: 404 });
+
+  // Safety net: return the plain shell (generic meta) if anything above failed.
+  if (!html) html = await fetchShell(url.origin);
+  if (html) {
+    return new Response(html, {
+      status: 200,
+      headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' },
+    });
   }
-
-  const titleT = escAttr(title);
-  const descT = escAttr(desc);
-  const imgT = escAttr(ogImage);
-  const urlT = escAttr(ogUrl);
-
-  html = html
-    .replace(/<title>[^<]*<\/title>/, `<title>${titleT}</title>`)
-    .replace(/<meta property="og:title"[^>]*\/>/, `<meta property="og:title" content="${titleT}" />`)
-    .replace(/<meta property="og:description"[^>]*\/>/, `<meta property="og:description" content="${descT}" />`)
-    .replace(/<meta property="og:image"[^>]*\/>/, `<meta property="og:image" content="${imgT}" />`)
-    .replace(/<meta property="og:image:width"[^>]*\/>/, `<meta property="og:image:width" content="1200" />`)
-    .replace(/<meta property="og:image:height"[^>]*\/>/, `<meta property="og:image:height" content="630" />`)
-    .replace(/<meta property="og:url"[^>]*\/>/, `<meta property="og:url" content="${urlT}" />`);
-
-  return new Response(html, {
-    status: 200,
-    headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' },
-  });
+  return new Response('Portal not found', { status: 404 });
 }
