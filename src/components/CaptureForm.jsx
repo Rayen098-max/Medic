@@ -17,7 +17,24 @@ export default function CaptureForm() {
     painPointIds: ['L01'], // Default to generic lower back
     consent: false
   });
+  const [exercises, setExercises] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleImageUpload = (index, e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const newExercises = [...exercises];
+        newExercises[index].image = reader.result;
+        setExercises(newExercises);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const addExercise = () => setExercises([...exercises, { image: '', instructions: '' }]);
+  const removeExercise = (index) => setExercises(exercises.filter((_, i) => i !== index));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,7 +65,8 @@ export default function CaptureForm() {
       physioPhone: formData.physioPhone,
       physioAvailability: formData.physioAvailability,
       consultDate: formData.consultDate,
-      productPurchased: formData.productPurchased
+      productPurchased: formData.productPurchased,
+      recommendedExercises: exercises
     };
 
     try {
@@ -180,6 +198,37 @@ export default function CaptureForm() {
                 </div>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Recommended Exercises (Optional)</label>
+            {exercises.map((ex, i) => (
+              <div key={i} style={{ padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '12px', position: 'relative' }}>
+                <button type="button" onClick={() => removeExercise(i)} style={{ position: 'absolute', top: '8px', right: '8px', background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+                
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#ccc' }}>Exercise Image</label>
+                  <input type="file" accept="image/*" onChange={(e) => handleImageUpload(i, e)} style={{ color: 'white', fontSize: '0.85rem', width: '100%' }} />
+                  {ex.image && <img src={ex.image} alt="Preview" style={{ marginTop: '8px', width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-color)' }} />}
+                </div>
+                
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#ccc' }}>Instructions</label>
+                  <textarea 
+                    value={ex.instructions} 
+                    onChange={(e) => {
+                      const newEx = [...exercises];
+                      newEx[i].instructions = e.target.value;
+                      setExercises(newEx);
+                    }}
+                    rows={3}
+                    placeholder="e.g., Hold for 30 seconds, repeat 3 times."
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', resize: 'vertical' }}
+                  />
+                </div>
+              </div>
+            ))}
+            <button type="button" onClick={addExercise} className="clinical-btn" style={{ fontSize: '0.85rem', padding: '8px 12px', width: 'fit-content' }}>+ Add Exercise</button>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(0, 210, 255, 0.05)', padding: '16px', borderRadius: '8px' }}>

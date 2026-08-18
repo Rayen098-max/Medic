@@ -17,6 +17,8 @@ export default function CustomerPortal() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showProductsModal, setShowProductsModal] = useState(false);
+  const [showExercisesModal, setShowExercisesModal] = useState(false);
+  const [activeExercise, setActiveExercise] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
@@ -66,7 +68,8 @@ export default function CustomerPortal() {
             dos: matchedPoints[0].dos,
             donts: matchedPoints[0].donts,
             products: fullProducts,
-            activeZones: [matchedPoints[0].id]
+            activeZones: [matchedPoints[0].id],
+            recommendedExercises: []
         });
     }
 
@@ -107,7 +110,8 @@ export default function CustomerPortal() {
               dos: combinedDos,
               donts: combinedDonts,
               products: fullProducts,
-              activeZones: activeZoneIds
+              activeZones: activeZoneIds,
+              recommendedExercises: data.recommendedExercises || []
             });
           } else {
             const matchedZone = contentData.zones.find(z => z.id === data.painArea);
@@ -119,11 +123,16 @@ export default function CustomerPortal() {
 
   // Close the solutions popup with the Escape key
   useEffect(() => {
-    if (!showProductsModal) return;
-    const onKey = (e) => { if (e.key === 'Escape') setShowProductsModal(false); };
+    const onKey = (e) => { 
+      if (e.key === 'Escape') {
+        setShowProductsModal(false); 
+        setShowExercisesModal(false);
+        setActiveExercise(null);
+      }
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [showProductsModal]);
+  }, []);
 
   // Personalized browser tab title, mirroring the server-side og:title
   useEffect(() => {
@@ -192,11 +201,6 @@ export default function CustomerPortal() {
           <button onClick={() => setActivePointId(null)} style={{ background: 'transparent', border: 'none', color: '#00d2ff', padding: 0, cursor: 'pointer' }}><X size={20}/></button>
         </div>
         <div style={{ marginBottom: '16px' }}>
-          <div style={{ fontSize: '0.95rem', color: '#22c55e', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={16}/> RECOMMENDED ACTION</div>
-          <ul style={{ margin: '8px 0 0 0', paddingLeft: '24px', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5 }}>
-            {activePointData.dos.map((item, i) => <li key={i} style={{marginBottom: '4px'}}>{item}</li>)}
-          </ul>
-        </div>
         <div>
           <div style={{ fontSize: '0.95rem', color: '#ef4444', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}><XCircle size={16}/> AVOID</div>
           <ul style={{ margin: '8px 0 0 0', paddingLeft: '24px', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5 }}>
@@ -338,6 +342,71 @@ export default function CustomerPortal() {
             </div>
           </div>
         )}
+
+        {/* Floating exercises button */}
+        {!activePointId && zone.recommendedExercises && zone.recommendedExercises.length > 0 && (
+          <button
+            className="exercise-fab"
+            onClick={() => setShowExercisesModal(true)}
+            aria-label="View recommended exercises"
+            title="Recommended Exercises"
+          >
+            <img src="/exercise-logo.png" alt="Exercises Logo" />
+            <span className="cart-fab-badge" style={{ color: '#2ecc71' }}>{zone.recommendedExercises.length}</span>
+          </button>
+        )}
+
+        {/* Recommended exercises popup */}
+        {showExercisesModal && (
+          <div className="cart-modal-overlay" onClick={() => setShowExercisesModal(false)}>
+            <div className="cart-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+              <div className="cart-modal-header">
+                <div>
+                  <h3 style={{ color: '#2ecc71' }}>Recommended Exercises</h3>
+                  <p>Curated by your Physiotherapist</p>
+                </div>
+                <button className="cart-modal-close" onClick={() => setShowExercisesModal(false)}>
+                  <X size={22} />
+                </button>
+              </div>
+              <div className="cart-modal-body">
+                {zone.recommendedExercises.map((ex, i) => (
+                  <div className="cart-product-card" key={i} onClick={() => setActiveExercise(ex)} style={{ cursor: 'pointer', flexDirection: 'column' }}>
+                    {ex.image && <img src={ex.image} alt="Exercise" style={{ width: '100%', height: '140px', objectFit: 'cover' }} />}
+                    <div className="cart-product-info" style={{ marginTop: '12px', width: '100%' }}>
+                      <span className="cart-product-category" style={{ color: '#2ecc71', background: 'rgba(46, 204, 113, 0.12)', borderColor: 'rgba(46, 204, 113, 0.3)' }}>EXERCISE {i + 1}</span>
+                      <p style={{ whiteSpace: 'pre-wrap', maxHeight: '60px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ex.instructions}</p>
+                      <div style={{ color: '#2ecc71', fontSize: '0.8rem', fontWeight: 'bold', marginTop: '8px' }}>Tap to view details →</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Detailed Exercise View */}
+        {activeExercise && (
+          <div className="cart-modal-overlay" style={{ zIndex: 40 }} onClick={() => setActiveExercise(null)}>
+            <div className="cart-modal" style={{ height: 'auto', maxHeight: '90vh', width: 'min(90vw, 600px)' }} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+              <div className="cart-modal-header">
+                <h3 style={{ color: '#2ecc71' }}>Exercise Detail</h3>
+                <button className="cart-modal-close" onClick={() => setActiveExercise(null)}>
+                  <X size={22} />
+                </button>
+              </div>
+              <div className="cart-modal-body" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
+                {activeExercise.image && (
+                  <img src={activeExercise.image} alt="Exercise Detail" style={{ width: '100%', maxHeight: '45vh', objectFit: 'contain', background: '#000' }} />
+                )}
+                <div style={{ padding: '24px', flex: 1, overflowY: 'auto' }}>
+                  <h4 style={{ color: 'white', marginTop: 0, marginBottom: '16px', fontSize: '1.2rem' }}>Instructions</h4>
+                  <p style={{ color: '#e2e8f0', whiteSpace: 'pre-wrap', lineHeight: 1.6, fontSize: '1rem', margin: 0 }}>{activeExercise.instructions}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       <style>{`
@@ -382,6 +451,43 @@ export default function CustomerPortal() {
         @keyframes cartRipple {
           0% { transform: scale(1); opacity: 0.8; }
           100% { transform: scale(1.55); opacity: 0; }
+        }
+        .exercise-fab {
+          position: absolute;
+          bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
+          left: calc(env(safe-area-inset-left, 0px) + 18px);
+          width: clamp(54px, 14vw, 66px);
+          height: clamp(54px, 14vw, 66px);
+          border-radius: 50%;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #fff;
+          box-shadow: 0 0 20px rgba(46, 204, 113, 0.55), 0 0 40px rgba(46, 204, 113, 0.35), 0 6px 18px rgba(0, 0, 0, 0.45);
+          z-index: 15;
+          animation: cartHeartbeat 1.6s ease-in-out infinite;
+          animation-delay: 0.8s;
+          transition: transform 0.2s ease;
+          overflow: hidden;
+        }
+        .exercise-fab img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        .exercise-fab:hover { transform: scale(1.08); }
+        .exercise-fab:active { transform: scale(0.95); }
+        .exercise-fab::after {
+          content: "";
+          position: absolute;
+          inset: -6px;
+          border-radius: 50%;
+          border: 2px solid rgba(46, 204, 113, 0.6);
+          animation: cartRipple 1.6s ease-out infinite;
+          animation-delay: 0.8s;
+          pointer-events: none;
         }
         .cart-fab-badge {
           position: absolute;
@@ -539,6 +645,10 @@ export default function CustomerPortal() {
           .cart-fab {
             bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
             right: calc(env(safe-area-inset-right, 0px) + 14px);
+          }
+          .exercise-fab {
+            bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+            left: calc(env(safe-area-inset-left, 0px) + 14px);
           }
           @keyframes cartSheetIn {
             from { opacity: 0.4; transform: translateY(100%); }
