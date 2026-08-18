@@ -17,6 +17,13 @@ export default function CustomerPortal() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showProductsModal, setShowProductsModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     async function loadData() {
@@ -206,7 +213,7 @@ export default function CustomerPortal() {
       top: 0,
       left: 0,
       width: '100vw',
-      height: '100vh',
+      height: '100dvh',
       backgroundImage: 'url(/grid_background.jpg)',
       backgroundSize: 'cover',
       backgroundPosition: 'center',
@@ -277,7 +284,7 @@ export default function CustomerPortal() {
           </div>
         </div>
 
-        <Canvas style={{ position: 'absolute', inset: 0, touchAction: 'none' }} dpr={[1, 1.5]} camera={{ position: [0, 0, 9], fov: 45 }}>
+        <Canvas style={{ position: 'absolute', inset: 0, touchAction: 'none' }} dpr={[1, 1.5]} camera={{ position: [0, 0, isMobile ? 14 : 9], fov: 45 }}>
           {renderScene()}
         </Canvas>
         {renderHotspotOverlay()}

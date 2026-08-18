@@ -13,11 +13,18 @@ import painPointsData from './data/painPoints.json';
 
 function MapView() {
   const [activeZone, setActiveZone] = useState(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const selectedZoneData = activeZone ? painPointsData.find(z => z.id === activeZone) : null;
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+    <div style={{ width: '100vw', height: '100dvh', position: 'relative' }}>
       {/* Header */}
       <div style={{ position: 'absolute', top: 30, left: 30, zIndex: 10, pointerEvents: 'none' }}>
         <h1 style={{ 
@@ -42,7 +49,7 @@ function MapView() {
       </div>
 
       {/* 3D Canvas */}
-      <Canvas style={{ background: 'transparent' }} dpr={[1, 1.5]} camera={{ position: [0, 0, 9], fov: 45 }} performance={{ min: 0.5 }}>
+      <Canvas style={{ background: 'transparent' }} dpr={[1, 1.5]} camera={{ position: [0, 0, isMobile ? 14 : 9], fov: 45 }} performance={{ min: 0.5 }}>
         <ambientLight intensity={0.5} />
         <spotLight position={[10, 10, 10]} angle={0.15} penumbra={1} intensity={1} />
         
