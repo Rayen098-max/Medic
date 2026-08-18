@@ -111,7 +111,8 @@ export default function CustomerPortal() {
               donts: combinedDonts,
               products: fullProducts,
               activeZones: activeZoneIds,
-              recommendedExercises: data.recommendedExercises || []
+              recommendedExercises: data.recommendedExercises || [],
+              conditionNotes: data.conditionNotes || {}
             });
           } else {
             const matchedZone = contentData.zones.find(z => z.id === data.painArea);
@@ -187,6 +188,8 @@ export default function CustomerPortal() {
 
   const renderHotspotOverlay = () => {
     if (!activePointData) return null;
+    const customNote = zone?.conditionNotes?.[activePointData.id];
+
     return (
       <div style={{ 
         position: 'absolute', bottom: '24px', left: '50%', transform: 'translateX(-50%)', 
@@ -200,12 +203,22 @@ export default function CustomerPortal() {
           <h4 style={{ margin: 0, color: '#00d2ff', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '1px' }}>{activePointData.name}</h4>
           <button onClick={() => setActivePointId(null)} style={{ background: 'transparent', border: 'none', color: '#00d2ff', padding: 0, cursor: 'pointer' }}><X size={20}/></button>
         </div>
-        <div>
-          <div style={{ fontSize: '0.95rem', color: '#ef4444', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}><XCircle size={16}/> AVOID</div>
-          <ul style={{ margin: '8px 0 0 0', paddingLeft: '24px', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5 }}>
-            {activePointData.donts.map((item, i) => <li key={i} style={{marginBottom: '4px'}}>{item}</li>)}
-          </ul>
-        </div>
+        
+        {customNote ? (
+          <div>
+            <div style={{ fontSize: '0.95rem', color: '#22c55e', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={16}/> PHYSIO NOTES</div>
+            <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+              {customNote}
+            </p>
+          </div>
+        ) : (
+          <div>
+            <div style={{ fontSize: '0.95rem', color: '#ef4444', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}><XCircle size={16}/> AVOID</div>
+            <ul style={{ margin: '8px 0 0 0', paddingLeft: '24px', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5 }}>
+              {activePointData.donts.map((item, i) => <li key={i} style={{marginBottom: '4px'}}>{item}</li>)}
+            </ul>
+          </div>
+        )}
       </div>
     );
   };

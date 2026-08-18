@@ -18,6 +18,7 @@ export default function CaptureForm() {
     consent: false
   });
   const [exercises, setExercises] = useState([]);
+  const [conditionNotes, setConditionNotes] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleImageUpload = (index, e) => {
@@ -66,7 +67,8 @@ export default function CaptureForm() {
       physioAvailability: formData.physioAvailability,
       consultDate: formData.consultDate,
       productPurchased: formData.productPurchased,
-      recommendedExercises: exercises
+      recommendedExercises: exercises,
+      conditionNotes: conditionNotes
     };
 
     try {
@@ -199,6 +201,28 @@ export default function CaptureForm() {
               ))}
             </div>
           </div>
+
+          {formData.painPointIds.length > 0 && (
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Condition Notes</label>
+              {formData.painPointIds.map(id => {
+                const point = painPointsData.find(p => p.id === id);
+                if (!point) return null;
+                return (
+                  <div key={id} style={{ padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '12px' }}>
+                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: 'var(--accent)', fontWeight: 'bold' }}>Notes for: {point.name}</label>
+                    <textarea 
+                      value={conditionNotes[id] || ''} 
+                      onChange={(e) => setConditionNotes({...conditionNotes, [id]: e.target.value})}
+                      rows={3}
+                      placeholder="e.g., Avoid heavy lifting. Keep spine neutral."
+                      style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', resize: 'vertical' }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           <div>
             <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Recommended Exercises (Optional)</label>
