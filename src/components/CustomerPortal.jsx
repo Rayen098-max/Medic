@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
+import { OrbitControls, Environment, ContactShadows, Html } from '@react-three/drei';
 import BodyModel from './BodyModel';
 import contentData from '../data/content.json';
 import painPointsData from '../data/painPoints.json';
@@ -166,7 +166,17 @@ export default function CustomerPortal() {
       <directionalLight position={[10, 10, 10]} intensity={2} />
       <directionalLight position={[-10, 10, -10]} intensity={2} />
       <directionalLight position={[0, -10, 0]} intensity={1} />
-      <React.Suspense fallback={null}>
+      <React.Suspense fallback={
+        <Html center>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid rgba(0, 210, 255, 0.2)', borderTopColor: '#00d2ff', animation: 'spin 1s linear infinite' }} />
+            <div style={{ color: '#00d2ff', fontSize: '1rem', whiteSpace: 'nowrap', letterSpacing: '1px', textTransform: 'uppercase' }}>
+              Loading Model...
+            </div>
+          </div>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </Html>
+      }>
         <BodyModel 
           zones={painPointsData}
           activeZones={zone.activeZones}
