@@ -206,7 +206,10 @@ export default function CustomerPortal() {
         
         {customNote ? (
           <div>
-            <div style={{ fontSize: '0.95rem', color: '#22c55e', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={16}/> PHYSIO NOTES</div>
+            <div style={{ fontSize: '0.95rem', color: '#22c55e', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CheckCircle2 size={16}/> 
+              {patient?.physioName ? `${patient.physioName.toLowerCase().startsWith('dr') ? '' : 'DR. '}${patient.physioName.toUpperCase()}'S NOTES` : 'PHYSIO NOTES'}
+            </div>
             <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
               {customNote}
             </p>
