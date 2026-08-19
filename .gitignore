@@ -26,5 +26,3 @@ api/_shell.mjs
 *.sln
 *.sw?
 .env
-
-.credentials.txt

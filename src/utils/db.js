@@ -13,7 +13,6 @@ export const getPatients = async () => {
   const { data, error } = await supabase
     .from('patients')
     .select('*')
-    .is('deleted_at', null)
     .order('consultDate', { ascending: false });
     
   if (error) throw error;
@@ -38,7 +37,6 @@ export const getPatientById = async (id) => {
     .from('patients')
     .select('*')
     .eq('id', id)
-    .is('deleted_at', null)
     .single();
 
   if (error) throw error;
@@ -57,10 +55,9 @@ export const updatePatientStatus = async (id, statusData) => {
 
 export const deletePatient = async (id) => {
   if (!supabase) throw new Error("Supabase is not configured.");
-  // Soft delete
   const { data, error } = await supabase
     .from('patients')
-    .update({ deleted_at: new Date().toISOString() })
+    .delete()
     .eq('id', id)
     .select();
 

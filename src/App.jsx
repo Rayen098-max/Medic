@@ -8,9 +8,6 @@ import AdminPanel from './components/AdminPanel';
 import CaptureForm from './components/CaptureForm';
 import CustomerPortal from './components/CustomerPortal';
 import EditBodyPanel from './components/EditBodyPanel';
-import Login from './components/Login';
-import ProtectedRoute from './components/ProtectedRoute';
-import { AuthProvider } from './context/AuthContext';
 import contentData from './data/content.json';
 import painPointsData from './data/painPoints.json';
 
@@ -103,29 +100,14 @@ function MapView() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<MapView />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/admin" element={
-            <ProtectedRoute allowedRoles={['admin', 'manager']}>
-              <AdminPanel />
-            </ProtectedRoute>
-          } />
-          <Route path="/capture" element={
-            <ProtectedRoute allowedRoles={['physio', 'admin']}>
-              <CaptureForm />
-            </ProtectedRoute>
-          } />
-          <Route path="/edit-body" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <EditBodyPanel />
-            </ProtectedRoute>
-          } />
-          <Route path="/r/:id" element={<CustomerPortal />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<MapView />} />
+        <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/capture" element={<CaptureForm />} />
+        <Route path="/edit-body" element={<EditBodyPanel />} />
+        <Route path="/r/:id" element={<CustomerPortal />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
