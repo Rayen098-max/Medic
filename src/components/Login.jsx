@@ -41,11 +41,17 @@ export default function Login() {
 
     if (data.user) {
       // Fetch profile to determine routing if no 'from' state
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', data.user.id)
         .single();
+
+      if (profileError) {
+        setError("Login successful, but failed to load profile: " + profileError.message + ". (Check RLS policies on profiles table)");
+        setLoading(false);
+        return;
+      }
 
       setLoading(false);
 
