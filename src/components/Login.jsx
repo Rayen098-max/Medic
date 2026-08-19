@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../utils/db';
-import { useAuth } from '../context/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 export default function Login() {
@@ -11,17 +10,9 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { user, profile } = useAuth();
 
   // Where to go after login (e.g., if they were redirected here)
   const from = location.state?.from?.pathname;
-
-  if (user && profile) {
-    if (from) return <Navigate to={from} replace />;
-    if (profile.role === 'physio') return <Navigate to="/capture" replace />;
-    if (profile.role === 'admin' || profile.role === 'manager') return <Navigate to="/admin" replace />;
-    return <Navigate to="/" replace />;
-  }
 
   const handleLogin = async (e) => {
     e.preventDefault();
