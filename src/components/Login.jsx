@@ -39,12 +39,34 @@ export default function Login() {
       return;
     }
 
-    // We do NOT manually navigate here. 
-    // signInWithPassword triggers onAuthStateChange in AuthContext.
-    // AuthContext will fetch the profile and update its state.
-    // Once AuthContext provides 'user' and 'profile', the declarative
-    // <Navigate> at the top of this component will automatically redirect the user!
-    
+    if (data.user) {
+      // Fetch profile to determine routing if no 'from' state
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) {
+        setError("Login successful, but failed to load profile: " + profileError.message + ". (Check RLS policies on profiles table)");
+        setLoading(false);
+        return;
+      }
+
+      setLoading(false);
+
+      if (from) {
+        navigate(from, { replace: true });
+      } else {
+        if (profile?.role === 'physio') {
+          navigate('/capture', { replace: true });
+        } else if (profile?.role === 'admin' || profile?.role === 'manager') {
+          navigate('/admin', { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
+      }
+    }
   };
 
   return (
