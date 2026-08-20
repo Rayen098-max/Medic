@@ -1,17 +1,82 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getPatients, supabase } from '../utils/db';
-import { Search, Download, Trash2, LogOut, ShieldAlert } from 'lucide-react';
+import { getPatients, deletePatient, supabase } from '../utils/db';
+import { Search, Download, Trash2, LogOut, ShieldAlert, Eye, MessageCircle, Check, Clock } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Papa from 'papaparse';
 
 export default function AdminPanel() {
   const [patients, setPatients] = useState([]);
   const [physios, setPhysios] = useState([]);
+  const [sentStatus, setSentStatus] = useState({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [physioFilter, setPhysioFilter] = useState('');
   const { profile, signOut, session } = useAuth();
+
+  const calculateTimeSince = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'today';
+    if (diffDays === 1) return 'yesterday';
+    if (diffDays < 7) return `${diffDays} days`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks`;
+    return `${Math.floor(diffDays / 30)} months`;
+  };
+
+  const getFollowUpStatus = (consultDate) => {
+    const today = new Date();
+    const consult = new Date(consultDate);
+    const diffTime = Math.abs(today - consult);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays >= 3 && diffDays <= 5) return { status: 'due', color: '#eab308', text: 'Due Today' };
+    if (diffDays > 5) return { status: 'overdue', color: '#ef4444', text: 'Overdue' };
+    return { status: 'pending', color: '#8b949e', text: `Due in ${Math.max(0, 3 - diffDays)} days` };
+  };
+
+  const generateWhatsAppLink = (customer) => {
+    if (!customer.phone) return '#';
+    const phone = customer.phone.replace(/\D/g, '');
+    const cacheBuster = new Date().getTime();
+    const link = `${window.location.origin}/r/${customer.id}?v=${cacheBuster}`;
+    
+    const timeSinceVisit = calculateTimeSince(customer.consultDate);
+    const productPurchased = customer.productPurchased || customer.product;
+    
+    let context = "";
+    if (timeSinceVisit && productPurchased) {
+      context = `It's been ${timeSinceVisit} since you picked up your ${productPurchased}. `;
+    } else if (timeSinceVisit) {
+      context = `It's been ${timeSinceVisit} since your visit. `;
+    }
+    
+    const physioName = physios.find(p => p.id === customer.physio_id)?.full_name || profile?.full_name || 'Physio';
+    
+    const fullMessage = `Hi ${customer.name},\n\n${context}Hope your body is treating you better!\n\nHere is your *Personalized 3D Recovery Plan* (including exercises and things to avoid):\n👉 ${link}\n\nLet me know if you have any questions.\n\nBest,\nDr. ${physioName}`;
+
+    const message = encodeURIComponent(fullMessage);
+    return `https://wa.me/${phone}?text=${message}`;
+  };
+
+  const handleMarkSent = (id) => {
+    setSentStatus(prev => ({ ...prev, [id]: true }));
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this patient record?')) {
+      try {
+        await deletePatient(id);
+        setPatients(prev => prev.filter(p => p.id !== id));
+      } catch (err) {
+        alert('Failed to delete patient: ' + err.message);
+      }
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -181,6 +246,7 @@ export default function AdminPanel() {
                 <th style={{ padding: '16px', color: 'var(--text-muted)' }}>Phone</th>
                 <th style={{ padding: '16px', color: 'var(--text-muted)' }}>Consult Date</th>
                 <th style={{ padding: '16px', color: 'var(--text-muted)' }}>Condition</th>
+                <th style={{ padding: '16px', color: 'var(--text-muted)' }}>Status</th>
                 {(profile?.role === 'admin' || profile?.role === 'manager') && (
                   <th style={{ padding: '16px', color: 'var(--text-muted)' }}>Physio ID</th>
                 )}
@@ -188,24 +254,75 @@ export default function AdminPanel() {
               </tr>
             </thead>
             <tbody>
-              {filteredPatients.map(patient => (
+              {filteredPatients.map(patient => {
+                const status = getFollowUpStatus(patient.consultDate);
+                const isSent = sentStatus[patient.id];
+                
+                return (
                 <tr key={patient.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '16px' }}>{patient.name}</td>
+                  <td style={{ padding: '16px' }}>
+                    <div style={{ fontWeight: 'bold' }}>{patient.name}</div>
+                  </td>
                   <td style={{ padding: '16px' }}>{patient.phone}</td>
                   <td style={{ padding: '16px' }}>{patient.consultDate}</td>
-                  <td style={{ padding: '16px' }}>{patient.painArea}</td>
+                  <td style={{ padding: '16px', textTransform: 'capitalize' }}>{patient.painArea?.replace('_', ' ')}</td>
+                  <td style={{ padding: '16px' }}>
+                    <span style={{ 
+                      color: status.color, 
+                      background: `${status.color}20`, 
+                      padding: '4px 12px', 
+                      borderRadius: '12px', 
+                      fontSize: '0.875rem',
+                      fontWeight: '600'
+                    }}>
+                      {isSent ? 'Follow-up Sent' : status.text}
+                    </span>
+                  </td>
                   {(profile?.role === 'admin' || profile?.role === 'manager') && (
                     <td style={{ padding: '16px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                       {physios.find(p => p.id === patient.physio_id)?.full_name || patient.physio_id}
                     </td>
                   )}
                   <td style={{ padding: '16px' }}>
-                    <Link to={`/r/${patient.id}`} style={{ color: 'var(--accent)', textDecoration: 'none', marginRight: '16px' }}>
-                      View Portal
-                    </Link>
+                    <div style={{ display: 'flex', gap: '12px' }}>
+                      <Link 
+                        to={`/r/${patient.id}`} 
+                        target="_blank"
+                        className="clinical-btn"
+                        style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(0, 210, 255, 0.1)', color: 'var(--accent)', borderColor: 'var(--accent)' }}
+                      >
+                        <Eye size={18} /> Preview
+                      </Link>
+
+                      {isSent ? (
+                        <div style={{ color: '#22c55e', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px' }}>
+                          <Check size={18} /> Sent
+                        </div>
+                      ) : (
+                        <a 
+                          href={generateWhatsAppLink(patient)} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          onClick={() => handleMarkSent(patient.id)}
+                          className="clinical-btn"
+                          style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', borderColor: '#22c55e' }}
+                        >
+                          <MessageCircle size={18} /> Send WhatsApp
+                        </a>
+                      )}
+
+                      <button 
+                        onClick={() => handleDelete(patient.id)}
+                        className="clinical-btn"
+                        title="Delete Record"
+                        style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderColor: '#ef4444', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              )})}
               {filteredPatients.length === 0 && (
                 <tr>
                   <td colSpan="6" style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
