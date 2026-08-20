@@ -1,17 +1,24 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Camera, ArrowLeft, Loader2 } from 'lucide-react';
+import { z } from 'zod';
 import { addPatient } from '../utils/db';
+import { useAuth } from '../context/AuthContext';
 import painPointsData from '../data/painPoints.json';
+
+const formSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  phone: z.string().min(5, "Phone is required"),
+  consultDate: z.string().min(1, "Consult date is required"),
+  productPurchased: z.string().optional(),
+});
 
 export default function CaptureForm() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    physioName: '',
-    physioPhone: '',
-    physioAvailability: '1 PM - 9 PM, every day except Wednesday',
     consultDate: new Date().toISOString().split('T')[0],
     productPurchased: '',
     painPointIds: ['L01'], // Default to generic lower back
@@ -39,6 +46,21 @@ export default function CaptureForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    try {
+      formSchema.parse({
+        name: formData.name,
+        phone: formData.phone,
+        consultDate: formData.consultDate,
+        productPurchased: formData.productPurchased
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        alert("Validation error: " + error.errors.map(e => e.message).join(', '));
+        return;
+      }
+    }
+
     if (!formData.consent) {
       alert("Please confirm customer consent to proceed.");
       return;
@@ -62,9 +84,7 @@ export default function CaptureForm() {
       transcription: finalTranscription,
       sleepPosition: 'Unknown',
       product: primaryPoint ? primaryPoint.products[0] : 'Recommended Product',
-      physioName: formData.physioName,
-      physioPhone: formData.physioPhone,
-      physioAvailability: formData.physioAvailability,
+      physio_id: profile?.id,
       consultDate: formData.consultDate,
       productPurchased: formData.productPurchased,
       recommendedExercises: exercises,
@@ -112,30 +132,6 @@ export default function CaptureForm() {
               type="tel" 
               value={formData.phone}
               onChange={e => setFormData({...formData, phone: e.target.value})}
-              style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white' }} 
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Physio Name</label>
-            <input 
-              required
-              type="text" 
-              value={formData.physioName}
-              onChange={e => setFormData({...formData, physioName: e.target.value})}
-              placeholder="e.g. Sarah"
-              style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white' }} 
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Physio Phone (WhatsApp)</label>
-            <input 
-              required
-              type="tel" 
-              value={formData.physioPhone}
-              onChange={e => setFormData({...formData, physioPhone: e.target.value})}
-              placeholder="e.g. +1234567890"
               style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white' }} 
             />
           </div>
