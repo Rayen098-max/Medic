@@ -97,7 +97,9 @@ export default function AdminPanel() {
       <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
           <div>
-            <h1 style={{ color: 'var(--accent)', margin: 0, fontSize: '2.5rem' }}>Admin Dashboard</h1>
+            <h1 style={{ color: 'var(--accent)', margin: 0, fontSize: '2.5rem' }}>
+              {profile?.role === 'physio' ? 'My Follow-ups' : 'Admin Dashboard'}
+            </h1>
             <p style={{ color: 'var(--text-muted)', margin: '8px 0 0 0' }}>Logged in as: {profile?.full_name} ({profile?.role})</p>
           </div>
           <div style={{ display: 'flex', gap: '16px' }}>
@@ -122,10 +124,12 @@ export default function AdminPanel() {
             <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)' }}>Consults This Month</h3>
             <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent)' }}>{consultsThisMonth}</p>
           </div>
-          <div className="glass-panel" style={{ padding: '24px' }}>
-            <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)' }}>Active Physios</h3>
-            <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent)' }}>{physios.length || 1}</p>
-          </div>
+          {(profile?.role === 'admin' || profile?.role === 'manager') && (
+            <div className="glass-panel" style={{ padding: '24px' }}>
+              <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)' }}>Active Physios</h3>
+              <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent)' }}>{physios.length || 1}</p>
+            </div>
+          )}
         </div>
 
         {/* Controls Row */}

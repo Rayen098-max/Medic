@@ -10,13 +10,14 @@ import CustomerPortal from './components/CustomerPortal';
 import EditBodyPanel from './components/EditBodyPanel';
 import Login from './components/Login';
 import ProtectedRoute from './components/ProtectedRoute';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import contentData from './data/content.json';
 import painPointsData from './data/painPoints.json';
 
 function MapView() {
   const [activeZone, setActiveZone] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const { profile } = useAuth();
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -80,17 +81,21 @@ function MapView() {
         <DetailPanel zone={selectedZoneData} onClose={() => setActiveZone(null)} />
       )}
       
-      {/* Admin Link for Demo */}
+      {/* Navigation Buttons based on Role */}
       <div style={{ position: 'absolute', bottom: 20, left: 20, zIndex: 10, display: 'flex', gap: '16px' }}>
-        <Link to="/capture" className="clinical-btn" style={{ textDecoration: 'none' }}>
-          New Consult
-        </Link>
+        {(profile?.role === 'admin' || profile?.role === 'physio') && (
+          <Link to="/capture" className="clinical-btn" style={{ textDecoration: 'none' }}>
+            New Consult
+          </Link>
+        )}
         <Link to="/admin" className="clinical-btn" style={{ textDecoration: 'none', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', borderColor: 'var(--border-color)' }}>
-          Follow-up Admin
+          {profile?.role === 'physio' ? 'My Follow-ups' : 'Follow-up Admin'}
         </Link>
-        <Link to="/edit-body" className="clinical-btn" style={{ textDecoration: 'none', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', borderColor: 'var(--border-color)' }}>
-          Edit Body
-        </Link>
+        {profile?.role === 'admin' && (
+          <Link to="/edit-body" className="clinical-btn" style={{ textDecoration: 'none', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', borderColor: 'var(--border-color)' }}>
+            Edit Body
+          </Link>
+        )}
       </div>
 
       {/* Attribution */}
@@ -106,10 +111,14 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<MapView />} />
+          <Route path="/" element={
+            <ProtectedRoute allowedRoles={['admin', 'manager', 'physio']}>
+              <MapView />
+            </ProtectedRoute>
+          } />
           <Route path="/login" element={<Login />} />
           <Route path="/admin" element={
-            <ProtectedRoute allowedRoles={['admin', 'manager']}>
+            <ProtectedRoute allowedRoles={['admin', 'manager', 'physio']}>
               <AdminPanel />
             </ProtectedRoute>
           } />

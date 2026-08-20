@@ -18,8 +18,6 @@ export default function Login() {
 
   if (user && profile) {
     if (from) return <Navigate to={from} replace />;
-    if (profile.role === 'physio') return <Navigate to="/capture" replace />;
-    if (profile.role === 'admin' || profile.role === 'manager') return <Navigate to="/admin" replace />;
     return <Navigate to="/" replace />;
   }
 
