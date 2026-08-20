@@ -77,11 +77,20 @@ export default function AdminPanel() {
   const filteredPatients = patients.filter(p => {
     const matchesSearch = p.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           p.phone?.includes(searchTerm);
-    const matchesPhysio = physioFilter ? p.physio_id === physioFilter : true;
-    return matchesSearch && matchesPhysio;
+    
+    // Client-side fallback for RLS: ensure physios only see their own patients
+    const isPhysio = profile?.role === 'physio';
+    const matchesOwnPhysio = isPhysio ? p.physio_id === profile?.id : true;
+    
+    const matchesPhysioFilter = physioFilter ? p.physio_id === physioFilter : true;
+    
+    return matchesSearch && matchesOwnPhysio && matchesPhysioFilter;
   });
 
-  const consultsThisMonth = patients.filter(p => {
+  // Calculate total patients for the current user's view
+  const displayTotalPatients = filteredPatients.length;
+
+  const consultsThisMonth = filteredPatients.filter(p => {
     if (!p.consultDate) return false;
     const date = new Date(p.consultDate);
     const now = new Date();
@@ -118,7 +127,7 @@ export default function AdminPanel() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '40px' }}>
           <div className="glass-panel" style={{ padding: '24px' }}>
             <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)' }}>Total Patients</h3>
-            <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent)' }}>{patients.length}</p>
+            <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent)' }}>{displayTotalPatients}</p>
           </div>
           <div className="glass-panel" style={{ padding: '24px' }}>
             <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)' }}>Consults This Month</h3>
