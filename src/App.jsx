@@ -11,13 +11,14 @@ import EditBodyPanel from './components/EditBodyPanel';
 import Login from './components/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { LogOut } from 'lucide-react';
 import contentData from './data/content.json';
 import painPointsData from './data/painPoints.json';
 
 function MapView() {
   const [activeZone, setActiveZone] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const { profile } = useAuth();
+  const { profile, signOut } = useAuth();
 
   React.useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -50,6 +51,17 @@ function MapView() {
         <p style={{ color: 'var(--text-muted)', margin: '8px 0 0 4px', fontSize: '1rem', fontWeight: '500', letterSpacing: '1px' }}>
           Interactive 3D body preview
         </p>
+      </div>
+
+      {/* Sign Out Button */}
+      <div style={{ position: 'absolute', top: 30, right: 30, zIndex: 10 }}>
+        <button 
+          onClick={signOut} 
+          className="clinical-btn" 
+          style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: '#ef4444', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
+        >
+          <LogOut size={16} /> Sign Out
+        </button>
       </div>
 
       {/* 3D Canvas */}
