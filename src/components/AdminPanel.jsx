@@ -16,6 +16,9 @@ export default function AdminPanel() {
 
   const calculateTimeSince = (dateString) => {
     if (!dateString) return '';
+    if (dateString === 'Few Days ago' || dateString === 'a week ago') {
+      return dateString.toLowerCase();
+    }
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now - date);
@@ -29,6 +32,9 @@ export default function AdminPanel() {
   };
 
   const getFollowUpStatus = (consultDate) => {
+    if (consultDate === 'Few Days ago' || consultDate === 'a week ago') {
+      return { status: 'pending', color: '#8b949e', text: 'N/A' };
+    }
     const today = new Date();
     const consult = new Date(consultDate);
     const diffTime = Math.abs(today - consult);
@@ -46,13 +52,14 @@ export default function AdminPanel() {
     const link = `${window.location.origin}/r/${customer.id}?v=${cacheBuster}`;
     
     const timeSinceVisit = calculateTimeSince(customer.consultDate);
-    const productPurchased = customer.productPurchased || customer.product;
     
     let context = "";
-    if (timeSinceVisit && productPurchased) {
-      context = `It's been ${timeSinceVisit} since you picked up your ${productPurchased}. `;
-    } else if (timeSinceVisit) {
-      context = `It's been ${timeSinceVisit} since your visit. `;
+    if (timeSinceVisit) {
+      if (customer.consultDate === 'Few Days ago' || customer.consultDate === 'a week ago') {
+        context = `It's been ${timeSinceVisit} since your visit. `;
+      } else {
+        context = `It's been ${timeSinceVisit} since your visit. `;
+      }
     }
     
     const physioName = physios.find(p => p.id === customer.physio_id)?.full_name || profile?.full_name || 'Physio';
@@ -108,7 +115,6 @@ export default function AdminPanel() {
       Phone: p.phone,
       Condition: p.painArea,
       Date: p.consultDate,
-      Product: p.productPurchased || 'None',
       PhysioID: p.physio_id
     })));
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -157,6 +163,7 @@ export default function AdminPanel() {
 
   const consultsThisMonth = filteredPatients.filter(p => {
     if (!p.consultDate) return false;
+    if (p.consultDate === 'Few Days ago' || p.consultDate === 'a week ago') return true;
     const date = new Date(p.consultDate);
     const now = new Date();
     return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();

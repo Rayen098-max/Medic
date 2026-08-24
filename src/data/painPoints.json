@@ -2,1203 +2,334 @@
   {
     "id": "N01",
     "name": "Forward Head Posture (Tech Neck)",
-    "zone": "Neck",
-    "description": "Prolonged phone/laptop use pulls the head forward off the spine's centerline. Every inch forward roughly doubles the effective load on neck muscles.",
-    "dos": [
-      "Keep screens at eye level",
-      "take breaks every 30-45 min",
-      "do chin-tuck exercises"
-    ],
-    "donts": [
-      "Avoid looking down at phone for long periods",
-      "avoid stomach sleeping"
-    ],
-    "exercises": [
-      "Chin tucks (10 reps x 3/day)",
-      "wall angels",
-      "upper back stretch"
-    ],
-    "products": [
-      {
-        "id": "PIL_RELIEF",
-        "reason": "Keeps neck aligned with spine, reduces forward-head strain overnight"
-      }
-    ]
+    "zone": "neck"
   },
   {
     "id": "N02",
     "name": "Cervical Spondylosis",
-    "zone": "Neck",
-    "description": "Age-related wear on the neck's discs and joints causing stiffness, especially noticeable in the morning.",
-    "dos": [
-      "Gentle daily neck mobility work",
-      "supportive pillow",
-      "warm compress for stiffness"
-    ],
-    "donts": [
-      "Avoid sudden jerky neck movements",
-      "avoid unsupported sleeping positions"
-    ],
-    "exercises": [
-      "Slow neck rotations",
-      "isometric neck holds"
-    ],
-    "products": [
-      {
-        "id": "PIL_CERVICAL",
-        "reason": "Maintains neutral neck curve to reduce morning stiffness"
-      }
-    ]
-  },
-  {
-    "id": "N03",
-    "name": "Whiplash-type Strain",
-    "zone": "Neck",
-    "description": "Soft tissue strain from a sudden jolt or repeated poor sleep positioning, causing tenderness and restricted movement.",
-    "dos": [
-      "Rest the area initially",
-      "gentle range-of-motion once acute pain eases"
-    ],
-    "donts": [
-      "Avoid forcing movement through sharp pain",
-      "avoid heavy pillows that tilt the head"
-    ],
-    "exercises": [
-      "Gentle neck tilts within comfort",
-      "isometric holds once cleared"
-    ],
-    "products": [
-      {
-        "id": "PIL_HYBRID",
-        "reason": "Reduces pressure while healing, supports natural curve"
-      }
-    ]
-  },
-  {
-    "id": "N04",
-    "name": "Text Neck Stiffness",
-    "zone": "Neck",
-    "description": "Repeated downward head tilt while texting shortens front neck muscles and overloads the back of the neck.",
-    "dos": [
-      "Hold phone at chest/eye level",
-      "stretch chest and neck regularly"
-    ],
-    "donts": [
-      "Avoid prolonged downward gaze",
-      "avoid cradling phone between ear and shoulder"
-    ],
-    "exercises": [
-      "Chest doorway stretch",
-      "chin tucks",
-      "shoulder blade squeezes"
-    ],
-    "products": [
-      {
-        "id": "PIL_RELIEF",
-        "reason": "Helps reset neck alignment during rest to counter daytime posture"
-      }
-    ]
+    "zone": "neck"
   },
   {
     "id": "N05",
     "name": "Cervical Radiculopathy (Pinched Nerve)",
-    "zone": "Neck",
-    "description": "Compression of a nerve root in the neck, often causing pain/tingling radiating into the shoulder or arm.",
-    "dos": [
-      "Maintain neutral neck posture",
-      "use supportive pillow",
-      "consult physio for persistent tingling"
-    ],
-    "donts": [
-      "Avoid sleeping on stomach",
-      "avoid extreme neck extension"
-    ],
-    "exercises": [
-      "Gentle nerve glide exercises (physio-guided)",
-      "chin tucks"
-    ],
-    "products": [
-      {
-        "id": "PIL_CERVICAL",
-        "reason": "Prevents extreme neck angles that can aggravate nerve compression"
-      }
-    ]
+    "zone": "neck"
+  },
+  {
+    "id": "N03",
+    "name": "Neck Strain",
+    "zone": "neck"
+  },
+  {
+    "id": "N04",
+    "name": "Tension Headache",
+    "zone": "neck"
   },
   {
     "id": "N06",
-    "name": "Torticollis (Wry Neck)",
-    "zone": "Neck",
-    "description": "Sudden muscle spasm causing the neck to twist to one side, often from an awkward sleep position.",
-    "dos": [
-      "Apply gentle warmth",
-      "slow stretching once spasm eases",
-      "supportive pillow"
-    ],
-    "donts": [
-      "Avoid forcing the neck straight",
-      "avoid unsupported side sleeping"
-    ],
-    "exercises": [
-      "Gentle side-to-side neck stretches within comfort"
-    ],
-    "products": [
-      {
-        "id": "PIL_RELIEF",
-        "reason": "Reduces chance of recurrence from unsupported sleep posture"
-      }
-    ]
+    "name": "Postural Neck Fatigue (Desk Work) - Cervical Disc Bulge (Degenerative Disc)",
+    "zone": "neck"
   },
   {
     "id": "N07",
-    "name": "Neck Strain from Side Sleeping",
-    "zone": "Neck",
-    "description": "Sleeping on the side without enough pillow height leaves the neck unsupported, tilting it downward for hours.",
-    "dos": [
-      "Use a pillow that fills the shoulder-to-head gap fully"
-    ],
-    "donts": [
-      "Avoid flat or worn-out pillows",
-      "avoid stacking two mismatched pillows"
-    ],
-    "exercises": [
-      "Neck side-bend stretch",
-      "chin tucks"
-    ],
-    "products": [
-      {
-        "id": "PIL_HYBRID",
-        "reason": "Specifically sized to fill the gap for side sleepers"
-      }
-    ]
-  },
-  {
-    "id": "N08",
-    "name": "Occipital Tension Headache",
-    "zone": "Neck",
-    "description": "Tight muscles at the base of the skull, often from neck/shoulder tension, radiating into headache.",
-    "dos": [
-      "Gentle massage/stretch of the base of skull",
-      "supportive pillow",
-      "regular breaks from screens"
-    ],
-    "donts": [
-      "Avoid prolonged forward head posture",
-      "avoid skipping stretch breaks"
-    ],
-    "exercises": [
-      "Suboccipital release stretch",
-      "chin tucks"
-    ],
-    "products": [
-      {
-        "id": "PIL_RELIEF",
-        "reason": "Reduces base-of-skull tension by keeping neck neutral overnight"
-      }
-    ]
-  },
-  {
-    "id": "N09",
-    "name": "Postural Neck Fatigue (Desk Work)",
-    "zone": "Neck",
-    "description": "Static neck posture through long work hours leads to muscle fatigue rather than sharp injury.",
-    "dos": [
-      "Adjust monitor height",
-      "take micro-breaks",
-      "stretch every hour"
-    ],
-    "donts": [
-      "Avoid sitting in one fixed neck position for hours"
-    ],
-    "exercises": [
-      "Chin tucks",
-      "neck rotations",
-      "upper trapezius stretch"
-    ],
-    "products": [
-      {
-        "id": "PIL_RELIEF",
-        "reason": "Supports recovery of fatigued neck muscles overnight"
-      }
-    ]
-  },
-  {
-    "id": "N10",
-    "name": "Cervical Disc Bulge (Mild)",
-    "zone": "Neck",
-    "description": "Early-stage disc bulge in the neck that can cause localized stiffness or mild referred discomfort.",
-    "dos": [
-      "Maintain neutral neck alignment",
-      "supportive pillow",
-      "avoid aggravating positions"
-    ],
-    "donts": [
-      "Avoid stomach sleeping",
-      "avoid sudden neck flexion under load"
-    ],
-    "exercises": [
-      "Gentle chin tucks",
-      "physio-guided mobility work"
-    ],
-    "products": [
-      {
-        "id": "PIL_CERVICAL",
-        "reason": "Maintains alignment to reduce pressure on the disc"
-      }
-    ]
-  },
-  {
-    "id": "N11",
-    "name": "Neck Stiffness from Stomach Sleeping",
-    "zone": "Neck",
-    "description": "Stomach sleeping forces the neck into rotation for hours, straining one side.",
-    "dos": [
-      "Transition toward side or back sleeping gradually",
-      "use a supportive pillow"
-    ],
-    "donts": [
-      "Avoid stomach sleeping regularly",
-      "avoid a too-high pillow which worsens rotation"
-    ],
-    "exercises": [
-      "Neck rotation stretch",
-      "chin tucks"
-    ],
-    "products": [
-      {
-        "id": "PIL_RELIEF",
-        "reason": "Encourages a more neutral sleep position over time"
-      }
-    ]
-  },
-  {
-    "id": "N12",
     "name": "Trapezius Muscle Spasm",
-    "zone": "Neck",
-    "description": "Tightness/spasm in the upper trapezius, often linked to stress or prolonged shoulder elevation.",
-    "dos": [
-      "Gentle stretching",
-      "warm compress",
-      "posture awareness during stress"
-    ],
-    "donts": [
-      "Avoid hunching shoulders toward ears for long periods"
-    ],
-    "exercises": [
-      "Upper trap stretch",
-      "shoulder rolls"
-    ],
-    "products": [
-      {
-        "id": "PIL_RELIEF",
-        "reason": "Reduces overnight tension buildup in the upper trapezius"
-      }
-    ]
-  },
-  {
-    "id": "N13",
-    "name": "Degenerative Disc Discomfort - Neck",
-    "zone": "Neck",
-    "description": "Gradual wear of cervical discs over time, causing intermittent stiffness and reduced range of motion.",
-    "dos": [
-      "Low-impact neck mobility work",
-      "supportive pillow",
-      "consistent sleep posture"
-    ],
-    "donts": [
-      "Avoid high-impact neck strain",
-      "avoid unsupported sleep positions"
-    ],
-    "exercises": [
-      "Gentle range-of-motion exercises",
-      "isometric neck holds"
-    ],
-    "products": [
-      {
-        "id": "PIL_CERVICAL",
-        "reason": "Provides consistent support to reduce strain on worn discs"
-      }
-    ]
+    "zone": "neck"
   },
   {
     "id": "S01",
     "name": "Rotator Cuff Strain",
-    "zone": "Shoulder",
-    "description": "Overuse or repetitive strain of the shoulder's stabilizing muscles, causing pain with arm movement overhead.",
-    "dos": [
-      "Rest from aggravating movement",
-      "gentle range-of-motion",
-      "supportive sleep position"
-    ],
-    "donts": [
-      "Avoid sleeping directly on the affected shoulder",
-      "avoid heavy overhead lifting"
-    ],
-    "exercises": [
-      "Pendulum swings",
-      "external rotation stretch (physio-guided)"
-    ],
-    "products": [
-      {
-        "id": "MAT_HYBRID",
-        "reason": "Reduces direct pressure on the shoulder joint during side sleeping"
-      }
-    ]
+    "zone": "shoulder"
   },
   {
     "id": "S02",
     "name": "Frozen Shoulder (Adhesive Capsulitis)",
-    "zone": "Shoulder",
-    "description": "Progressive stiffening of the shoulder joint capsule, restricting movement, often worse at night.",
-    "dos": [
-      "Gentle daily stretching within pain-free range",
-      "supportive pillow for arm"
-    ],
-    "donts": [
-      "Avoid forcing the arm through sharp pain",
-      "avoid prolonged immobility"
-    ],
-    "exercises": [
-      "Pendulum swings",
-      "wall crawls (physio-guided)"
-    ],
-    "products": [
-      {
-        "id": "MAT_HYBRID",
-        "reason": "Cushions the shoulder to reduce nighttime discomfort"
-      }
-    ]
+    "zone": "shoulder"
   },
   {
     "id": "S03",
     "name": "Shoulder Impingement Syndrome",
-    "zone": "Shoulder",
-    "description": "Tendons in the shoulder get compressed during overhead movement, causing pain especially when raising the arm.",
-    "dos": [
-      "Strengthen shoulder-stabilizing muscles",
-      "maintain good posture"
-    ],
-    "donts": [
-      "Avoid repetitive overhead reaching without rest",
-      "avoid sleeping on the affected side"
-    ],
-    "exercises": [
-      "Scapular retraction exercises",
-      "external rotation with band"
-    ],
-    "products": [
-      {
-        "id": "MAT_HYBRID",
-        "reason": "Even support reduces pressure points that aggravate impingement"
-      }
-    ]
+    "zone": "shoulder"
   },
   {
     "id": "S04",
     "name": "Rounded Shoulder Posture",
-    "zone": "Shoulder",
-    "description": "Prolonged sitting shortens chest muscles and overstretches upper back, pulling shoulders forward.",
-    "dos": [
-      "Chest stretches",
-      "strengthen upper back",
-      "set ergonomic armrests"
-    ],
-    "donts": [
-      "Avoid long unbroken sitting without posture breaks"
-    ],
-    "exercises": [
-      "Doorway chest stretch",
-      "band pull-aparts"
-    ],
-    "products": [
-      {
-        "id": "CHR_ELITE",
-        "reason": "Keeps shoulders in a relaxed, neutral position during seated hours"
-      }
-    ]
+    "zone": "shoulder"
   },
   {
     "id": "S05",
     "name": "Shoulder Pain from Side-Sleeping",
-    "zone": "Shoulder",
-    "description": "Sleeping directly on the shoulder without cushioning compresses the joint for hours.",
-    "dos": [
-      "Use a pillow to support the arm",
-      "alternate sleeping sides if possible"
-    ],
-    "donts": [
-      "Avoid sleeping directly on a painful shoulder without support"
-    ],
-    "exercises": [
-      "Cross-body shoulder stretch",
-      "pendulum swings"
-    ],
-    "products": [
-      {
-        "id": "MAT_HYBRID",
-        "reason": "Provides cushioning at the shoulder to reduce point pressure"
-      }
-    ]
+    "zone": "shoulder"
   },
   {
     "id": "S06",
     "name": "Bursitis of the Shoulder",
-    "zone": "Shoulder",
-    "description": "Inflammation of the fluid-filled sac cushioning the shoulder joint, causing pain with movement or pressure.",
-    "dos": [
-      "Rest from aggravating activity",
-      "gentle range-of-motion once pain eases"
-    ],
-    "donts": [
-      "Avoid direct pressure on the shoulder",
-      "avoid repetitive overhead motion"
-    ],
-    "exercises": [
-      "Gentle pendulum swings",
-      "isometric holds (physio-guided)"
-    ],
-    "products": [
-      {
-        "id": "MAT_HYBRID",
-        "reason": "Reduces direct pressure on the inflamed area during sleep"
-      }
-    ]
-  },
-  {
-    "id": "S07",
-    "name": "Postural Shoulder Fatigue (Desk Work)",
-    "zone": "Shoulder",
-    "description": "Static shoulder position through long work hours leads to muscle fatigue and tightness.",
-    "dos": [
-      "Adjust chair/desk height",
-      "take regular breaks",
-      "stretch shoulders hourly"
-    ],
-    "donts": [
-      "Avoid hunching shoulders forward for long periods"
-    ],
-    "exercises": [
-      "Shoulder rolls",
-      "band pull-aparts"
-    ],
-    "products": [
-      {
-        "id": "CHR_ELITE",
-        "reason": "Supports relaxed shoulder position to reduce fatigue buildup"
-      }
-    ]
-  },
-  {
-    "id": "S08",
-    "name": "Shoulder Blade Winging",
-    "zone": "Shoulder",
-    "description": "Weakness in muscles stabilizing the shoulder blade causes it to protrude, often linked to poor posture.",
-    "dos": [
-      "Strengthen scapular stabilizers",
-      "maintain upright sitting posture"
-    ],
-    "donts": [
-      "Avoid prolonged slouched sitting"
-    ],
-    "exercises": [
-      "Wall push-ups",
-      "scapular retraction holds"
-    ],
-    "products": [
-      {
-        "id": "CHR_ELITE",
-        "reason": "Encourages better scapular positioning during seated hours"
-      }
-    ]
+    "zone": "shoulder"
   },
   {
     "id": "S09",
     "name": "AC Joint Strain",
-    "zone": "Shoulder",
-    "description": "Strain at the joint where collarbone meets shoulder blade, often from repetitive load or a minor injury.",
-    "dos": [
-      "Rest from aggravating movement",
-      "gentle mobility once pain eases"
-    ],
-    "donts": [
-      "Avoid carrying heavy bags on the affected shoulder"
-    ],
-    "exercises": [
-      "Gentle shoulder mobility (physio-guided)",
-      "isometric holds"
-    ],
-    "products": [
-      {
-        "id": "MAT_HYBRID",
-        "reason": "Reduces pressure on the joint during rest and recovery"
-      }
-    ]
-  },
-  {
-    "id": "S10",
-    "name": "Overuse Strain from Carrying Heavy Bags",
-    "zone": "Shoulder",
-    "description": "Repeated one-sided load from bags/backpacks causes muscle imbalance and shoulder fatigue.",
-    "dos": [
-      "Alternate shoulders when carrying load",
-      "strengthen both sides evenly"
-    ],
-    "donts": [
-      "Avoid consistently carrying heavy loads on one shoulder"
-    ],
-    "exercises": [
-      "Shoulder shrugs",
-      "band rows"
-    ],
-    "products": [
-      {
-        "id": "CHR_ELITE",
-        "reason": "Reduces added strain from poor seated shoulder posture"
-      }
-    ]
+    "zone": "shoulder"
   },
   {
     "id": "S11",
     "name": "Shoulder Tightness from Stress",
-    "zone": "Shoulder",
-    "description": "Stress often causes unconscious shoulder elevation, leading to chronic tightness over time.",
-    "dos": [
-      "Practice shoulder-drop awareness",
-      "regular stretching",
-      "relaxation techniques"
-    ],
-    "donts": [
-      "Avoid holding tension in shoulders for long stretches"
-    ],
-    "exercises": [
-      "Shoulder rolls",
-      "upper trap stretch"
-    ],
-    "products": [
-      {
-        "id": "MAT_HYBRID",
-        "reason": "Allows shoulders to fully relax and decompress during sleep"
-      }
-    ]
+    "zone": "shoulder"
   },
   {
     "id": "S12",
     "name": "Referred Shoulder Pain from Neck Issues",
-    "zone": "Shoulder",
-    "description": "Neck-related nerve or muscle issues can produce pain that's felt in the shoulder area.",
-    "dos": [
-      "Address neck posture alongside shoulder care",
-      "supportive pillow"
-    ],
-    "donts": [
-      "Avoid treating only the shoulder if the root cause is the neck"
-    ],
-    "exercises": [
-      "Chin tucks",
-      "gentle neck and shoulder mobility"
-    ],
-    "products": [
-      {
-        "id": "PIL_RELIEF",
-        "reason": "Supports the neck, which may be the actual source of shoulder pain"
-      }
-    ]
+    "zone": "shoulder"
   },
   {
     "id": "U01",
     "name": "Thoracic Kyphosis (Slouched Upper Back)",
-    "zone": "Upper Back",
-    "description": "Gradual forward curving of the upper back from prolonged sitting, often felt as tiredness rather than sharp pain.",
-    "dos": [
-      "Standing stretch breaks",
-      "use a chair with full back support",
-      "strengthen mid-back"
-    ],
-    "donts": [
-      "Avoid slouched sitting for long unbroken stretches"
-    ],
-    "exercises": [
-      "Band rows",
-      "doorway chest stretch"
-    ],
-    "products": [
-      {
-        "id": "CHR_STYLUX",
-        "reason": "Keeps thoracic spine from curving forward during long seated hours"
-      }
-    ]
+    "zone": "upper back"
   },
   {
     "id": "U02",
     "name": "Upper Back Muscle Fatigue (Desk Work)",
-    "zone": "Upper Back",
-    "description": "Static upper back posture through long work hours leads to muscle fatigue between the shoulder blades.",
-    "dos": [
-      "Take regular posture breaks",
-      "adjust chair height",
-      "stretch upper back"
-    ],
-    "donts": [
-      "Avoid sitting without back support for long periods"
-    ],
-    "exercises": [
-      "Cat-cow stretch",
-      "band pull-aparts"
-    ],
-    "products": [
-      {
-        "id": "CHR_STYLUX",
-        "reason": "Reduces load on upper back muscles by providing consistent support"
-      }
-    ]
+    "zone": "upper back"
   },
   {
     "id": "U03",
     "name": "Rhomboid Strain",
-    "zone": "Upper Back",
-    "description": "Strain of the muscles between the shoulder blades, often from repetitive poor posture or overuse.",
-    "dos": [
-      "Gentle stretching",
-      "strengthen mid-back gradually",
-      "maintain upright posture"
-    ],
-    "donts": [
-      "Avoid prolonged slouching",
-      "avoid sudden heavy pulling movements"
-    ],
-    "exercises": [
-      "Band rows",
-      "scapular squeezes"
-    ],
-    "products": [
-      {
-        "id": "CHR_STYLUX",
-        "reason": "Supports the upper back to reduce strain during seated work"
-      }
-    ]
+    "zone": "upper back"
   },
   {
     "id": "U04",
     "name": "Postural Upper Back Pain (Screen Use)",
-    "zone": "Upper Back",
-    "description": "Extended forward-leaning toward screens strains the upper back's supporting muscles.",
-    "dos": [
-      "Position screens at eye level",
-      "take breaks",
-      "strengthen upper back"
-    ],
-    "donts": [
-      "Avoid leaning forward toward screens for long periods"
-    ],
-    "exercises": [
-      "Chin tucks",
-      "band pull-aparts"
-    ],
-    "products": [
-      {
-        "id": "CHR_AURA",
-        "reason": "Encourages upright posture, reducing forward lean toward screens"
-      }
-    ]
-  },
-  {
-    "id": "U05",
-    "name": "Thoracic Spine Stiffness",
-    "zone": "Upper Back",
-    "description": "Reduced mobility in the mid-back, often from long periods of sitting without movement.",
-    "dos": [
-      "Regular mobility breaks",
-      "gentle thoracic rotation exercises"
-    ],
-    "donts": [
-      "Avoid staying static in one position for hours"
-    ],
-    "exercises": [
-      "Thoracic rotation stretch",
-      "cat-cow stretch"
-    ],
-    "products": [
-      {
-        "id": "CHR_STYLUX",
-        "reason": "Encourages a more neutral spine position, reducing stiffness buildup"
-      }
-    ]
+    "zone": "upper back"
   },
   {
     "id": "U06",
     "name": "Upper Back Pain from Sagging Mattress",
-    "zone": "Upper Back",
-    "description": "A mattress that sags in the middle lets the upper back curve unnaturally through the night.",
-    "dos": [
-      "Choose a mattress firm enough to support the spine evenly"
-    ],
-    "donts": [
-      "Avoid old, sagging, or overly soft mattresses"
-    ],
-    "exercises": [
-      "Cat-cow stretch",
-      "gentle thoracic extension"
-    ],
-    "products": [
-      {
-        "id": "MAT_SNOWTEC",
-        "reason": "Maintains even spinal support through the night, preventing sag-related strain"
-      }
-    ]
+    "zone": "upper back"
   },
   {
     "id": "U07",
     "name": "Costovertebral Joint Discomfort",
-    "zone": "Upper Back",
-    "description": "Discomfort at the joints where ribs meet the spine, often aggravated by poor posture or twisting.",
-    "dos": [
-      "Gentle thoracic mobility",
-      "maintain upright posture",
-      "supportive mattress"
-    ],
-    "donts": [
-      "Avoid sudden twisting movements",
-      "avoid slouched sitting"
-    ],
-    "exercises": [
-      "Thoracic rotation stretch (gentle)",
-      "deep breathing exercises"
-    ],
-    "products": [
-      {
-        "id": "MAT_SNOWTEC",
-        "reason": "Provides even support reducing strain through the rib-spine joints"
-      }
-    ]
-  },
-  {
-    "id": "U08",
-    "name": "Upper Back Tightness (Underdeveloped Muscles)",
-    "zone": "Upper Back",
-    "description": "Weak upper back muscles relative to the chest muscles create an imbalance, leading to tightness.",
-    "dos": [
-      "Strengthen upper back gradually",
-      "balance with chest stretching"
-    ],
-    "donts": [
-      "Avoid neglecting upper back strengthening in a fitness routine"
-    ],
-    "exercises": [
-      "Band rows",
-      "reverse flys"
-    ],
-    "products": [
-      {
-        "id": "CHR_STYLUX",
-        "reason": "Supports the upper back while strength is being built up"
-      }
-    ]
+    "zone": "upper back"
   },
   {
     "id": "U09",
     "name": "Scapular Stabilizer Weakness",
-    "zone": "Upper Back",
-    "description": "Weakness in the muscles that stabilize the shoulder blade contributes to poor upper back posture.",
-    "dos": [
-      "Strengthen scapular stabilizers",
-      "maintain awareness of shoulder position"
-    ],
-    "donts": [
-      "Avoid letting shoulders roll forward for long periods"
-    ],
-    "exercises": [
-      "Wall push-ups",
-      "scapular retraction holds"
-    ],
-    "products": [
-      {
-        "id": "CHR_ELITE",
-        "reason": "Encourages better scapular positioning throughout the day"
-      }
-    ]
-  },
-  {
-    "id": "U10",
-    "name": "Upper Back Pain from Heavy Backpacks",
-    "zone": "Upper Back",
-    "description": "Carrying heavy loads on the back strains the upper back's supporting muscles over time.",
-    "dos": [
-      "Use both straps evenly",
-      "keep pack weight reasonable",
-      "strengthen upper back"
-    ],
-    "donts": [
-      "Avoid carrying heavy loads on one shoulder or for long distances"
-    ],
-    "exercises": [
-      "Band rows",
-      "thoracic extension stretch"
-    ],
-    "products": [
-      {
-        "id": "CHR_STYLUX",
-        "reason": "Helps the upper back recover from cumulative daily load strain"
-      }
-    ]
+    "zone": "upper back"
   },
   {
     "id": "U11",
     "name": "Postural Strain from Driving",
-    "zone": "Upper Back",
-    "description": "Long periods of driving in a fixed position strain the upper back, especially with poor seat support.",
-    "dos": [
-      "Adjust seat support",
-      "take breaks on long drives",
-      "stretch after driving"
-    ],
-    "donts": [
-      "Avoid long drives without back support or breaks"
-    ],
-    "exercises": [
-      "Thoracic rotation stretch",
-      "doorway chest stretch"
-    ],
-    "products": [
-      {
-        "id": "CHR_STYLUX",
-        "reason": "Provides consistent support to reduce strain from prolonged sitting"
-      }
-    ]
+    "zone": "upper back"
   },
   {
     "id": "U12",
     "name": "Mid-Back Stiffness (Prolonged Sitting)",
-    "zone": "Upper Back",
-    "description": "Extended sitting without movement leads to reduced mid-back mobility and a stiff, tight feeling.",
-    "dos": [
-      "Take movement breaks every 45-60 minutes",
-      "gentle thoracic stretches"
-    ],
-    "donts": [
-      "Avoid sitting still for multiple hours without a break"
-    ],
-    "exercises": [
-      "Cat-cow stretch",
-      "thoracic rotation stretch"
-    ],
-    "products": [
-      {
-        "id": "CHR_STYLUX",
-        "reason": "Encourages better posture, reducing stiffness from prolonged sitting"
-      }
-    ]
+    "zone": "upper back"
   },
   {
     "id": "L01",
     "name": "Lumbar Strain (General Lower Back Pain)",
-    "zone": "Lower Back",
-    "description": "General strain of the lower back's muscles/ligaments, the most common pain point reported in consults.",
-    "dos": [
-      "Maintain a supportive sleep surface",
-      "gentle daily movement",
-      "core strengthening"
-    ],
-    "donts": [
-      "Avoid soft, sagging mattresses",
-      "avoid prolonged sitting without support"
-    ],
-    "exercises": [
-      "Pelvic tilts",
-      "knee-to-chest stretch"
-    ],
-    "products": [
-      {
-        "id": "MAT_SNOWTEC",
-        "reason": "Maintains the spine's natural curve, the most common fix for lower back pain"
-      }
-    ]
+    "zone": "lower back"
   },
   {
     "id": "L02",
     "name": "Sciatica",
-    "zone": "Lower Back",
-    "description": "Irritation of the sciatic nerve causing pain that can radiate from the lower back into the leg.",
-    "dos": [
-      "Maintain neutral spine posture",
-      "gentle nerve-friendly stretches",
-      "supportive mattress"
-    ],
-    "donts": [
-      "Avoid prolonged sitting",
-      "avoid twisting movements under load"
-    ],
-    "exercises": [
-      "Piriformis stretch",
-      "nerve glide (physio-guided)"
-    ],
-    "products": [
-      {
-        "id": "MAT_SNOWTEC",
-        "reason": "Reduces pressure on the lower spine that can aggravate the sciatic nerve"
-      }
-    ]
+    "zone": "lower back"
   },
   {
     "id": "L03",
     "name": "Herniated/Bulging Disc (Lumbar)",
-    "zone": "Lower Back",
-    "description": "A disc in the lower back bulges or herniates, potentially pressing on nearby nerves.",
-    "dos": [
-      "Maintain neutral spine alignment",
-      "supportive mattress",
-      "gentle physio-guided movement"
-    ],
-    "donts": [
-      "Avoid heavy lifting with poor form",
-      "avoid prolonged forward bending"
-    ],
-    "exercises": [
-      "Gentle extension exercises (physio-guided)",
-      "pelvic tilts"
-    ],
-    "products": [
-      {
-        "id": "MAT_SNOWTEC",
-        "reason": "Provides consistent spinal support to reduce pressure on the affected disc"
-      }
-    ]
+    "zone": "lower back"
   },
   {
     "id": "L04",
     "name": "Poor Mattress Support-Related Pain",
-    "zone": "Lower Back",
-    "description": "An unsupportive mattress lets the hips sink below the spine's natural line, straining the lower back overnight.",
-    "dos": [
-      "Choose a mattress firm enough to support the lower back without sagging"
-    ],
-    "donts": [
-      "Avoid old, sagging, or overly soft mattresses"
-    ],
-    "exercises": [
-      "Pelvic tilts",
-      "child's pose stretch"
-    ],
-    "products": [
-      {
-        "id": "MAT_SNOWTEC",
-        "reason": "Directly addresses the root cause by maintaining spinal alignment overnight"
-      }
-    ]
+    "zone": "lower back"
   },
   {
     "id": "L05",
     "name": "Lower Back Pain from Prolonged Sitting",
-    "zone": "Lower Back",
-    "description": "Extended sitting compresses the lower back's discs and reduces blood flow to supporting muscles.",
-    "dos": [
-      "Take standing breaks every 30-45 minutes",
-      "use lower back support while seated"
-    ],
-    "donts": [
-      "Avoid sitting for hours without a break or back support"
-    ],
-    "exercises": [
-      "Standing hip flexor stretch",
-      "pelvic tilts"
-    ],
-    "products": [
-      {
-        "id": "CHR_AURA",
-        "reason": "Provides consistent lower back support during long seated periods"
-      }
-    ]
+    "zone": "lower back"
   },
   {
     "id": "L06",
     "name": "Sacroiliac (SI) Joint Dysfunction",
-    "zone": "Lower Back",
-    "description": "Irritation of the joint connecting the spine to the pelvis, often causing one-sided lower back pain.",
-    "dos": [
-      "Maintain even weight distribution when standing/sitting",
-      "gentle stability exercises"
-    ],
-    "donts": [
-      "Avoid activities that involve repeated one-sided loading"
-    ],
-    "exercises": [
-      "Pelvic tilts",
-      "gentle glute bridges"
-    ],
-    "products": [
-      {
-        "id": "MAT_SNOWTEC",
-        "reason": "Supports even pelvic alignment during sleep"
-      }
-    ]
+    "zone": "lower back"
   },
   {
     "id": "L07",
     "name": "Lumbar Spondylosis",
-    "zone": "Lower Back",
-    "description": "Age-related wear of the lower spine's joints and discs, causing stiffness particularly in the morning.",
-    "dos": [
-      "Gentle daily movement",
-      "supportive mattress",
-      "avoid prolonged stiffness-inducing positions"
-    ],
-    "donts": [
-      "Avoid sudden heavy lifting",
-      "avoid staying still for long periods"
-    ],
-    "exercises": [
-      "Cat-cow stretch",
-      "gentle pelvic tilts"
-    ],
-    "products": [
-      {
-        "id": "MAT_SNOWTEC",
-        "reason": "Reduces morning stiffness by maintaining consistent spinal support overnight"
-      }
-    ]
+    "zone": "lower back"
   },
   {
     "id": "L08",
     "name": "Postural Lower Back Pain (Standing/Retail Work)",
-    "zone": "Lower Back",
-    "description": "Prolonged standing, common in retail roles, fatigues the lower back's supporting muscles.",
-    "dos": [
-      "Wear supportive footwear",
-      "shift weight periodically",
-      "core strengthening"
-    ],
-    "donts": [
-      "Avoid standing still in one position for extended periods"
-    ],
-    "exercises": [
-      "Standing pelvic tilts",
-      "hip flexor stretch"
-    ],
-    "products": [
-      {
-        "id": "CHR_AURA",
-        "reason": "Provides recovery support during any seated breaks through the day"
-      }
-    ]
+    "zone": "lower back"
   },
   {
     "id": "L09",
     "name": "Lower Back Stiffness from Stomach Sleeping",
-    "zone": "Lower Back",
-    "description": "Stomach sleeping can arch the lower back unnaturally, straining it over a full night's sleep.",
-    "dos": [
-      "Gradually transition to side or back sleeping",
-      "use a supportive mattress"
-    ],
-    "donts": [
-      "Avoid stomach sleeping on a soft mattress regularly"
-    ],
-    "exercises": [
-      "Child's pose stretch",
-      "pelvic tilts"
-    ],
-    "products": [
-      {
-        "id": "MAT_SNOWTEC",
-        "reason": "Reduces unnatural arching by providing more even support"
-      }
-    ]
+    "zone": "lower back"
   },
   {
     "id": "L10",
     "name": "Muscle Imbalance-Related Pain (Weak Core)",
-    "zone": "Lower Back",
-    "description": "A weak core provides less support for the lower back, increasing strain during daily activity.",
-    "dos": [
-      "Gradual core strengthening",
-      "maintain good posture during activity"
-    ],
-    "donts": [
-      "Avoid neglecting core strength while focusing only on the back"
-    ],
-    "exercises": [
-      "Pelvic tilts",
-      "bird-dog exercise",
-      "gentle planks"
-    ],
-    "products": [
-      {
-        "id": "MAT_SNOWTEC",
-        "reason": "Provides supportive rest surface while core strength is being built up"
-      }
-    ]
+    "zone": "lower back"
   },
   {
     "id": "L11",
     "name": "Lower Back Pain from Heavy Lifting",
-    "zone": "Lower Back",
-    "description": "Improper lifting form places excessive strain on the lower back's muscles and discs.",
-    "dos": [
-      "Bend at the knees, not the waist",
-      "keep loads close to the body",
-      "strengthen legs and core"
-    ],
-    "donts": [
-      "Avoid lifting heavy objects with a rounded lower back"
-    ],
-    "exercises": [
-      "Pelvic tilts",
-      "gentle hamstring stretch"
-    ],
-    "products": [
-      {
-        "id": "MAT_SNOWTEC",
-        "reason": "Supports recovery of strained lower back muscles overnight"
-      }
-    ]
+    "zone": "lower back"
   },
   {
     "id": "L12",
     "name": "Degenerative Disc Discomfort - Lower Back",
-    "zone": "Lower Back",
-    "description": "Gradual wear of lumbar discs over time, causing intermittent stiffness and reduced flexibility.",
-    "dos": [
-      "Low-impact movement",
-      "supportive mattress",
-      "consistent gentle activity"
-    ],
-    "donts": [
-      "Avoid high-impact strain",
-      "avoid prolonged inactivity"
-    ],
-    "exercises": [
-      "Gentle pelvic tilts",
-      "walking",
-      "cat-cow stretch"
-    ],
-    "products": [
-      {
-        "id": "MAT_SNOWTEC",
-        "reason": "Provides consistent support to reduce strain on worn discs"
-      }
-    ]
+    "zone": "lower back"
   },
   {
     "id": "L13",
     "name": "Pregnancy-Related Lower Back Strain",
-    "zone": "Lower Back",
-    "description": "Postural and weight-distribution changes during pregnancy commonly strain the lower back; general comfort guidance only, not medical advice.",
-    "dos": [
-      "Use extra pillow support while sleeping",
-      "gentle physio-approved movement",
-      "supportive mattress"
-    ],
-    "donts": [
-      "Avoid sleeping flat on the back for extended periods later in pregnancy",
-      "avoid unsupported prolonged standing"
-    ],
-    "exercises": [
-      "Physio-guided pelvic tilts",
-      "gentle walking (as approved by a doctor)"
-    ],
-    "products": [
-      {
-        "id": "MAT_SNOWTEC",
-        "reason": "Provides adaptable support recommended alongside a doctor's guidance during pregnancy"
-      }
-    ]
+    "zone": "lower back"
+  },
+  {
+    "id": "K01",
+    "name": "Patellofemoral Pain Syndrome (Runner's Knee)",
+    "zone": "knee",
+    "description": "Pain around/behind the kneecap, often from overuse or poor kneecap tracking."
+  },
+  {
+    "id": "K02",
+    "name": "Osteoarthritis of the Knee",
+    "zone": "knee",
+    "description": "Age-related wear of the joint cartilage, causing stiffness and pain, especially with activity."
+  },
+  {
+    "id": "K03",
+    "name": "Meniscus Tear",
+    "zone": "knee",
+    "description": "Damage to the cartilage cushioning the knee joint, often from twisting movements."
+  },
+  {
+    "id": "K04",
+    "name": "ACL (Anterior Cruciate Ligament) Sprain/Tear",
+    "zone": "knee",
+    "description": "Injury to a key stabilizing ligament, common in sudden stops or direction changes."
+  },
+  {
+    "id": "K05",
+    "name": "MCL (Medial Collateral Ligament) Sprain",
+    "zone": "knee",
+    "description": "Strain on the inner knee ligament, often from a sideways impact or stress."
+  },
+  {
+    "id": "K06",
+    "name": "Patellar Tendinitis (Jumper's Knee)",
+    "zone": "knee",
+    "description": "Inflammation of the tendon connecting the kneecap to the shinbone, common in jumping-heavy activity."
+  },
+  {
+    "id": "K07",
+    "name": "IT Band Syndrome (Iliotibial Band Syndrome)",
+    "zone": "knee",
+    "description": "Tightness/friction of the band running along the outer thigh to the knee, causing outer knee pain."
+  },
+  {
+    "id": "K08",
+    "name": "Bursitis of the Knee",
+    "zone": "knee",
+    "description": "Inflammation of the fluid-filled sac cushioning the knee joint."
+  },
+  {
+    "id": "K09",
+    "name": "Chondromalacia Patella",
+    "zone": "knee",
+    "description": "Softening/breakdown of cartilage under the kneecap, causing a grinding or aching sensation."
+  },
+  {
+    "id": "K10",
+    "name": "PCL (Posterior Cruciate Ligament) Sprain",
+    "zone": "knee",
+    "description": "Injury to the ligament stabilizing backward knee movement, often from a direct blow to the front of the knee."
+  },
+  {
+    "id": "K11",
+    "name": "Knee Pain from Weak Quadriceps",
+    "zone": "knee",
+    "description": "Reduced muscle support around the joint leading to instability and strain."
+  },
+  {
+    "id": "K12",
+    "name": "Patellar Dislocation/Subluxation",
+    "zone": "knee",
+    "description": "The kneecap partially or fully shifts out of its normal groove."
+  },
+  {
+    "id": "K13",
+    "name": "Gout in the Knee",
+    "zone": "knee",
+    "description": "Sudden, sharp joint pain and swelling from uric acid crystal buildup."
+  },
+  {
+    "id": "K14",
+    "name": "Rheumatoid Arthritis of the Knee",
+    "zone": "knee",
+    "description": "An autoimmune condition causing joint inflammation, stiffness, and swelling."
+  },
+  {
+    "id": "K15",
+    "name": "Referred Knee Pain from Hip Issues",
+    "zone": "knee",
+    "description": "Hip joint problems that present as knee discomfort due to shared nerve pathways."
+  },
+  {
+    "id": "K16",
+    "name": "Knee Pain from Poor Footwear/Overpronation",
+    "zone": "knee",
+    "description": "Improper foot alignment placing uneven stress on the knee joint."
+  },
+  {
+    "id": "K17",
+    "name": "Postural Knee Strain from Prolonged Standing",
+    "zone": "knee",
+    "description": "Common in retail/service roles, where standing for long hours fatigues knee-supporting muscles."
+  },
+  {
+    "id": "K18",
+    "name": "Knee Stiffness from Prolonged Sitting",
+    "zone": "knee",
+    "description": "Reduced knee mobility and stiffness from extended sedentary periods, common with desk jobs."
+  },
+  {
+    "id": "C01",
+    "name": "Calf muscle strain",
+    "zone": "lower leg & foot"
+  },
+  {
+    "id": "C02",
+    "name": "Calf muscle tightness",
+    "zone": "lower leg & foot"
+  },
+  {
+    "id": "C03",
+    "name": "Calf cramps",
+    "zone": "lower leg & foot"
+  },
+  {
+    "id": "C04",
+    "name": "Shin-to-calf muscle pain",
+    "zone": "lower leg & foot"
+  },
+  {
+    "id": "C05",
+    "name": "Ankle sprain",
+    "zone": "lower leg & foot"
+  },
+  {
+    "id": "C06",
+    "name": "Achilles tendinopathy",
+    "zone": "lower leg & foot"
+  },
+  {
+    "id": "C07",
+    "name": "high arch/low arch of foot",
+    "zone": "lower leg & foot"
   }
 ]

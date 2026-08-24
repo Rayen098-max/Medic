@@ -10,7 +10,6 @@ const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
   phone: z.string().min(5, "Phone is required"),
   consultDate: z.string().min(1, "Consult date is required"),
-  productPurchased: z.string().optional(),
 });
 
 export default function CaptureForm() {
@@ -19,8 +18,7 @@ export default function CaptureForm() {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
-    consultDate: new Date().toISOString().split('T')[0],
-    productPurchased: '',
+    consultDate: 'Few Days ago',
     painPointIds: ['L01'], // Default to generic lower back
     consent: false
   });
@@ -51,8 +49,7 @@ export default function CaptureForm() {
       formSchema.parse({
         name: formData.name,
         phone: formData.phone,
-        consultDate: formData.consultDate,
-        productPurchased: formData.productPurchased
+        consultDate: formData.consultDate
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -83,10 +80,8 @@ export default function CaptureForm() {
       painPointId: matchedPointIds.join(','),
       transcription: finalTranscription,
       sleepPosition: 'Unknown',
-      product: primaryPoint ? primaryPoint.products[0] : 'Recommended Product',
       physio_id: profile?.id,
       consultDate: formData.consultDate,
-      productPurchased: formData.productPurchased,
       recommendedExercises: exercises,
       conditionNotes: conditionNotes
     };
@@ -138,24 +133,15 @@ export default function CaptureForm() {
 
           <div>
             <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Consult Date</label>
-            <input 
+            <select
               required
-              type="date" 
               value={formData.consultDate}
               onChange={e => setFormData({...formData, consultDate: e.target.value})}
-              style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }} 
-            />
-          </div>
-
-          <div>
-            <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Product Purchased (Optional)</label>
-            <input 
-              type="text" 
-              value={formData.productPurchased}
-              onChange={e => setFormData({...formData, productPurchased: e.target.value})}
-              placeholder="e.g. Lumbar Support Cushion"
-              style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white' }} 
-            />
+              style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }}
+            >
+              <option value="Few Days ago">Few Days ago</option>
+              <option value="a week ago">a week ago</option>
+            </select>
           </div>
 
           <div>
