@@ -35,7 +35,7 @@ const getMirroredTransform = (pos, rot) => {
 const isBilateralZone = (zoneName) => {
   if (!zoneName) return false;
   const z = zoneName.toLowerCase();
-  return z.includes('shoulder') || z.includes('knee') || z.includes('leg') || z.includes('foot');
+  return z.includes('shoulder') || z.includes('knee') || z.includes('leg') || z.includes('foot') || z.includes('ankle');
 };
 
 function EditBody3D({ coordinates, activeZone, onCoordinateUpdate }) {
