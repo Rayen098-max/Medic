@@ -16,6 +16,28 @@ const getUniqueZones = () => {
   return Array.from(zones);
 };
 
+const getMirroredTransform = (pos, rot) => {
+  const euler = new THREE.Euler(rot[0], rot[1], rot[2]);
+  const normal = new THREE.Vector3(0, 0, 1).applyEuler(euler);
+  const mirroredNormal = new THREE.Vector3(-normal.x, normal.y, normal.z);
+  const mirroredPos = new THREE.Vector3(-pos[0], pos[1], pos[2]);
+  
+  const dummy = new THREE.Object3D();
+  dummy.position.copy(mirroredPos);
+  dummy.lookAt(mirroredPos.clone().add(mirroredNormal));
+  
+  return {
+    position: [mirroredPos.x, mirroredPos.y, mirroredPos.z],
+    rotation: [dummy.rotation.x, dummy.rotation.y, dummy.rotation.z]
+  };
+};
+
+const isBilateralZone = (zoneName) => {
+  if (!zoneName) return false;
+  const z = zoneName.toLowerCase();
+  return z.includes('shoulder') || z.includes('knee') || z.includes('leg') || z.includes('foot');
+};
+
 function EditBody3D({ coordinates, activeZone, onCoordinateUpdate }) {
   const obj = useLoader(OBJLoader, '/model.obj');
   
@@ -90,19 +112,37 @@ function EditBody3D({ coordinates, activeZone, onCoordinateUpdate }) {
             const rot = data.rotation || [0, 0, 0];
             const color = activeZone === zone ? "#00ff00" : "#ff0000";
             
-            // Adjust offset to counteract the mesh scale so it hovers slightly above the surface
+            const isBilateral = isBilateralZone(zone);
+            const mirrored = isBilateral ? getMirroredTransform(pos, rot) : null;
+            
             return (
-              <group position={pos} rotation={rot} key={zone}>
-                <mesh position={[0, 0, 0.05 / scale]}>
-                  <sphereGeometry args={[0.06 / scale, 16, 16]} />
-                  <meshBasicMaterial color={color} transparent opacity={0.6} />
-                </mesh>
-                <mesh position={[0, 0, 0.05 / scale]}>
-                  <sphereGeometry args={[0.03 / scale, 16, 16]} />
-                  <meshBasicMaterial color="#ffffff" />
-                </mesh>
-                <pointLight color={color} intensity={50} distance={3.0 / scale} decay={2} position={[0, 0, 0.1 / scale]} />
-              </group>
+              <React.Fragment key={zone}>
+                <group position={pos} rotation={rot}>
+                  <mesh position={[0, 0, 0.05 / scale]}>
+                    <sphereGeometry args={[0.06 / scale, 16, 16]} />
+                    <meshBasicMaterial color={color} transparent opacity={0.6} />
+                  </mesh>
+                  <mesh position={[0, 0, 0.05 / scale]}>
+                    <sphereGeometry args={[0.03 / scale, 16, 16]} />
+                    <meshBasicMaterial color="#ffffff" />
+                  </mesh>
+                  <pointLight color={color} intensity={50} distance={3.0 / scale} decay={2} position={[0, 0, 0.1 / scale]} />
+                </group>
+
+                {mirrored && (
+                  <group position={mirrored.position} rotation={mirrored.rotation}>
+                    <mesh position={[0, 0, 0.05 / scale]}>
+                      <sphereGeometry args={[0.06 / scale, 16, 16]} />
+                      <meshBasicMaterial color={color} transparent opacity={0.6} />
+                    </mesh>
+                    <mesh position={[0, 0, 0.05 / scale]}>
+                      <sphereGeometry args={[0.03 / scale, 16, 16]} />
+                      <meshBasicMaterial color="#ffffff" />
+                    </mesh>
+                    <pointLight color={color} intensity={50} distance={3.0 / scale} decay={2} position={[0, 0, 0.1 / scale]} />
+                  </group>
+                )}
+              </React.Fragment>
             );
           })}
         </mesh>

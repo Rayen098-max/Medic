@@ -80,10 +80,37 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
     return zones
       .filter(z => activeZones.length === 0 || activeZones.includes(z.id))
       .map(z => ({
-         id: z.id, 
+         id: z.id,
+         zone: z.zone,
          ...getHotspotData(z.zone, z.id, z.position)
       }));
   }, [zones, activeZones]);
+
+  const getMirroredTransform = (pos, rot) => {
+    // Reconstruct the normal vector from rotation
+    const euler = new THREE.Euler(rot[0], rot[1], rot[2]);
+    const normal = new THREE.Vector3(0, 0, 1).applyEuler(euler);
+    
+    // Mirror the normal and the position along the X-axis
+    const mirroredNormal = new THREE.Vector3(-normal.x, normal.y, normal.z);
+    const mirroredPos = new THREE.Vector3(-pos[0], pos[1], pos[2]);
+    
+    // Create a dummy object to look along the mirrored normal
+    const dummy = new THREE.Object3D();
+    dummy.position.copy(mirroredPos);
+    dummy.lookAt(mirroredPos.clone().add(mirroredNormal));
+    
+    return {
+      position: [mirroredPos.x, mirroredPos.y, mirroredPos.z],
+      rotation: [dummy.rotation.x, dummy.rotation.y, dummy.rotation.z]
+    };
+  };
+
+  const isBilateralZone = (zoneName) => {
+    if (!zoneName) return false;
+    const z = zoneName.toLowerCase();
+    return z.includes('shoulder') || z.includes('knee') || z.includes('leg') || z.includes('foot');
+  };
 
   useFrame((state) => {
     if (group.current) {
@@ -112,29 +139,56 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
             scale={scale}
           >
             {/* Soft glowing light for pain points, respecting surface normal */}
-            {activeZonePositions.map((zone, i) => (
-              <group position={zone.position} rotation={zone.rotation} key={zone.id || i}>
-                {/* Invisible interactive hit area */}
-                <mesh 
-                  visible={false}
-                  onClick={(e) => handlePointerInteraction(e, true, zone.id)}
-                  onPointerMove={(e) => handlePointerInteraction(e, false, zone.id)}
-                  onPointerOut={() => setHovered(false)}
-                >
-                  <sphereGeometry args={[0.4 / scale, 8, 8]} />
-                </mesh>
-                {/* Red glow effect mimicking a bright internal/surface node */}
-                <mesh position={[0, 0, 0.05 / scale]}>
-                  <sphereGeometry args={[0.06 / scale, 16, 16]} />
-                  <meshBasicMaterial color="#ff0000" transparent opacity={0.6} />
-                </mesh>
-                <mesh position={[0, 0, 0.05 / scale]}>
-                  <sphereGeometry args={[0.03 / scale, 16, 16]} />
-                  <meshBasicMaterial color="#ffffff" />
-                </mesh>
-                <pointLight color="#ff0000" intensity={50} distance={3.0 / scale} decay={2} position={[0, 0, 0.1 / scale]} />
-              </group>
-            ))}
+            {activeZonePositions.map((zone, i) => {
+              const isBilateral = isBilateralZone(zone.zone);
+              const mirrored = isBilateral ? getMirroredTransform(zone.position, zone.rotation) : null;
+              
+              return (
+                <React.Fragment key={zone.id || i}>
+                  <group position={zone.position} rotation={zone.rotation}>
+                    <mesh 
+                      visible={false}
+                      onClick={(e) => handlePointerInteraction(e, true, zone.id)}
+                      onPointerMove={(e) => handlePointerInteraction(e, false, zone.id)}
+                      onPointerOut={() => setHovered(false)}
+                    >
+                      <sphereGeometry args={[0.4 / scale, 8, 8]} />
+                    </mesh>
+                    <mesh position={[0, 0, 0.05 / scale]}>
+                      <sphereGeometry args={[0.06 / scale, 16, 16]} />
+                      <meshBasicMaterial color="#ff0000" transparent opacity={0.6} />
+                    </mesh>
+                    <mesh position={[0, 0, 0.05 / scale]}>
+                      <sphereGeometry args={[0.03 / scale, 16, 16]} />
+                      <meshBasicMaterial color="#ffffff" />
+                    </mesh>
+                    <pointLight color="#ff0000" intensity={50} distance={3.0 / scale} decay={2} position={[0, 0, 0.1 / scale]} />
+                  </group>
+
+                  {mirrored && (
+                    <group position={mirrored.position} rotation={mirrored.rotation}>
+                      <mesh 
+                        visible={false}
+                        onClick={(e) => handlePointerInteraction(e, true, zone.id)}
+                        onPointerMove={(e) => handlePointerInteraction(e, false, zone.id)}
+                        onPointerOut={() => setHovered(false)}
+                      >
+                        <sphereGeometry args={[0.4 / scale, 8, 8]} />
+                      </mesh>
+                      <mesh position={[0, 0, 0.05 / scale]}>
+                        <sphereGeometry args={[0.06 / scale, 16, 16]} />
+                        <meshBasicMaterial color="#ff0000" transparent opacity={0.6} />
+                      </mesh>
+                      <mesh position={[0, 0, 0.05 / scale]}>
+                        <sphereGeometry args={[0.03 / scale, 16, 16]} />
+                        <meshBasicMaterial color="#ffffff" />
+                      </mesh>
+                      <pointLight color="#ff0000" intensity={50} distance={3.0 / scale} decay={2} position={[0, 0, 0.1 / scale]} />
+                    </group>
+                  )}
+                </React.Fragment>
+              );
+            })}
           </mesh>
         )}
       </Center>
