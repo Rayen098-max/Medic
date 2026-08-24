@@ -61,7 +61,11 @@ export default function CustomerPortal() {
           const catProd = productsCatalog.find(c => c.id === p.id);
           return { ...catProd, reason: p.reason };
         }).filter(p => p.id);
-        fullProducts.sort((a, b) => a.priority - b.priority);
+        const isBackPain = matchedPoints.some(p => {
+           const z = p.zone?.toLowerCase() || '';
+           return z.includes('back') || z.includes('neck') || z.includes('shoulder');
+        });
+
         setZone({
             name: combinedName,
             description: combinedDesc,
@@ -69,7 +73,8 @@ export default function CustomerPortal() {
             donts: matchedPoints[0].donts,
             products: fullProducts,
             activeZones: [matchedPoints[0].id],
-            recommendedExercises: []
+            recommendedExercises: [],
+            isBack: isBackPain
         });
     }
 
@@ -104,6 +109,11 @@ export default function CustomerPortal() {
 
             const activeZoneIds = matchedPoints.map(p => p.id);
 
+            const isBackPain = matchedPoints.some(p => {
+               const z = p.zone?.toLowerCase() || '';
+               return z.includes('back') || z.includes('neck') || z.includes('shoulder');
+            });
+
             setZone({
               name: combinedName,
               description: combinedDesc,
@@ -112,7 +122,8 @@ export default function CustomerPortal() {
               products: fullProducts,
               activeZones: activeZoneIds,
               recommendedExercises: data.recommendedExercises || [],
-              conditionNotes: data.conditionNotes || {}
+              conditionNotes: data.conditionNotes || {},
+              isBack: isBackPain
             });
           } else {
             const matchedZone = contentData.zones.find(z => z.id === data.painArea);
@@ -190,6 +201,8 @@ export default function CustomerPortal() {
         enablePan={false}
         minDistance={3}
         maxDistance={10}
+        minPolarAngle={Math.PI / 2}
+        maxPolarAngle={Math.PI / 2}
         autoRotate={!activePointId}
         autoRotateSpeed={1}
       />
@@ -313,7 +326,7 @@ export default function CustomerPortal() {
           </div>
         </div>
 
-        <Canvas style={{ position: 'absolute', inset: 0, touchAction: 'none' }} dpr={[1, 1.5]} camera={{ position: [0, 0, isMobile ? 14 : 9], fov: 45 }}>
+        <Canvas style={{ position: 'absolute', inset: 0, touchAction: 'none' }} dpr={[1, 1.5]} camera={{ position: [0, 0, zone.isBack ? -(isMobile ? 14 : 9) : (isMobile ? 14 : 9)], fov: 45 }}>
           {renderScene()}
         </Canvas>
         {renderHotspotOverlay()}
