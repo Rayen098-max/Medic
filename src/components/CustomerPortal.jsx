@@ -16,7 +16,7 @@ export default function CustomerPortal() {
   const [activePointId, setActivePointId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showProductsModal, setShowProductsModal] = useState(false);
+  const [showPhasesModal, setShowPhasesModal] = useState(false);
   const [showExercisesModal, setShowExercisesModal] = useState(false);
   const [activeExercise, setActiveExercise] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -137,7 +137,7 @@ export default function CustomerPortal() {
   useEffect(() => {
     const onKey = (e) => { 
       if (e.key === 'Escape') {
-        setShowProductsModal(false); 
+        setShowPhasesModal(false); 
         setShowExercisesModal(false);
         setActiveExercise(null);
       }
@@ -334,52 +334,51 @@ export default function CustomerPortal() {
         </Canvas>
         {renderHotspotOverlay()}
 
-        {/* Floating cart button — pulsing heartbeat glow */}
-        {!activePointId && zone.products.length > 0 && (
+        {/* Floating PHASE button */}
+        {!activePointId && (
           <button
-            className="cart-fab"
-            onClick={() => setShowProductsModal(true)}
-            aria-label="View recommended solutions"
-            title="Recommended Solutions"
+            className="phase-fab"
+            onClick={() => setShowPhasesModal(true)}
+            aria-label="View Recovery Phases"
+            title="Recovery Phases"
           >
-            <ShoppingBag size={28} strokeWidth={2} />
-            <span className="cart-fab-badge">{zone.products.length}</span>
+            <img src="/phase-logo.png" alt="Phases Logo" />
           </button>
         )}
 
-        {/* Recommended solutions popup */}
-        {showProductsModal && (
-          <div className="cart-modal-overlay" onClick={() => setShowProductsModal(false)}>
-            <div className="cart-modal" role="dialog" aria-modal="true" aria-label="Recommended solutions" onClick={(e) => e.stopPropagation()}>
+        {/* Phases popup */}
+        {showPhasesModal && (
+          <div className="cart-modal-overlay" onClick={() => setShowPhasesModal(false)}>
+            <div className="phase-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
               <div className="cart-modal-header">
                 <div>
-                  <h3>Recommended Solutions</h3>
-                  <p>Curated by The Sleep Company for your recovery</p>
+                  <h3 style={{ color: '#00d2ff', fontSize: '1.6rem' }}>Recovery Phases</h3>
+                  <p>Your personalized roadmap to full recovery</p>
                 </div>
-                <button className="cart-modal-close" onClick={() => setShowProductsModal(false)} aria-label="Close recommendations">
-                  <X size={22} />
+                <button className="cart-modal-close" onClick={() => setShowPhasesModal(false)}>
+                  <X size={24} />
                 </button>
               </div>
-              <div className="cart-modal-body">
-                {zone.products.map((p, i) => {
-                  const catProd = productsCatalog.find(c => c.id === p.id);
-                  if (!catProd) return null;
-                  return (
-                    <div className="cart-product-card" key={i}>
-                      <img src={catProd.image} alt={catProd.name} />
-                      <div className="cart-product-info">
-                        <span className="cart-product-category">{catProd.category}</span>
-                        <h4>{catProd.name}</h4>
-                        <p>{p.reason}</p>
-                        <a href={catProd.url} target="_blank" rel="noreferrer" className="cart-product-link">
-                          View on Store
-                        </a>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="phase-modal-body">
+                <div className="phase-card">
+                  <div className="phase-card-header">WEEK 1</div>
+                  <div className="phase-card-content">
+                    <p>Exercises that we will tackle later</p>
+                  </div>
+                </div>
+                <div className="phase-card">
+                  <div className="phase-card-header">WEEK 2</div>
+                  <div className="phase-card-content">
+                    <p>Exercises that we will tackle later</p>
+                  </div>
+                </div>
+                <div className="phase-card highlight-phase">
+                  <div className="phase-card-header" style={{ color: '#e5409e' }}>WEEK 3</div>
+                  <div className="phase-card-content">
+                    <p style={{ fontWeight: 'bold' }}>For further consultations and doubts, visit the physio at the store.</p>
+                  </div>
+                </div>
               </div>
-              <div className="cart-modal-footer">Powered by The Sleep Company</div>
             </div>
           </div>
         )}
@@ -451,29 +450,35 @@ export default function CustomerPortal() {
       </div>
 
       <style>{`
-        /* ---- Cart FAB ---- */
-        .cart-fab {
+        /* ---- Phase FAB ---- */
+        .phase-fab {
           position: absolute;
           bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
           right: calc(env(safe-area-inset-right, 0px) + 18px);
-          width: clamp(54px, 14vw, 66px);
-          height: clamp(54px, 14vw, 66px);
+          width: clamp(64px, 16vw, 76px);
+          height: clamp(64px, 16vw, 76px);
           border-radius: 50%;
           border: none;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #fff;
-          background: linear-gradient(180deg, #ff6b81 0%, #e5409e 35%, #9b5cf6 70%, #00d4ff 100%);
-          box-shadow: 0 0 20px rgba(255, 107, 129, 0.55), 0 0 40px rgba(0, 212, 255, 0.35), 0 6px 18px rgba(0, 0, 0, 0.45);
+          background: #fff;
+          box-shadow: 0 0 25px rgba(0, 212, 255, 0.4);
           z-index: 15;
           animation: cartHeartbeat 1.6s ease-in-out infinite;
           transition: transform 0.2s ease;
+          padding: 2px;
         }
-        .cart-fab:hover { transform: scale(1.08); }
-        .cart-fab:active { transform: scale(0.95); }
-        .cart-fab::after {
+        .phase-fab img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          border-radius: 50%;
+        }
+        .phase-fab:hover { transform: scale(1.08); }
+        .phase-fab:active { transform: scale(0.95); }
+        .phase-fab::after {
           content: "";
           position: absolute;
           inset: -6px;
@@ -604,6 +609,70 @@ export default function CustomerPortal() {
           flex-shrink: 0;
         }
         .cart-modal-close:hover { background: rgba(239, 68, 68, 0.2); border-color: #ef4444; color: #ef4444; }
+        
+        .phase-modal {
+          width: min(900px, calc(100vw - 32px));
+          max-height: min(85vh, 700px);
+          background: linear-gradient(180deg, rgba(13, 18, 30, 0.98), rgba(9, 13, 24, 0.98));
+          border: 1px solid rgba(0, 212, 255, 0.4);
+          border-radius: 20px;
+          box-shadow: 0 0 40px rgba(0, 212, 255, 0.25), 0 24px 60px rgba(0, 0, 0, 0.6);
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+          animation: cartModalIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .phase-modal-body {
+          padding: 24px;
+          overflow-y: auto;
+          display: flex;
+          gap: 20px;
+          justify-content: space-between;
+        }
+        .phase-card {
+          flex: 1;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .phase-card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 10px 30px rgba(0, 212, 255, 0.15);
+          border-color: rgba(0, 212, 255, 0.3);
+        }
+        .highlight-phase {
+          background: rgba(229, 64, 158, 0.05);
+          border-color: rgba(229, 64, 158, 0.3);
+        }
+        .highlight-phase:hover {
+          box-shadow: 0 10px 30px rgba(229, 64, 158, 0.15);
+          border-color: rgba(229, 64, 158, 0.5);
+        }
+        .phase-card-header {
+          font-size: 1.4rem;
+          font-weight: 900;
+          color: #00d2ff;
+          margin-bottom: 16px;
+          letter-spacing: 2px;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          padding-bottom: 12px;
+          text-align: center;
+        }
+        .phase-card-content {
+          color: #e2e8f0;
+          font-size: 1.1rem;
+          line-height: 1.6;
+          text-align: center;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex: 1;
+        }
+        
         .cart-modal-body {
           padding: 16px 20px;
           overflow-y: auto;
@@ -675,15 +744,27 @@ export default function CustomerPortal() {
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        /* ---- Mobile: bottom-sheet popup, safe-area aware ---- */
+        @media (max-width: 768px) {
+          .phase-modal-body {
+            flex-direction: column;
+          }
+          .phase-card {
+            padding: 16px;
+          }
+          .phase-card-header {
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+          }
+        }
         @media (max-width: 640px) {
-          .cart-modal {
+          .cart-modal, .phase-modal {
             width: calc(100vw - 24px);
-            max-height: 80vh;
+            max-height: 85vh;
             border-radius: 20px 20px 14px 14px;
             animation: cartSheetIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
           }
-          .cart-fab {
+          .phase-fab {
             bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
             right: calc(env(safe-area-inset-right, 0px) + 14px);
           }
