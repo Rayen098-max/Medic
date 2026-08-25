@@ -49,7 +49,10 @@ export default function AdminPanel() {
 
   const generateWhatsAppLink = (customer) => {
     if (!customer.phone) return '#';
-    const phone = customer.phone.replace(/\D/g, '');
+    let phone = customer.phone.replace(/\D/g, '');
+    if (phone.length === 10) {
+      phone = '91' + phone;
+    }
     const cacheBuster = new Date().getTime();
     const link = `${window.location.origin}/r/${customer.id}?v=${cacheBuster}`;
     
