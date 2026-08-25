@@ -48,10 +48,10 @@ export default function CustomerPortal() {
         setPatient({ name: 'Test', physioName: 'Smith' });
         const matchedPoints = [painPointsData[0]];
         const combinedName = matchedPoints[0].name;
-        const combinedDesc = matchedPoints[0].description;
+        const combinedDesc = matchedPoints[0].description || '';
         const uniqueProductsMap = new Map();
         matchedPoints.forEach(p => {
-          p.products.forEach(prod => {
+          (p.products || []).forEach(prod => {
             if (!uniqueProductsMap.has(prod.id)) {
               uniqueProductsMap.set(prod.id, prod);
             }
@@ -69,8 +69,8 @@ export default function CustomerPortal() {
         setZone({
             name: combinedName,
             description: combinedDesc,
-            dos: matchedPoints[0].dos,
-            donts: matchedPoints[0].donts,
+            dos: matchedPoints[0].dos || [],
+            donts: matchedPoints[0].donts || [],
             products: fullProducts,
             activeZones: [matchedPoints[0].id],
             recommendedExercises: [],
@@ -87,13 +87,13 @@ export default function CustomerPortal() {
           if (matchedPoints.length > 0) {
             const primaryName = matchedPoints[0].name;
             const combinedName = matchedPoints.length > 1 ? `${primaryName} + ${matchedPoints.length - 1} other${matchedPoints.length > 2 ? 's' : ''}` : primaryName;
-            const combinedDesc = matchedPoints.map(p => p.description).join('\n\n');
-            const combinedDos = [...new Set(matchedPoints.flatMap(p => p.dos))];
-            const combinedDonts = [...new Set(matchedPoints.flatMap(p => p.donts))];
+            const combinedDesc = matchedPoints.map(p => p.description || '').filter(Boolean).join('\n\n');
+            const combinedDos = [...new Set(matchedPoints.flatMap(p => p.dos || []))];
+            const combinedDonts = [...new Set(matchedPoints.flatMap(p => p.donts || []))];
             
             const uniqueProductsMap = new Map();
             matchedPoints.forEach(p => {
-              p.products.forEach(prod => {
+              (p.products || []).forEach(prod => {
                 if (!uniqueProductsMap.has(prod.id)) {
                   uniqueProductsMap.set(prod.id, prod);
                 }
@@ -241,7 +241,10 @@ export default function CustomerPortal() {
           <div>
             <div style={{ fontSize: '0.95rem', color: '#ef4444', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}><XCircle size={16}/> AVOID</div>
             <ul style={{ margin: '8px 0 0 0', paddingLeft: '24px', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5 }}>
-              {activePointData.donts.map((item, i) => <li key={i} style={{marginBottom: '4px'}}>{item}</li>)}
+              {(activePointData.donts || []).map((item, i) => <li key={i} style={{marginBottom: '4px'}}>{item}</li>)}
+              {(!activePointData.donts || activePointData.donts.length === 0) && (
+                <li style={{marginBottom: '4px', fontStyle: 'italic', color: '#94a3b8'}}>No specific avoidances listed.</li>
+              )}
             </ul>
           </div>
         )}
