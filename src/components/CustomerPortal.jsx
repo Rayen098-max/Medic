@@ -34,17 +34,17 @@ export default function CustomerPortal() {
         if (data) {
           processData(data);
         } else {
-           useDummyData();
+           loadDummyData();
         }
       } catch (err) {
         console.warn("DB Error, falling back to dummy data", err);
-        useDummyData();
+        loadDummyData();
       } finally {
         setLoading(false);
       }
     }
     
-    function useDummyData() {
+    function loadDummyData() {
         setPatient({ name: 'Test', physioName: 'Smith' });
         const matchedPoints = [painPointsData[0]];
         const combinedName = matchedPoints[0].name;

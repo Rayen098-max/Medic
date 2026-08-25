@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getPatients, deletePatient, supabase } from '../utils/db';
-import { Search, Download, Trash2, LogOut, ShieldAlert, Eye, MessageCircle, Check, Clock } from 'lucide-react';
+import { getPatients, deletePatient, supabase, updatePatientStatus } from '../utils/db';
+import { Search, Download, Trash2, LogOut, ShieldAlert, Eye, MessageCircle, Check, Clock, X, FastForward } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Papa from 'papaparse';
 
 export default function AdminPanel() {
   const [patients, setPatients] = useState([]);
   const [physios, setPhysios] = useState([]);
-  const [sentStatus, setSentStatus] = useState({});
+  const [queueList, setQueueList] = useState([]);
+  const [queueIndex, setQueueIndex] = useState(0);
+  const [isQueueOpen, setIsQueueOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [physioFilter, setPhysioFilter] = useState('');
@@ -70,8 +72,53 @@ export default function AdminPanel() {
     return `https://wa.me/${phone}?text=${message}`;
   };
 
-  const handleMarkSent = (id) => {
-    setSentStatus(prev => ({ ...prev, [id]: true }));
+  const handleMarkSent = async (id) => {
+    try {
+      const now = new Date().toISOString();
+      setPatients(prev => prev.map(p => p.id === id ? { ...p, followup_sent_at: now } : p));
+      await updatePatientStatus(id, { followup_sent_at: now });
+    } catch (error) {
+      console.error("Failed to mark as sent:", error);
+      alert("Failed to update status in database.");
+    }
+  };
+
+  const startBulkSend = () => {
+    const duePatients = filteredPatients.filter(p => {
+      const status = getFollowUpStatus(p.consultDate);
+      return status.status === 'due' && !p.followup_sent_at;
+    });
+    
+    if (duePatients.length === 0) {
+      alert("No patients are 'Due Today' and unsent in the current view.");
+      return;
+    }
+    
+    setQueueList(duePatients);
+    setQueueIndex(0);
+    setIsQueueOpen(true);
+  };
+
+  const handleQueueSend = async () => {
+    const patient = queueList[queueIndex];
+    window.open(generateWhatsAppLink(patient), '_blank');
+    await handleMarkSent(patient.id);
+    
+    if (queueIndex < queueList.length - 1) {
+      setQueueIndex(prev => prev + 1);
+    } else {
+      setIsQueueOpen(false);
+      setQueueList([]);
+    }
+  };
+
+  const handleQueueSkip = () => {
+    if (queueIndex < queueList.length - 1) {
+      setQueueIndex(prev => prev + 1);
+    } else {
+      setIsQueueOpen(false);
+      setQueueList([]);
+    }
   };
 
   const handleDelete = async (id) => {
@@ -239,9 +286,14 @@ export default function AdminPanel() {
             </select>
           )}
 
-          <button onClick={handleExport} className="clinical-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Download size={16} /> Export CSV
-          </button>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button onClick={startBulkSend} className="clinical-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', borderColor: '#22c55e' }}>
+              <FastForward size={16} /> Send All Due Today
+            </button>
+            <button onClick={handleExport} className="clinical-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Download size={16} /> Export CSV
+            </button>
+          </div>
         </div>
 
         {/* Data Table */}
@@ -263,7 +315,7 @@ export default function AdminPanel() {
             <tbody>
               {filteredPatients.map(patient => {
                 const status = getFollowUpStatus(patient.consultDate);
-                const isSent = sentStatus[patient.id];
+                const isSent = !!patient.followup_sent_at;
                 
                 return (
                 <tr key={patient.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
@@ -275,8 +327,8 @@ export default function AdminPanel() {
                   <td style={{ padding: '16px', textTransform: 'capitalize' }}>{patient.painArea?.replace('_', ' ')}</td>
                   <td style={{ padding: '16px' }}>
                     <span style={{ 
-                      color: status.color, 
-                      background: `${status.color}20`, 
+                      color: isSent ? '#22c55e' : status.color, 
+                      background: isSent ? 'rgba(34, 197, 94, 0.1)' : `${status.color}20`, 
                       padding: '4px 12px', 
                       borderRadius: '12px', 
                       fontSize: '0.875rem',
@@ -372,6 +424,41 @@ export default function AdminPanel() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* Bulk Send Queue Modal */}
+        {isQueueOpen && queueList.length > 0 && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(3, 8, 20, 0.75)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(5px)' }}>
+            <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '30px', position: 'relative', border: '1px solid rgba(0, 212, 255, 0.35)', boxShadow: '0 0 40px rgba(0, 212, 255, 0.15)' }}>
+              <button 
+                onClick={() => setIsQueueOpen(false)} 
+                style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-color)', color: 'white', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              >
+                <X size={18} />
+              </button>
+              
+              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                <h2 style={{ color: '#00d2ff', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '1px' }}>Sending Bulk Follow-ups</h2>
+                <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.9rem' }}>Patient {queueIndex + 1} of {queueList.length}</p>
+              </div>
+              
+              <div style={{ background: 'rgba(13, 17, 23, 0.8)', padding: '24px', borderRadius: '12px', marginBottom: '24px', border: '1px solid var(--border-color)' }}>
+                <h3 style={{ margin: '0 0 12px 0', fontSize: '1.2rem', color: 'white' }}>To: {queueList[queueIndex].name}</h3>
+                <div style={{ color: '#e2e8f0', fontSize: '0.95rem', whiteSpace: 'pre-wrap', fontFamily: 'monospace', background: 'rgba(0,0,0,0.4)', padding: '16px', borderRadius: '8px', lineHeight: 1.5, maxHeight: '250px', overflowY: 'auto' }}>
+                  {decodeURIComponent(generateWhatsAppLink(queueList[queueIndex]).split('?text=')[1])}
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <button onClick={handleQueueSkip} className="clinical-btn" style={{ flex: 1, background: 'rgba(255,255,255,0.05)', color: 'white' }}>
+                  Skip
+                </button>
+                <button onClick={handleQueueSend} className="clinical-btn" style={{ flex: 2, background: 'linear-gradient(180deg, #2ecc71, #27ae60)', color: 'white', borderColor: '#27ae60', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <MessageCircle size={18} /> Send WhatsApp
+                </button>
+              </div>
             </div>
           </div>
         )}
