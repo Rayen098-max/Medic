@@ -20,15 +20,14 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 const accountsToCreate = [
   { email: 'admin@medic.local', role: 'admin', fullName: 'System Admin' },
   { email: 'manager@medic.local', role: 'manager', fullName: 'Clinic Manager' },
-  // 8 Physios
-  { email: 'physio1@medic.local', role: 'physio', fullName: 'Physio One' },
-  { email: 'physio2@medic.local', role: 'physio', fullName: 'Physio Two' },
-  { email: 'physio3@medic.local', role: 'physio', fullName: 'Physio Three' },
-  { email: 'physio4@medic.local', role: 'physio', fullName: 'Physio Four' },
-  { email: 'physio5@medic.local', role: 'physio', fullName: 'Physio Five' },
-  { email: 'physio6@medic.local', role: 'physio', fullName: 'Physio Six' },
-  { email: 'physio7@medic.local', role: 'physio', fullName: 'Physio Seven' },
-  { email: 'physio8@medic.local', role: 'physio', fullName: 'Physio Eight' },
+  // 7 Physios
+  { email: 'physio1@medic.local', role: 'physio', fullName: 'Dr Gursheen Kaur Gill' },
+  { email: 'physio2@medic.local', role: 'physio', fullName: 'Dr Dipti Mestry' },
+  { email: 'physio3@medic.local', role: 'physio', fullName: 'Dr Pooja' },
+  { email: 'physio4@medic.local', role: 'physio', fullName: 'Dr Aishawarya Panchal' },
+  { email: 'physio5@medic.local', role: 'physio', fullName: 'Dr Rutuja Tulaskar' },
+  { email: 'physio6@medic.local', role: 'physio', fullName: 'Dr Hritika' },
+  { email: 'physio7@medic.local', role: 'physio', fullName: 'Dr Kritika Gawand' },
 ];
 
 const generatePassword = () => {
