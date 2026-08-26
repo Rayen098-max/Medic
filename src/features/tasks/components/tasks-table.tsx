@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MessageCircle } from 'lucide-react'
+import CaptureForm from '@/components/CaptureForm'
 import {
   Select,
   SelectContent,
@@ -122,57 +123,16 @@ export function TasksTable({ data }: TasksTableProps) {
                             <CardHeader>
                               <CardTitle className="text-lg">New Consult Form</CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <Label>Customer Name</Label>
-                                  <Input value={row["Customer Name"]} readOnly className="bg-muted" />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label>Customer Number</Label>
-                                  <Input value={row["Customer Number"]} readOnly className="bg-muted" />
-                                </div>
-                              </div>
-                              
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <Label>Physio Pitched</Label>
-                                  <Select defaultValue="no">
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select Yes/No" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="yes">Yes</SelectItem>
-                                      <SelectItem value="no">No</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label>Primary Category</Label>
-                                  <Select>
-                                    <SelectTrigger>
-                                      <SelectValue placeholder="Select Category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="ortho">Ortho</SelectItem>
-                                      <SelectItem value="neuro">Neuro</SelectItem>
-                                      <SelectItem value="sports">Sports</SelectItem>
-                                      <SelectItem value="other">Other</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label>Comments / Advice</Label>
-                                <Input placeholder="Enter any additional advice or comments..." />
-                              </div>
-
-                              <div className="flex justify-end pt-4">
-                                <Button onClick={() => handleDone(idx)} className="bg-primary px-8">
-                                  Done
-                                </Button>
-                              </div>
+                            <CardContent className="p-0 sm:p-6">
+                              <CaptureForm 
+                                isEmbedded={true}
+                                initialData={{
+                                  name: row["Customer Name"],
+                                  phone: row["Customer Number"] ? String(row["Customer Number"]) : "",
+                                  consultDate: row["Date"]
+                                }}
+                                onSuccess={() => handleDone(idx)}
+                              />
                             </CardContent>
                           </Card>
                         </div>
