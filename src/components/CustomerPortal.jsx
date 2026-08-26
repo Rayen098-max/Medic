@@ -6,6 +6,7 @@ import BodyModel from './BodyModel';
 import contentData from '../data/content.json';
 import painPointsData from '../data/painPoints.json';
 import productsCatalog from '../data/products.json';
+import predefinedMessagesData from '../data/predefinedMessages.json';
 import { getPatientById } from '../utils/db';
 import { CheckCircle2, XCircle, ShoppingBag, X } from 'lucide-react';
 
@@ -227,15 +228,27 @@ export default function CustomerPortal() {
           <button onClick={() => setActivePointId(null)} style={{ background: 'transparent', border: 'none', color: '#00d2ff', padding: 0, cursor: 'pointer' }}><X size={20}/></button>
         </div>
         
-        {customNote ? (
-          <div>
-            <div style={{ fontSize: '0.95rem', color: '#22c55e', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <CheckCircle2 size={16}/> 
-              {patient?.physioName ? `${patient.physioName.toLowerCase().startsWith('dr') ? '' : 'DR. '}${patient.physioName.toUpperCase()}'S NOTES` : 'PHYSIO NOTES'}
-            </div>
-            <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
-              {customNote}
-            </p>
+        {customNote || (predefinedMessagesData && predefinedMessagesData[activePointData.id]) ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {customNote && (
+              <div>
+                <div style={{ fontSize: '0.95rem', color: '#22c55e', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CheckCircle2 size={16}/> 
+                  {patient?.physioName ? `${patient.physioName.toLowerCase().startsWith('dr') ? '' : 'DR. '}${patient.physioName.toUpperCase()}'S NOTES` : 'PHYSIO NOTES'}
+                </div>
+                <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                  {customNote}
+                </p>
+              </div>
+            )}
+            {predefinedMessagesData && predefinedMessagesData[activePointData.id] && (
+              <div style={{ borderTop: customNote ? '1px solid rgba(0, 210, 255, 0.2)' : 'none', paddingTop: customNote ? '12px' : '0' }}>
+                <div style={{ fontSize: '0.95rem', color: '#00d2ff', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  CONDITION INFO
+                </div>
+                <div style={{ margin: '8px 0 0 0', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5, whiteSpace: 'pre-wrap' }} dangerouslySetInnerHTML={{ __html: predefinedMessagesData[activePointData.id].message.replace(/\n/g, '<br/>') }} />
+              </div>
+            )}
           </div>
         ) : (
           <div>
