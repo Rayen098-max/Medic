@@ -114,9 +114,8 @@ export function Dashboard() {
 
   // --- KPI Cards Calculations ---
   
-  // Pitched count
-  const pitchedRows = filteredData.filter(row => row["Physio Pitched"]?.toLowerCase() === 'yes' || row["Physio Pitched"]?.toLowerCase() === 'true');
-  const totalSessionsPitched = pitchedRows.length;
+  // Pitched count (reverting to total rows as per original logic since column is missing/empty)
+  const totalSessionsPitched = filteredData.length;
   
   // Done count
   const doneRows = filteredData.filter(row => row["Physio session Done"]?.toLowerCase() === 'yes' || row["Physio session Done"]?.toLowerCase() === 'true');
@@ -133,7 +132,7 @@ export function Dashboard() {
   };
   
   const uniquePhones = new Set<string>();
-  pitchedRows.forEach(row => {
+  filteredData.forEach(row => {
     const p = normalizePhone(row["Customer Number"]);
     if (p) uniquePhones.add(p);
   });
@@ -151,11 +150,12 @@ export function Dashboard() {
       }
       const stats = grouped.get(physio)!;
       
-      const isPitched = row["Physio Pitched"]?.toLowerCase() === 'yes';
+      // In the absence of Physio Pitched, each row counts as a pitch
+      stats.pitched++;
+      
       const isDone = row["Physio session Done"]?.toLowerCase() === 'yes';
       const isWhatsapp = row["Whatsapp followup done"]?.toLowerCase() === 'yes';
 
-      if (isPitched) stats.pitched++;
       if (isDone) stats.done++;
       if (isWhatsapp) stats.whatsapp++;
     });
@@ -172,74 +172,6 @@ export function Dashboard() {
       };
     }).sort((a, b) => b.conversionRate - a.conversionRate); // Highest conversion first
   }, [filteredData]);
-
-
-  // --- SECTION 2: Why Sessions Don't Happen ---
-  const declineReasonsData = useMemo(() => {
-    const reasonsMap = new Map<string, number>();
-    filteredData.forEach(row => {
-      if (row["Physio session Done"]?.toLowerCase() === 'no') {
-        const reason = (row["Reason (If Not done)"] || "Not specified").trim();
-        if (reason) {
-          reasonsMap.set(reason, (reasonsMap.get(reason) || 0) + 1);
-        }
-      }
-    });
-    return Array.from(reasonsMap.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
-  }, [filteredData]);
-
-
-  // --- SECTION 4: Sessions Pitched Over Time ---
-  const getWeekStart = (dateStr: string) => {
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    d.setDate(d.getDate() - d.getDay()); // Sunday
-    return d.toISOString().split('T')[0];
-  }
-
-  const timeSeriesData = useMemo(() => {
-    const map = new Map<string, number>();
-    pitchedRows.forEach(row => {
-      const rawDate = row.Date?.trim();
-      if (!rawDate) return;
-      const key = timeAgg === 'weekly' ? getWeekStart(rawDate) : rawDate;
-      map.set(key, (map.get(key) || 0) + 1);
-    });
-    
-    return Array.from(map.entries())
-      .map(([date, count]) => ({ date, count }))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [pitchedRows, timeAgg]);
-
-
-  // --- SECTION 1 & 5: Products/Concerns & Most Suggested Products ---
-  const getFrequencyMap = (column: keyof TrackerRow) => {
-    const map = new Map<string, number>();
-    filteredData.forEach(row => {
-      const val = row[column];
-      if (val && typeof val === 'string' && val.trim() !== '') {
-        const items = val.split(',').map(s => s.trim()).filter(Boolean);
-        items.forEach(item => {
-          map.set(item, (map.get(item) || 0) + 1);
-        });
-      }
-    });
-    return Array.from(map.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count);
-  };
-
-  const primaryCategoryData = getFrequencyMap("Primary Category");
-  const oldPainpointsData = getFrequencyMap("Customer Concern/Painpoint");
-  const productsSuggestedData = getFrequencyMap("Product suggested");
-
-
-  // --- SECTION 6: Data Completeness Indicator ---
-  const totalRows = filteredData.length;
-  const painpointFilledCount = filteredData.filter(row => row["Customer Concern/Painpoint"]?.trim()).length;
-  const completenessPercent = totalRows > 0 ? ((painpointFilledCount / totalRows) * 100).toFixed(1) : '0';
 
 
   return (
@@ -375,137 +307,6 @@ export function Dashboard() {
                 </CardContent>
               </Card>
 
-              {/* SECTION 2: Why Sessions Don't Happen */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Why Sessions Don't Happen</CardTitle>
-                  <CardDescription>Decline reasons for sessions pitched but not completed</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {declineReasonsData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart layout="vertical" data={declineReasonsData} margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                        <XAxis type="number" hide />
-                        <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12 }} />
-                        <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                        <Bar dataKey="count" fill="#F87171" radius={[0, 4, 4, 0]}>
-                          <LabelList dataKey="count" position="right" fontSize={12} fill="var(--foreground)" />
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <p className="text-muted-foreground text-sm text-center py-8">No decline data available for the current filters.</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* SECTION 4: Sessions Pitched Over Time */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle>Sessions Pitched Over Time</CardTitle>
-                    <CardDescription>Volume of pitches</CardDescription>
-                  </div>
-                  <Select value={timeAgg} onValueChange={setTimeAgg}>
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </CardHeader>
-                <CardContent>
-                  {timeSeriesData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height={300}>
-                      <LineChart data={timeSeriesData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                        <YAxis tick={{ fontSize: 12 }} />
-                        <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', borderColor: 'hsl(var(--border))' }} />
-                        <Line type="monotone" dataKey="count" stroke="#00d2ff" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <p className="text-muted-foreground text-sm text-center py-8">No time series data available.</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* SECTION 1 & 5: Products/Concerns & Most Suggested Products side by side */}
-              <div className='grid gap-4 md:grid-cols-2'>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Products/Concerns Discussed</CardTitle>
-                    <CardDescription>From 'Primary Category'</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {primaryCategoryData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart layout="vertical" data={primaryCategoryData} margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                          <XAxis type="number" hide />
-                          <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12 }} />
-                          <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                          <Bar dataKey="count" fill="#8b5cf6" radius={[0, 4, 4, 0]}>
-                            <LabelList dataKey="count" position="right" fontSize={12} fill="var(--foreground)" />
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <p className="text-muted-foreground text-sm text-center py-8">No primary category data available.</p>
-                    )}
-                    
-                    {/* Secondary sparse data */}
-                    {oldPainpointsData.length > 0 && (
-                      <div className="mt-8 border-t pt-4">
-                        <h4 className="text-xs font-semibold text-muted-foreground uppercase mb-2">Legacy Painpoints (Sparse)</h4>
-                        <ResponsiveContainer width="100%" height={150}>
-                          <BarChart layout="vertical" data={oldPainpointsData} margin={{ top: 0, right: 30, left: 100, bottom: 0 }}>
-                            <XAxis type="number" hide />
-                            <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 10 }} />
-                            <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                            <Bar dataKey="count" fill="#94a3b8" radius={[0, 4, 4, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Most Suggested Products</CardTitle>
-                    <CardDescription>What physios are actively recommending</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {productsSuggestedData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height={300}>
-                        <BarChart layout="vertical" data={productsSuggestedData} margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                          <XAxis type="number" hide />
-                          <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12 }} />
-                          <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                          <Bar dataKey="count" fill="#10b981" radius={[0, 4, 4, 0]}>
-                            <LabelList dataKey="count" position="right" fontSize={12} fill="var(--foreground)" />
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <p className="text-muted-foreground text-sm text-center py-8">No suggested product data available.</p>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-              
-              {/* SECTION 6: Data Completeness Indicator */}
-              <div className="flex justify-center mt-8">
-                <span className="inline-flex items-center rounded-full bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground ring-1 ring-inset ring-muted-foreground/20">
-                  Data Quality: Legacy 'Pain point' logged for {completenessPercent}% of entries.
-                </span>
-              </div>
             </TabsContent>
           </Tabs>
         )}
