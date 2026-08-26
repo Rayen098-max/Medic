@@ -16,69 +16,75 @@ interface TrackerRow {
   "Physio session Done": string;
 }
 
+const KNOWN_PHYSIOS = ['Aishwarya', 'Gursheen', 'Dipti', 'Rutuja', 'Pooja', 'Hritika', 'Kritika', 'Gaurav'];
+
 export function Tasks() {
   const [data, setData] = useState<TrackerRow[]>([])
   const [loading, setLoading] = useState(true)
   const { profile } = useAuth()
 
   useEffect(() => {
-    // Fetch live data from Google Sheets via Opensheet API
-    fetch('https://opensheet.elk.sh/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/Master%20Data')
+    let tabName = 'Master Data';
+    if (profile?.role === 'physio' && profile?.full_name) {
+      const clean = profile.full_name.toLowerCase();
+      const matched = KNOWN_PHYSIOS.find(p => clean.includes(p.toLowerCase()) || clean.includes(p.substring(0, 4).toLowerCase()));
+      if (matched) {
+        tabName = `Daily Tracker - ${matched}`;
+      }
+    }
+
+    setLoading(true);
+    fetch(`https://opensheet.elk.sh/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/${encodeURIComponent(tabName)}`)
       .then(res => res.json())
       .then((json: TrackerRow[]) => {
-        setData(json)
-        setLoading(false)
+        // Forward-fill the Date field because Google Sheet date headers only appear once per group
+        let lastDate = '';
+        const filledData: TrackerRow[] = [];
+
+        for (const row of json) {
+          const rawDate = row.Date?.trim();
+          if (rawDate && rawDate !== '' && !['Start', 'Mid', 'End', 'cc', 'no cc'].includes(rawDate)) {
+            lastDate = rawDate;
+          }
+          // Only include rows that actually represent a customer entry
+          const hasCustomer = (row['Customer Name'] && row['Customer Name'].trim() !== '') || 
+                              (row['Customer Number'] && row['Customer Number'].trim() !== '');
+          if (hasCustomer) {
+            filledData.push({
+              ...row,
+              Date: lastDate
+            });
+          }
+        }
+
+        setData(filledData);
+        setLoading(false);
       })
       .catch(err => {
         console.error("Error fetching data:", err)
         setLoading(false)
       })
-  }, [])
+  }, [profile])
 
   const filteredTasks = useMemo(() => {
     if (data.length === 0) return [];
+
+    // Extract unique dates in reverse chronological order
+    const uniqueDates = Array.from(new Set(data.map(row => row.Date?.trim()).filter(Boolean)));
     
-    // First, filter by the logged in user if they are a physio
-    let userFilteredData = data;
-    if (profile?.role === 'physio' && profile?.full_name) {
-      let profileName = profile.full_name.trim().toLowerCase();
-      if (profileName.startsWith('dr ')) profileName = profileName.substring(3);
-      if (profileName.startsWith('dr. ')) profileName = profileName.substring(4);
-      const profileWords = profileName.split(/\s+/);
-
-      userFilteredData = data.filter(row => {
-        const sheetName = row['Physio Name']?.trim().toLowerCase();
-        if (!sheetName) return false;
-        
-        // Direct inclusion check
-        if (profileName.includes(sheetName) || sheetName.includes(profileName)) return true;
-        
-        // Loose prefix match (handles typos like Aishwarya vs Aishawarya)
-        const sheetPrefix = sheetName.substring(0, 4);
-        return profileWords.some(word => word.length >= 4 && word.startsWith(sheetPrefix));
-      });
-    }
-
-    if (userFilteredData.length === 0) return [];
-
-    // Extract unique dates and parse them to sort descending
-    // Dates are formatted like "26/8", "25/8", "8/24/2026", etc.
-    const uniqueDates = Array.from(new Set(userFilteredData.map(row => row.Date?.trim()).filter(Boolean)));
-    
-    // Robust date sorting to handle various formats from the sheet
+    // Robust date sorting to handle various formats from the sheet (e.g. 24/8, 23/8, 8/24/2026)
     uniqueDates.sort((a, b) => {
       const parseDate = (dStr: string) => {
         if (!dStr) return 0;
         let d = new Date(dStr);
         if (!isNaN(d.getTime())) return d.getTime();
         
-        // Fallback for DD/MM or DD/MM/YYYY formats that native Date fails to parse
         const parts = dStr.split(/[\/\\]/);
         if (parts.length >= 2) {
            const val1 = parseInt(parts[0], 10);
            const val2 = parseInt(parts[1], 10);
            // assume val1 is day, val2 is month
-           d = new Date(new Date().getFullYear(), val2 - 1, val1);
+           d = new Date(2026, val2 - 1, val1);
            if (!isNaN(d.getTime())) return d.getTime();
         }
         return 0;
@@ -91,8 +97,8 @@ export function Tasks() {
 
     if (targetDates.length === 0) return [];
 
-    return userFilteredData.filter(row => targetDates.includes(row.Date?.trim()));
-  }, [data, profile]);
+    return data.filter(row => targetDates.includes(row.Date?.trim()));
+  }, [data]);
 
   return (
     <>
