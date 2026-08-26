@@ -193,13 +193,24 @@ export default function CaptureForm() {
                 return (
                   <div key={id} style={{ padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '12px' }}>
                     <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: 'var(--accent)', fontWeight: 'bold' }}>Notes for: {point.name}</label>
-                    <textarea 
-                      value={conditionNotes[id] || ''} 
-                      onChange={(e) => setConditionNotes({...conditionNotes, [id]: e.target.value})}
-                      rows={3}
-                      placeholder="e.g., Avoid heavy lifting. Keep spine neutral."
-                      style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', resize: 'vertical' }}
-                    />
+                    
+                    <div style={{ marginBottom: '12px' }}>
+                      <span style={{ fontSize: '0.8rem', color: '#ccc', display: 'block', marginBottom: '4px' }}>Paragraph 1: Personalized Message & Greetings (Editable)</span>
+                      <textarea 
+                        value={conditionNotes[id] || ''} 
+                        onChange={(e) => setConditionNotes({...conditionNotes, [id]: e.target.value})}
+                        rows={3}
+                        placeholder="e.g., Hi John, it was great seeing you today! Let's get that back pain sorted."
+                        style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', resize: 'vertical' }}
+                      />
+                    </div>
+                    
+                    <div>
+                      <span style={{ fontSize: '0.8rem', color: '#ccc', display: 'block', marginBottom: '4px' }}>Paragraph 2: Predefined Condition Info (Auto-appended)</span>
+                      <div style={{ width: '100%', padding: '12px', borderRadius: '4px', background: 'rgba(0,0,0,0.5)', border: '1px dashed var(--border-color)', color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                        The system will automatically append predefined information for this condition here, including up to 5 common issues and a reference to check the exercises section.
+                      </div>
+                    </div>
                   </div>
                 );
               })}
