@@ -86,6 +86,37 @@ export default function Login() {
           >
             {loading ? <Loader2 className="animate-spin" size={20} /> : 'Sign In'}
           </button>
+          
+          {/* Quick Login Helpers */}
+          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>Test Accounts</p>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button 
+                type="button" 
+                onClick={() => { setEmail('admin@medic.com'); setPassword('password'); }} 
+                className="clinical-btn" 
+                style={{ fontSize: '0.8rem', padding: '6px 12px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', borderColor: 'var(--border-color)' }}
+              >
+                Admin
+              </button>
+              <button 
+                type="button" 
+                onClick={() => { setEmail('manager@medic.com'); setPassword('password'); }} 
+                className="clinical-btn" 
+                style={{ fontSize: '0.8rem', padding: '6px 12px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', borderColor: 'var(--border-color)' }}
+              >
+                Manager
+              </button>
+              <button 
+                type="button" 
+                onClick={() => { setEmail('physio@medic.com'); setPassword('password'); }} 
+                className="clinical-btn" 
+                style={{ fontSize: '0.8rem', padding: '6px 12px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', borderColor: 'var(--border-color)' }}
+              >
+                Physio
+              </button>
+            </div>
+          </div>
         </form>
       </div>
     </div>

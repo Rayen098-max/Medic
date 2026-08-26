@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { AuthenticatedLayout } from './components/layout/authenticated-layout';
 import { Dashboard } from './features/dashboard';
 import { Canvas } from '@react-three/fiber';
@@ -137,6 +137,7 @@ export default function App() {
         <Routes>
           {/* Public or Fullscreen Routes */}
           <Route path="/login" element={<Login />} />
+          <Route path="/sign-in" element={<Navigate to="/login" replace />} />
           <Route path="/r/:id" element={<CustomerPortal />} />
           <Route path="/map" element={
             <ProtectedRoute allowedRoles={['admin', 'manager', 'physio']}>
