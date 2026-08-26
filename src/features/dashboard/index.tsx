@@ -1,5 +1,15 @@
 import { useEffect, useState, useMemo } from 'react'
-import { useAuth } from '@/context/AuthContext'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LabelList
+} from 'recharts'
 import {
   Card,
   CardContent,
@@ -35,25 +45,17 @@ interface TrackerRow {
   "When was the session"?: string;
   "Duration of session"?: string;
   "Exercise and changes in lifestyle"?: string;
+  "Physio Pitched"?: string;
+  "Customer Concern/Painpoint"?: string;
 }
 
 export function Dashboard() {
-  const { profile } = useAuth()
   const [data, setData] = useState<TrackerRow[]>([])
   const [loading, setLoading] = useState(true)
 
   // Filter States
   const [selectedMonth, setSelectedMonth] = useState<string>('all')
-  
-  // Set initial selected physio to 'all' for admins, or the physio's own name for physios
-  const initialPhysio = profile?.role === 'physio' && profile?.physioName 
-    ? profile.physioName.toLowerCase() 
-    : 'all';
-    
-  const [selectedPhysio, setSelectedPhysio] = useState<string>(initialPhysio)
-  
-  // Enforce RBAC: If role is physio, they cannot change this filter
-  const isPhysioLocked = profile?.role === 'physio';
+  const [selectedPhysio, setSelectedPhysio] = useState<string>('all')
 
   useEffect(() => {
     // Fetch live data from Google Sheets via Opensheet API
@@ -114,8 +116,36 @@ export function Dashboard() {
   const uniqueCustomers = new Set(filteredData.map(row => row['Customer Number'])).size;
   const repeatRate = totalSessionsPitched > 0 ? (((totalSessionsPitched - uniqueCustomers) / totalSessionsPitched) * 100).toFixed(2) : '0.00';
 
-  // Extract latest 5 entries for the per-session cards
-  const recentSessionsData = filteredData.slice(-5).reverse();
+  // --- New KPI Calculations for Charts ---
+  
+  // Pitched vs Done Ratio
+  const pitchedYes = filteredData.filter(row => row["Physio Pitched"]?.toLowerCase().includes('yes')).length;
+  const pitchedNo = filteredData.filter(row => row["Physio Pitched"]?.toLowerCase().includes('no')).length;
+  const doneYes = filteredData.filter(row => row["Physio session Done"]?.toLowerCase().includes('yes')).length;
+  const doneNo = filteredData.filter(row => row["Physio session Done"]?.toLowerCase().includes('no')).length;
+
+  const ratioData = [
+    { name: 'Physio Pitched', Yes: pitchedYes, No: pitchedNo },
+    { name: 'Session Done', Yes: doneYes, No: doneNo },
+  ];
+
+  // Customer Concern / Painpoint
+  const painpointsMap = new Map<string, number>();
+  filteredData.forEach(row => {
+    const p = row["Customer Concern/Painpoint"];
+    if (p && p.trim() !== '') {
+      // Split by comma if there are multiple, else it just processes the single string
+      const points = p.split(',').map(s => s.trim()).filter(Boolean);
+      points.forEach(pt => {
+        painpointsMap.set(pt, (painpointsMap.get(pt) || 0) + 1);
+      });
+    }
+  });
+  // Sort descending, highest first. Recharts renders top-to-bottom for vertical layouts in latest versions, 
+  // but if it renders bottom-up, we might need to reverse. Usually it's top-to-bottom.
+  const painpointsData = Array.from(painpointsMap.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
 
   return (
     <>
@@ -151,7 +181,7 @@ export function Dashboard() {
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-muted-foreground">Filter by Physio</label>
-            <Select value={selectedPhysio} onValueChange={setSelectedPhysio} disabled={isPhysioLocked}>
+            <Select value={selectedPhysio} onValueChange={setSelectedPhysio}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="All Physios" />
               </SelectTrigger>
@@ -223,63 +253,47 @@ export function Dashboard() {
                 </Card>
               </div>
 
-              {/* Per-Session Detail Cards */}
-              <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
-                
+              {/* Charts Section */}
+              <div className='grid gap-4 md:grid-cols-2'>
                 <Card className="col-span-1">
                   <CardHeader>
-                    <CardTitle>Session Timings</CardTitle>
-                    <CardDescription>When recent sessions took place</CardDescription>
+                    <CardTitle>Physio Pitched vs Session Done Ratio</CardTitle>
+                    <CardDescription>Comparison of pitched sessions and actual completed sessions</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ul className="space-y-3">
-                      {recentSessionsData.map((row, i) => (
-                        <li key={i} className="flex justify-between items-center text-sm border-b pb-2 last:border-0">
-                          <span className="font-medium truncate mr-2">{row["Customer Name"]}</span>
-                          <span className="text-muted-foreground whitespace-nowrap">{row["When was the session"] || 'N/A'}</span>
-                        </li>
-                      ))}
-                      {recentSessionsData.length === 0 && <li className="text-sm text-muted-foreground">No data available</li>}
-                    </ul>
+                    <ResponsiveContainer width="100%" height={400}>
+                      <BarChart data={ratioData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip cursor={{ fill: 'transparent' }} />
+                        <Legend />
+                        <Bar dataKey="Yes" fill="#10B981" radius={[4, 4, 0, 0]} name="Yes" />
+                        <Bar dataKey="No" fill="#EF4444" radius={[4, 4, 0, 0]} name="No" />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </CardContent>
                 </Card>
 
                 <Card className="col-span-1">
                   <CardHeader>
-                    <CardTitle>Session Durations</CardTitle>
-                    <CardDescription>Duration of recent sessions</CardDescription>
+                    <CardTitle>Customer Concerns (Diseases & Conditions) Extracted from Column D</CardTitle>
+                    <CardDescription>Number of Mentions</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ul className="space-y-3">
-                      {recentSessionsData.map((row, i) => (
-                        <li key={i} className="flex justify-between items-center text-sm border-b pb-2 last:border-0">
-                          <span className="font-medium truncate mr-2">{row["Customer Name"]}</span>
-                          <span className="text-muted-foreground whitespace-nowrap">{row["Duration of session"] || 'N/A'}</span>
-                        </li>
-                      ))}
-                      {recentSessionsData.length === 0 && <li className="text-sm text-muted-foreground">No data available</li>}
-                    </ul>
+                    <ResponsiveContainer width="100%" height={400}>
+                      <BarChart layout="vertical" data={painpointsData} margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                        <XAxis type="number" hide />
+                        <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 12 }} />
+                        <Tooltip cursor={{ fill: 'transparent' }} />
+                        <Bar dataKey="count" fill="#F87171" radius={[0, 4, 4, 0]}>
+                          <LabelList dataKey="count" position="right" fontSize={12} fill="var(--foreground)" />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
                   </CardContent>
                 </Card>
-
-                <Card className="col-span-1">
-                  <CardHeader>
-                    <CardTitle>Lifestyle Changes</CardTitle>
-                    <CardDescription>Exercises & changes suggested</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-3">
-                      {recentSessionsData.map((row, i) => (
-                        <li key={i} className="flex flex-col text-sm border-b pb-2 last:border-0">
-                          <span className="font-medium">{row["Customer Name"]}</span>
-                          <span className="text-muted-foreground mt-1">{row["Exercise and changes in lifestyle"] || 'N/A'}</span>
-                        </li>
-                      ))}
-                      {recentSessionsData.length === 0 && <li className="text-sm text-muted-foreground">No data available</li>}
-                    </ul>
-                  </CardContent>
-                </Card>
-
               </div>
             </TabsContent>
           </Tabs>
