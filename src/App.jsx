@@ -120,15 +120,7 @@ function MapView() {
   );
 }
 
-// A simple dummy Tasks component
-function Tasks() {
-  return (
-    <div style={{ padding: '24px', color: '#fff' }}>
-      <h1>Tasks</h1>
-      <p>Tasks tab restored. Functionality coming soon.</p>
-    </div>
-  );
-}
+import { Tasks } from './features/tasks';
 
 export default function App() {
   return (

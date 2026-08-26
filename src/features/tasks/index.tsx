@@ -6,6 +6,7 @@ import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { TasksTable } from './components/tasks-table'
+import { useAuth } from '@/context/AuthContext'
 
 interface TrackerRow {
   Date: string;
@@ -18,6 +19,7 @@ interface TrackerRow {
 export function Tasks() {
   const [data, setData] = useState<TrackerRow[]>([])
   const [loading, setLoading] = useState(true)
+  const { profile } = useAuth()
 
   useEffect(() => {
     // Fetch live data from Google Sheets via Opensheet API
@@ -36,9 +38,17 @@ export function Tasks() {
   const filteredTasks = useMemo(() => {
     if (data.length === 0) return [];
     
+    // First, filter by the logged in user if they are a physio
+    let userFilteredData = data;
+    if (profile?.role === 'physio' && profile?.full_name) {
+      userFilteredData = data.filter(row => row['Physio Name']?.trim().toLowerCase() === profile.full_name.trim().toLowerCase());
+    }
+
+    if (userFilteredData.length === 0) return [];
+
     // Extract unique dates and parse them to sort descending
     // Dates are formatted like "26/8", "25/8", etc.
-    const uniqueDates = Array.from(new Set(data.map(row => row.Date?.trim()).filter(Boolean)));
+    const uniqueDates = Array.from(new Set(userFilteredData.map(row => row.Date?.trim()).filter(Boolean)));
     
     // Simple sort based on raw format since it seems to be day/month. 
     // For robust parsing, we split and convert to numbers.
@@ -55,8 +65,8 @@ export function Tasks() {
 
     if (!targetDate) return [];
 
-    return data.filter(row => row.Date?.trim() === targetDate);
-  }, [data]);
+    return userFilteredData.filter(row => row.Date?.trim() === targetDate);
+  }, [data, profile]);
 
   return (
     <>

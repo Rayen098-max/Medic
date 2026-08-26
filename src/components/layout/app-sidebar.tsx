@@ -11,9 +11,18 @@ import { sidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
 import { TeamSwitcher } from './team-switcher'
+import { useAuth } from '@/context/AuthContext'
 
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
+  const { user, profile } = useAuth()
+  
+  const currentUser = {
+    name: profile?.full_name || 'User',
+    email: user?.email || '',
+    avatar: '/avatars/01.png',
+  }
+
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>
@@ -29,7 +38,7 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={sidebarData.user} />
+        <NavUser user={currentUser} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
