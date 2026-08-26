@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { AuthenticatedLayout } from './components/layout/authenticated-layout';
+import { Dashboard } from './features/dashboard';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 import BodyModel from './components/BodyModel';
@@ -118,33 +120,38 @@ function MapView() {
   );
 }
 
+// A simple dummy Tasks component
+function Tasks() {
+  return (
+    <div style={{ padding: '24px', color: '#fff' }}>
+      <h1>Tasks</h1>
+      <p>Tasks tab restored. Functionality coming soon.</p>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={
+          {/* Public or Fullscreen Routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/r/:id" element={<CustomerPortal />} />
+          <Route path="/map" element={
             <ProtectedRoute allowedRoles={['admin', 'manager', 'physio']}>
               <MapView />
             </ProtectedRoute>
           } />
-          <Route path="/login" element={<Login />} />
-          <Route path="/admin" element={
-            <ProtectedRoute allowedRoles={['admin', 'manager', 'physio']}>
-              <AdminPanel />
-            </ProtectedRoute>
-          } />
-          <Route path="/capture" element={
-            <ProtectedRoute allowedRoles={['physio', 'admin']}>
-              <CaptureForm />
-            </ProtectedRoute>
-          } />
-          <Route path="/edit-body" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <EditBodyPanel />
-            </ProtectedRoute>
-          } />
-          <Route path="/r/:id" element={<CustomerPortal />} />
+
+          {/* Authenticated Dashboard Routes with Sidebar */}
+          <Route element={<ProtectedRoute allowedRoles={['admin', 'manager', 'physio']}><AuthenticatedLayout /></ProtectedRoute>}>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/tasks" element={<Tasks />} />
+            <Route path="/capture" element={<CaptureForm />} />
+            <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/edit-body" element={<EditBodyPanel />} />
+          </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>
