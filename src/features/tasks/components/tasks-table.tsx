@@ -1,19 +1,4 @@
-import { useEffect, useState } from 'react'
-import { getRouteApi } from 'react-router-dom'
-import {
-  type SortingState,
-  type VisibilityState,
-  flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from '@tanstack/react-table'
-import { cn } from '@/lib/utils'
-import { useTableUrlState } from '@/hooks/use-table-url-state'
+import React, { useState } from 'react'
 import {
   Table,
   TableBody,
@@ -22,176 +7,184 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { priorities, statuses } from '../data/data'
-import { type Task } from '../data/schema'
-import { DataTableBulkActions } from './data-table-bulk-actions'
-import { tasksColumns as columns } from './tasks-columns'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { MessageCircle } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
-const route = getRouteApi('/_authenticated/tasks/')
-
-type DataTableProps = {
-  data: Task[]
+interface TrackerRow {
+  Date: string;
+  "Physio Name": string;
+  "Customer Name": string;
+  "Customer Number": string;
+  "Physio session Done": string;
 }
 
-export function TasksTable({ data }: DataTableProps) {
-  // Local UI-only states
-  const [rowSelection, setRowSelection] = useState({})
-  const [sorting, setSorting] = useState<SortingState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+interface TasksTableProps {
+  data: TrackerRow[]
+}
 
-  // Local state management for table (uncomment to use local-only state, not synced with URL)
-  // const [globalFilter, onGlobalFilterChange] = useState('')
-  // const [columnFilters, onColumnFiltersChange] = useState<ColumnFiltersState>([])
-  // const [pagination, onPaginationChange] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 })
+export function TasksTable({ data }: TasksTableProps) {
+  // Track which row is expanded (if any)
+  const [expandedRowIdx, setExpandedRowIdx] = useState<number | null>(null)
+  
+  // Track which forms have been successfully submitted/filled
+  const [filledForms, setFilledForms] = useState<Set<number>>(new Set())
 
-  // Synced with URL states (updated to match route search schema defaults)
-  const {
-    globalFilter,
-    onGlobalFilterChange,
-    columnFilters,
-    onColumnFiltersChange,
-    pagination,
-    onPaginationChange,
-    ensurePageInRange,
-  } = useTableUrlState({
-    search: route.useSearch(),
-    navigate: route.useNavigate(),
-    pagination: { defaultPage: 1, defaultPageSize: 10 },
-    globalFilter: { enabled: true, key: 'filter' },
-    columnFilters: [
-      { columnId: 'status', searchKey: 'status', type: 'array' },
-      { columnId: 'priority', searchKey: 'priority', type: 'array' },
-    ],
-  })
+  const handleFillFormClick = (idx: number) => {
+    // Toggle expand/collapse
+    if (expandedRowIdx === idx) {
+      setExpandedRowIdx(null)
+    } else {
+      setExpandedRowIdx(idx)
+    }
+  }
 
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
-    data,
-    columns,
-    state: {
-      sorting,
-      columnVisibility,
-      rowSelection,
-      columnFilters,
-      globalFilter,
-      pagination,
-    },
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
-    globalFilterFn: (row, _columnId, filterValue) => {
-      const id = String(row.getValue('id')).toLowerCase()
-      const title = String(row.getValue('title')).toLowerCase()
-      const searchValue = String(filterValue).toLowerCase()
-
-      return id.includes(searchValue) || title.includes(searchValue)
-    },
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    onPaginationChange,
-    onGlobalFilterChange,
-    onColumnFiltersChange,
-  })
-
-  const pageCount = table.getPageCount()
-  useEffect(() => {
-    ensurePageInRange(pageCount)
-  }, [pageCount, ensurePageInRange])
+  const handleDone = (idx: number) => {
+    // Add to filled forms set
+    setFilledForms(prev => new Set(prev).add(idx))
+    // Collapse the row
+    setExpandedRowIdx(null)
+  }
 
   return (
-    <div
-      className={cn(
-        'max-sm:has-[div[role="toolbar"]]:mb-16', // Add margin bottom to the table on mobile when the toolbar is visible
-        'flex flex-1 flex-col gap-4'
-      )}
-    >
-      <DataTableToolbar
-        table={table}
-        searchPlaceholder='Filter by title or ID...'
-        filters={[
-          {
-            columnId: 'status',
-            title: 'Status',
-            options: statuses,
-          },
-          {
-            columnId: 'priority',
-            title: 'Priority',
-            options: priorities,
-          },
-        ]}
-      />
-      <div className='overflow-hidden rounded-md border'>
-        <Table className='min-w-xl'>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead
-                      key={header.id}
-                      colSpan={header.colSpan}
-                      className={cn(
-                        header.column.columnDef.meta?.className,
-                        header.column.columnDef.meta?.thClassName
-                      )}
-                    >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  )
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={cn(
-                        cell.column.columnDef.meta?.className,
-                        cell.column.columnDef.meta?.tdClassName
-                      )}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
+    <div className="rounded-md border bg-card">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Customer Name</TableHead>
+            <TableHead>Customer Number</TableHead>
+            <TableHead className="w-[150px]">Actions</TableHead>
+            <TableHead className="w-[150px]">Contact</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {data.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                No tasks available for this date.
+              </TableCell>
+            </TableRow>
+          ) : (
+            data.map((row, idx) => {
+              const isExpanded = expandedRowIdx === idx;
+              const isFilled = filledForms.has(idx);
+
+              return (
+                <React.Fragment key={idx}>
+                  <TableRow>
+                    <TableCell className="font-medium">{row["Customer Name"] || 'Unknown'}</TableCell>
+                    <TableCell>{row["Customer Number"] || 'N/A'}</TableCell>
+                    <TableCell>
+                      {isFilled ? (
+                        <Button variant="default" className="bg-green-600 hover:bg-green-700 text-white w-full">
+                          Form Filled
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="destructive" 
+                          onClick={() => handleFillFormClick(idx)}
+                          className="w-full"
+                        >
+                          {isExpanded ? 'Cancel' : 'Fill Form'}
+                        </Button>
                       )}
                     </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className='h-24 text-center'
-                >
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <DataTablePagination table={table} className='mt-auto' />
-      <DataTableBulkActions table={table} />
+                    <TableCell>
+                      <Button 
+                        variant="outline"
+                        className="w-full gap-2 border-green-600 text-green-600 hover:bg-green-50"
+                        onClick={() => {
+                          if (row["Customer Number"]) {
+                            window.open(`https://wa.me/${row["Customer Number"].replace(/\D/g, '')}`, '_blank');
+                          }
+                        }}
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        WhatsApp
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                  
+                  {isExpanded && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="p-0 border-b-0">
+                        <div className="p-4 bg-muted/30">
+                          <Card>
+                            <CardHeader>
+                              <CardTitle className="text-lg">New Consult Form</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label>Customer Name</Label>
+                                  <Input value={row["Customer Name"]} readOnly className="bg-muted" />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Customer Number</Label>
+                                  <Input value={row["Customer Number"]} readOnly className="bg-muted" />
+                                </div>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label>Physio Pitched</Label>
+                                  <Select defaultValue="no">
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select Yes/No" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="yes">Yes</SelectItem>
+                                      <SelectItem value="no">No</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label>Primary Category</Label>
+                                  <Select>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select Category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="ortho">Ortho</SelectItem>
+                                      <SelectItem value="neuro">Neuro</SelectItem>
+                                      <SelectItem value="sports">Sports</SelectItem>
+                                      <SelectItem value="other">Other</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label>Comments / Advice</Label>
+                                <Input placeholder="Enter any additional advice or comments..." />
+                              </div>
+
+                              <div className="flex justify-end pt-4">
+                                <Button onClick={() => handleDone(idx)} className="bg-primary px-8">
+                                  Done
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </React.Fragment>
+              )
+            })
+          )}
+        </TableBody>
+      </Table>
     </div>
   )
 }
