@@ -12,6 +12,37 @@ const formSchema = z.object({
   consultDate: z.string().min(1, "Consult date is required"),
 });
 
+function formatConsultDateToISO(rawDate) {
+  if (!rawDate) return new Date().toISOString();
+  
+  if (rawDate === 'Few Days ago') {
+    return new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString();
+  }
+  if (rawDate === 'a week ago') {
+    return new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  }
+
+  // Try parsing directly
+  const d = new Date(rawDate);
+  if (!isNaN(d.getTime())) {
+    return d.toISOString();
+  }
+
+  // Parse DD/MM or DD/MM/YYYY
+  const parts = String(rawDate).split(/[\/\\]/);
+  if (parts.length >= 2) {
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const year = parts.length >= 3 ? parseInt(parts[2], 10) : new Date().getFullYear();
+    const parsed = new Date(year, month, day, 12, 0, 0);
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+  }
+
+  return new Date().toISOString();
+}
+
 export default function CaptureForm({ initialData = null, onSuccess = null, isEmbedded = false }) {
   const navigate = useNavigate();
   const { profile } = useAuth();
@@ -81,7 +112,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
       transcription: finalTranscription,
       sleepPosition: 'Unknown',
       physio_id: profile?.id,
-      consultDate: formData.consultDate,
+      consultDate: formatConsultDateToISO(formData.consultDate),
       recommendedExercises: exercises,
       conditionNotes: conditionNotes
     };
@@ -135,6 +166,9 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
           onChange={e => setFormData({...formData, consultDate: e.target.value})}
           style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }}
         >
+          {formData.consultDate && !['Few Days ago', 'a week ago'].includes(formData.consultDate) && (
+            <option value={formData.consultDate}>{formData.consultDate}</option>
+          )}
           <option value="Few Days ago">Few Days ago</option>
           <option value="a week ago">a week ago</option>
         </select>
