@@ -19,7 +19,7 @@ export default function CaptureForm() {
     name: '',
     phone: '',
     consultDate: 'Few Days ago',
-    painPointIds: ['L01'], // Default to generic lower back
+    painPointIds: [], // Default to no pain point selected
     consent: false
   });
   const [exercises, setExercises] = useState([]);
