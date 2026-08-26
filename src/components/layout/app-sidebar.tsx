@@ -22,12 +22,14 @@ export function AppSidebar() {
     avatar: '/avatars/01.png',
   }
 
-  // Filter out the Usage Report if the user is a physio
+  // Filter out the Usage Report if the user is a physio, and Tasks if user is admin/manager
   const filteredNavGroups = sidebarData.navGroups.map(group => ({
     ...group,
-    items: group.items.filter(item => 
-      !(item.url === '/usage-report' && profile?.role === 'physio')
-    )
+    items: group.items.filter(item => {
+      if (item.url === '/usage-report' && profile?.role === 'physio') return false;
+      if (item.url === '/tasks' && (profile?.role === 'admin' || profile?.role === 'manager')) return false;
+      return true;
+    })
   })).filter(group => group.items.length > 0)
 
   return (
