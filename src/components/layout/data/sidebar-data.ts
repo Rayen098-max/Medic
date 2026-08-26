@@ -62,11 +62,6 @@ export const sidebarData: SidebarData = {
           url: '/tasks',
           icon: ListTodo,
         },
-        {
-          title: 'New Consult',
-          url: '/capture',
-          icon: FileX, // Alternatively any other icon
-        },
       ],
     },
   ],

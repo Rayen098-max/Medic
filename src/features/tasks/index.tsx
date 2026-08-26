@@ -59,13 +59,12 @@ export function Tasks() {
       return (dayB || 0) - (dayA || 0);
     });
 
-    // Take the "2 days prior" data (index 2 if 0 is today and 1 is yesterday)
-    // If there aren't enough dates, just take the oldest available or fallback
-    const targetDate = uniqueDates.length > 2 ? uniqueDates[2] : uniqueDates[uniqueDates.length - 1];
+    // Take the two latest available dates for this user
+    const targetDates = uniqueDates.slice(0, 2);
 
-    if (!targetDate) return [];
+    if (targetDates.length === 0) return [];
 
-    return userFilteredData.filter(row => row.Date?.trim() === targetDate);
+    return userFilteredData.filter(row => targetDates.includes(row.Date?.trim()));
   }, [data, profile]);
 
   return (
@@ -80,7 +79,7 @@ export function Tasks() {
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
         <div className='flex flex-wrap items-end justify-between gap-2'>
           <div>
-            <h2 className='text-2xl font-bold tracking-tight'>Tasks (2 Days Prior)</h2>
+            <h2 className='text-2xl font-bold tracking-tight'>Tasks (Latest Available Dates)</h2>
             <p className='text-muted-foreground'>
               Here are your consultation reports to follow up on.
             </p>
