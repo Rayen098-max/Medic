@@ -41,10 +41,21 @@ export function Tasks() {
     // First, filter by the logged in user if they are a physio
     let userFilteredData = data;
     if (profile?.role === 'physio' && profile?.full_name) {
-      const profileName = profile.full_name.trim().toLowerCase();
+      let profileName = profile.full_name.trim().toLowerCase();
+      if (profileName.startsWith('dr ')) profileName = profileName.substring(3);
+      if (profileName.startsWith('dr. ')) profileName = profileName.substring(4);
+      const profileWords = profileName.split(/\s+/);
+
       userFilteredData = data.filter(row => {
         const sheetName = row['Physio Name']?.trim().toLowerCase();
-        return sheetName && profileName && (profileName.includes(sheetName) || sheetName.includes(profileName));
+        if (!sheetName) return false;
+        
+        // Direct inclusion check
+        if (profileName.includes(sheetName) || sheetName.includes(profileName)) return true;
+        
+        // Loose prefix match (handles typos like Aishwarya vs Aishawarya)
+        const sheetPrefix = sheetName.substring(0, 4);
+        return profileWords.some(word => word.length >= 4 && word.startsWith(sheetPrefix));
       });
     }
 
