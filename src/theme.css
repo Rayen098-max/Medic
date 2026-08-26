@@ -28,8 +28,8 @@
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: var(--accent);
-  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-accent: rgba(0, 210, 255, 0.15);
+  --sidebar-accent-foreground: #00d2ff;
   --sidebar-border: var(--border);
   --sidebar-ring: var(--ring);
 }
