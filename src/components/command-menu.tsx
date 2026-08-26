@@ -43,7 +43,7 @@ export function CommandMenu() {
                       key={`${navItem.url}-${i}`}
                       value={navItem.title}
                       onSelect={() => {
-                        runCommand(() => navigate({ to: navItem.url }))
+                        runCommand(() => navigate(navItem.url))
                       }}
                     >
                       <div className='flex size-4 items-center justify-center'>
@@ -58,7 +58,7 @@ export function CommandMenu() {
                     key={`${navItem.title}-${subItem.url}-${i}`}
                     value={`${navItem.title}-${subItem.url}`}
                     onSelect={() => {
-                      runCommand(() => navigate({ to: subItem.url }))
+                      runCommand(() => navigate(subItem.url))
                     }}
                   >
                     <div className='flex size-4 items-center justify-center'>

@@ -10,6 +10,12 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // If supabase is not configured (e.g. missing env vars), stop loading immediately
+    if (!supabase) {
+      setLoading(false);
+      return;
+    }
+
     // Fetch initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
