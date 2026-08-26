@@ -70,3 +70,74 @@ export const deletePatient = async (id) => {
     throw new Error("Action blocked by database. Please go to your Supabase dashboard and add a DELETE policy for the 'patients' table allowing the anon role to delete rows.");
   }
 };
+
+// Analytics / Session Tracking Functions
+
+export const trackSessionStart = async (patientId) => {
+  if (!supabase || !patientId) return null;
+  try {
+    const { data, error } = await supabase
+      .from('patient_sessions')
+      .insert([{ patient_id: patientId, duration_seconds: 0 }])
+      .select('id')
+      .single();
+    if (error) throw error;
+    return data.id;
+  } catch (error) {
+    console.error("Tracking error:", error);
+    return null;
+  }
+};
+
+export const updateSessionDuration = async (sessionId, durationSeconds) => {
+  if (!supabase || !sessionId) return;
+  try {
+    await supabase
+      .from('patient_sessions')
+      .update({ duration_seconds: durationSeconds })
+      .eq('id', sessionId);
+  } catch (error) {
+    console.error("Tracking update error:", error);
+  }
+};
+
+export const getUsageReport = async () => {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  // We fetch patients with their linked physio profile and their sessions
+  const { data, error } = await supabase
+    .from('patients')
+    .select(`
+      id,
+      name,
+      phone,
+      physio_id,
+      profiles!physio_id (full_name),
+      patient_sessions (id, duration_seconds, created_at)
+    `)
+    .is('deleted_at', null);
+
+  if (error) throw error;
+
+  // Process data to aggregate sessions
+  const report = data.filter(p => p.patient_sessions && p.patient_sessions.length > 0).map(patient => {
+    const sessions = patient.patient_sessions;
+    const totalOpens = sessions.length;
+    const totalTime = sessions.reduce((acc, curr) => acc + (curr.duration_seconds || 0), 0);
+    const lastOpened = sessions.reduce((latest, curr) => {
+      const currTime = new Date(curr.created_at).getTime();
+      return currTime > latest ? currTime : latest;
+    }, 0);
+
+    return {
+      id: patient.id,
+      name: patient.name,
+      phone: patient.phone,
+      physioName: patient.profiles?.full_name || 'Unknown',
+      totalOpens,
+      totalTime,
+      lastOpened: new Date(lastOpened).toISOString()
+    };
+  });
+
+  return report.sort((a, b) => new Date(b.lastOpened).getTime() - new Date(a.lastOpened).getTime());
+};

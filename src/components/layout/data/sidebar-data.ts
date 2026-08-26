@@ -62,6 +62,11 @@ export const sidebarData: SidebarData = {
           url: '/tasks',
           icon: ListTodo,
         },
+        {
+          title: 'Usage Report',
+          url: '/usage-report',
+          icon: Bug,
+        },
       ],
     },
   ],

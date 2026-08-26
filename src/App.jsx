@@ -121,6 +121,8 @@ function MapView() {
 }
 
 import { Tasks } from './features/tasks';
+import { UsageReport } from './features/usage-report';
+import { Analytics } from '@vercel/analytics/react';
 
 export default function App() {
   return (
@@ -144,9 +146,15 @@ export default function App() {
             <Route path="/capture" element={<CaptureForm />} />
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/edit-body" element={<EditBodyPanel />} />
+            <Route path="/usage-report" element={
+              <ProtectedRoute allowedRoles={['admin', 'manager']}>
+                <UsageReport />
+              </ProtectedRoute>
+            } />
           </Route>
         </Routes>
       </BrowserRouter>
+      <Analytics />
     </AuthProvider>
   );
 }

@@ -7,7 +7,7 @@ import contentData from '../data/content.json';
 import painPointsData from '../data/painPoints.json';
 import productsCatalog from '../data/products.json';
 import predefinedMessagesData from '../data/predefinedMessages.json';
-import { getPatientById } from '../utils/db';
+import { getPatientById, trackSessionStart, updateSessionDuration } from '../utils/db';
 import { CheckCircle2, XCircle, ShoppingBag, X } from 'lucide-react';
 
 export default function CustomerPortal() {
@@ -27,6 +27,30 @@ export default function CustomerPortal() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Usage Tracking Effect
+  useEffect(() => {
+    if (!id || loading) return;
+    let sessionId = null;
+    let secondsSpent = 0;
+    let intervalId = null;
+
+    const startTracking = async () => {
+      sessionId = await trackSessionStart(id);
+      if (sessionId) {
+        intervalId = setInterval(() => {
+          secondsSpent += 5;
+          updateSessionDuration(sessionId, secondsSpent);
+        }, 5000);
+      }
+    };
+
+    startTracking();
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [id, loading]);
 
   useEffect(() => {
     async function loadData() {
