@@ -41,22 +41,38 @@ export function Tasks() {
     // First, filter by the logged in user if they are a physio
     let userFilteredData = data;
     if (profile?.role === 'physio' && profile?.full_name) {
-      userFilteredData = data.filter(row => row['Physio Name']?.trim().toLowerCase() === profile.full_name.trim().toLowerCase());
+      const profileName = profile.full_name.trim().toLowerCase();
+      userFilteredData = data.filter(row => {
+        const sheetName = row['Physio Name']?.trim().toLowerCase();
+        return sheetName && profileName && (profileName.includes(sheetName) || sheetName.includes(profileName));
+      });
     }
 
     if (userFilteredData.length === 0) return [];
 
     // Extract unique dates and parse them to sort descending
-    // Dates are formatted like "26/8", "25/8", etc.
+    // Dates are formatted like "26/8", "25/8", "8/24/2026", etc.
     const uniqueDates = Array.from(new Set(userFilteredData.map(row => row.Date?.trim()).filter(Boolean)));
     
-    // Simple sort based on raw format since it seems to be day/month. 
-    // For robust parsing, we split and convert to numbers.
+    // Robust date sorting to handle various formats from the sheet
     uniqueDates.sort((a, b) => {
-      const [dayA, monthA] = a.split('/').map(Number);
-      const [dayB, monthB] = b.split('/').map(Number);
-      if (monthA !== monthB) return (monthB || 0) - (monthA || 0);
-      return (dayB || 0) - (dayA || 0);
+      const parseDate = (dStr: string) => {
+        if (!dStr) return 0;
+        let d = new Date(dStr);
+        if (!isNaN(d.getTime())) return d.getTime();
+        
+        // Fallback for DD/MM or DD/MM/YYYY formats that native Date fails to parse
+        const parts = dStr.split(/[\/\\]/);
+        if (parts.length >= 2) {
+           const val1 = parseInt(parts[0], 10);
+           const val2 = parseInt(parts[1], 10);
+           // assume val1 is day, val2 is month
+           d = new Date(new Date().getFullYear(), val2 - 1, val1);
+           if (!isNaN(d.getTime())) return d.getTime();
+        }
+        return 0;
+      };
+      return parseDate(b) - parseDate(a);
     });
 
     // Take the two latest available dates for this user
