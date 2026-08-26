@@ -10,7 +10,7 @@ import {
 import { sidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
-import { TeamSwitcher } from './team-switcher'
+import { BrandHeader } from './brand-header'
 import { useAuth } from '@/context/AuthContext'
 
 export function AppSidebar() {
@@ -26,11 +26,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>
-        <TeamSwitcher teams={sidebarData.teams} />
-
-        {/* Replace <TeamSwitch /> with the following <AppTitle />
-         /* if you want to use the normal app title instead of TeamSwitch dropdown */}
-        {/* <AppTitle /> */}
+        <BrandHeader />
       </SidebarHeader>
       <SidebarContent>
         {sidebarData.navGroups.map((props) => (
