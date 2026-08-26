@@ -255,27 +255,7 @@ export function Dashboard() {
 
               {/* Charts Section */}
               <div className='grid gap-4 md:grid-cols-2'>
-                <Card className="col-span-1">
-                  <CardHeader>
-                    <CardTitle>Physio Pitched vs Session Done Ratio</CardTitle>
-                    <CardDescription>Comparison of pitched sessions and actual completed sessions</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ResponsiveContainer width="100%" height={400}>
-                      <BarChart data={ratioData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip cursor={{ fill: 'transparent' }} />
-                        <Legend />
-                        <Bar dataKey="Yes" fill="#10B981" radius={[4, 4, 0, 0]} name="Yes" />
-                        <Bar dataKey="No" fill="#EF4444" radius={[4, 4, 0, 0]} name="No" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-
-                <Card className="col-span-1">
+                <Card className="col-span-2">
                   <CardHeader>
                     <CardTitle>Customer Concerns (Diseases & Conditions) Extracted from Column D</CardTitle>
                     <CardDescription>Number of Mentions</CardDescription>
