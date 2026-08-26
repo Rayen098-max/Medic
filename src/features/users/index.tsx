@@ -1,4 +1,4 @@
-import { getRouteApi } from '@tanstack/react-router'
+import { getRouteApi } from 'react-router-dom'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'

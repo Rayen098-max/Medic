@@ -1,4 +1,4 @@
-import { useNavigate, useRouter } from '@tanstack/react-router'
+import { useNavigate, useRouter } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 
 export function UnauthorisedError() {

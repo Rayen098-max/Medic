@@ -1,5 +1,5 @@
 import { type ChangeEvent, useState } from 'react'
-import { getRouteApi } from '@tanstack/react-router'
+import { getRouteApi } from 'react-router-dom'
 import { SlidersHorizontal, ArrowUpAZ, ArrowDownAZ } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

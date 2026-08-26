@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link } from 'react-router-dom'
 import { Logo } from '@/assets/logo'
 import { cn } from '@/lib/utils'
 import dashboardDark from './assets/dashboard-dark.png'
