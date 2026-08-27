@@ -492,20 +492,33 @@ export default function CustomerPortal() {
       <style>{`
         /* ---- Phase FAB & Menu ---- */
         .phase-fab {
-          width: clamp(64px, 16vw, 76px);
-          height: clamp(64px, 16vw, 76px);
+          width: clamp(54px, 14vw, 66px);
+          height: clamp(54px, 14vw, 66px);
+          border-radius: 50%;
           border: none;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: transparent;
+          background: #fff;
+          box-shadow: 0 0 25px rgba(0, 212, 255, 0.4);
           z-index: 15;
+          animation: cartHeartbeat 1.6s ease-in-out infinite;
           transition: transform 0.2s ease;
-          padding: 0;
+          overflow: hidden;
+          padding: 8px; /* Give the arrow logo some breathing room inside the circle */
         }
         .phase-fab:hover { transform: scale(1.08); }
         .phase-fab:active { transform: scale(0.95); }
+        .phase-fab::after {
+          content: "";
+          position: absolute;
+          inset: -6px;
+          border-radius: 50%;
+          border: 2px solid rgba(0, 212, 255, 0.6);
+          animation: cartRipple 1.6s ease-out infinite;
+          pointer-events: none;
+        }
         @keyframes cartHeartbeat {
           0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(255,107,129,.5), 0 0 40px rgba(0,212,255,.3), 0 6px 18px rgba(0,0,0,.45); }
           12% { transform: scale(1.12); box-shadow: 0 0 30px rgba(255,107,129,.75), 0 0 60px rgba(0,212,255,.5), 0 6px 18px rgba(0,0,0,.45); }
