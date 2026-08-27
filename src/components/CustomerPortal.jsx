@@ -423,45 +423,60 @@ export default function CustomerPortal() {
           </div>
         )}
 
-        {/* Floating exercises button */}
+        {/* Floating exercises menu and button */}
         {!activePointId && zone.recommendedExercises && zone.recommendedExercises.length > 0 && (
-          <button
-            className="exercise-fab"
-            onClick={() => setShowExercisesModal(true)}
-            aria-label="View recommended exercises"
-            title="Recommended Exercises"
-          >
-            <img src="/exercise-logo.png" alt="Exercises Logo" />
-            <span className="cart-fab-badge" style={{ color: '#2ecc71' }}>{zone.recommendedExercises.length}</span>
-          </button>
-        )}
-
-        {/* Recommended exercises popup */}
-        {showExercisesModal && (
-          <div className="cart-modal-overlay" onClick={() => setShowExercisesModal(false)}>
-            <div className="cart-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-              <div className="cart-modal-header">
-                <div>
-                  <h3 style={{ color: '#2ecc71' }}>Recommended Exercises</h3>
-                  <p>Curated by your Physiotherapist</p>
-                </div>
-                <button className="cart-modal-close" onClick={() => setShowExercisesModal(false)}>
-                  <X size={22} />
-                </button>
-              </div>
-              <div className="cart-modal-body">
+          <div style={{ 
+            position: 'absolute', 
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)', 
+            left: 'calc(env(safe-area-inset-left, 0px) + 18px)', 
+            zIndex: 35, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'flex-start', 
+            gap: '12px' 
+          }}>
+            {showExercisesModal && (
+              <div className="keep-menu-container" style={{ alignItems: 'flex-start', transformOrigin: 'bottom left' }}>
                 {zone.recommendedExercises.map((ex, i) => (
-                  <div className="cart-product-card" key={i} onClick={() => setActiveExercise(ex)} style={{ cursor: 'pointer', flexDirection: 'column' }}>
-                    {ex.image && <img src={ex.image} alt="Exercise" style={{ width: '100%', height: '140px', objectFit: 'cover' }} />}
-                    <div className="cart-product-info" style={{ marginTop: '12px', width: '100%' }}>
-                      <span className="cart-product-category" style={{ color: '#2ecc71', background: 'rgba(46, 204, 113, 0.12)', borderColor: 'rgba(46, 204, 113, 0.3)' }}>EXERCISE {i + 1}</span>
-                      <p style={{ whiteSpace: 'pre-wrap', maxHeight: '60px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ex.instructions}</p>
-                      <div style={{ color: '#2ecc71', fontSize: '0.8rem', fontWeight: 'bold', marginTop: '8px' }}>Tap to view details →</div>
+                  <div 
+                    className="keep-menu-card" 
+                    key={i} 
+                    onClick={() => {
+                      setActiveExercise(ex);
+                      setShowExercisesModal(false);
+                    }}
+                    style={{ cursor: 'pointer', borderLeft: '4px solid #2ecc71', width: '220px' }}
+                  >
+                    <div className="keep-menu-title" style={{ color: '#2ecc71' }}>EXERCISE {i + 1}</div>
+                    <div className="keep-menu-desc" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {ex.instructions}
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
+            )}
+            
+            <button
+              className="exercise-fab"
+              onClick={() => setShowExercisesModal(!showExercisesModal)}
+              aria-label="View recommended exercises"
+              title="Recommended Exercises"
+              style={{ position: 'relative', bottom: 'auto', left: 'auto' }}
+            >
+              <img 
+                src="/exercise-logo.png" 
+                alt="Exercises Logo" 
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  borderRadius: '50%',
+                  transform: showExercisesModal ? 'scale(0.9)' : 'none', 
+                  transition: 'transform 0.3s ease'
+                }} 
+              />
+              <span className="cart-fab-badge" style={{ color: '#2ecc71' }}>{zone.recommendedExercises.length}</span>
+            </button>
           </div>
         )}
 
@@ -570,9 +585,6 @@ export default function CustomerPortal() {
           line-height: 1.4;
         }
         .exercise-fab {
-          position: absolute;
-          bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
-          left: calc(env(safe-area-inset-left, 0px) + 18px);
           width: clamp(54px, 14vw, 66px);
           height: clamp(54px, 14vw, 66px);
           border-radius: 50%;
