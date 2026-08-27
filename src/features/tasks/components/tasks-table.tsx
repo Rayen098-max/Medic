@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import {
   Table,
   TableBody,
@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { MessageCircle, Eye } from 'lucide-react'
+import { MessageCircle, Eye, Trash2 } from 'lucide-react'
 import CaptureForm from '@/components/CaptureForm'
 import { getPatients } from '@/utils/db'
 import { useAuth } from '@/context/AuthContext'
@@ -26,12 +26,20 @@ interface TasksTableProps {
   data: TrackerRow[]
 }
 
+const getTaskId = (row: TrackerRow) => `${row.Date || ''}-${row["Customer Name"] || ''}-${row["Customer Number"] || ''}`
+
 export function TasksTable({ data }: TasksTableProps) {
   const { profile } = useAuth()
-  const [expandedRowIdx, setExpandedRowIdx] = useState<number | null>(null)
-  const [filledForms, setFilledForms] = useState<Set<number>>(new Set())
-  const [filledPatientIds, setFilledPatientIds] = useState<Record<number, string>>({})
+  const [expandedRowIdx, setExpandedRowIdx] = useState<string | null>(null)
+  const [filledForms, setFilledForms] = useState<Set<string>>(new Set())
+  const [filledPatientIds, setFilledPatientIds] = useState<Record<string, string>>({})
   const [dbPatients, setDbPatients] = useState<any[]>([])
+  
+  // Track deleted tasks in localStorage
+  const [deletedTasks, setDeletedTasks] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('deleted_tasks')
+    return saved ? new Set(JSON.parse(saved)) : new Set()
+  })
 
   useEffect(() => {
     getPatients()
@@ -41,24 +49,36 @@ export function TasksTable({ data }: TasksTableProps) {
       .catch(err => console.error("Error fetching db patients:", err))
   }, [])
 
-  const handleFillFormClick = (idx: number) => {
-    if (expandedRowIdx === idx) {
-      setExpandedRowIdx(null)
-    } else {
-      setExpandedRowIdx(idx)
+  const handleDelete = (id: string) => {
+    if (window.confirm("Are you sure you want to remove this task?")) {
+      setDeletedTasks(prev => {
+        const next = new Set(prev)
+        next.add(id)
+        localStorage.setItem('deleted_tasks', JSON.stringify(Array.from(next)))
+        return next
+      })
+      if (expandedRowIdx === id) setExpandedRowIdx(null)
     }
   }
 
-  const handleDone = (idx: number, newId?: string) => {
-    setFilledForms(prev => new Set(prev).add(idx))
+  const handleFillFormClick = (id: string) => {
+    if (expandedRowIdx === id) {
+      setExpandedRowIdx(null)
+    } else {
+      setExpandedRowIdx(id)
+    }
+  }
+
+  const handleDone = (id: string, newId?: string) => {
+    setFilledForms(prev => new Set(prev).add(id))
     if (newId) {
-      setFilledPatientIds(prev => ({ ...prev, [idx]: newId }))
+      setFilledPatientIds(prev => ({ ...prev, [id]: newId }))
     }
     setExpandedRowIdx(null)
   }
 
-  const getMatchedPatientId = (row: TrackerRow, idx: number) => {
-    if (filledPatientIds[idx]) return filledPatientIds[idx];
+  const getMatchedPatientId = (row: TrackerRow, id: string) => {
+    if (filledPatientIds[id]) return filledPatientIds[id];
     const cleanPhone = (row["Customer Number"] || "").replace(/\D/g, '');
     const cleanName = (row["Customer Name"] || "").trim().toLowerCase();
     
@@ -72,8 +92,8 @@ export function TasksTable({ data }: TasksTableProps) {
     return found ? found.id : null;
   }
 
-  const handlePreview = (row: TrackerRow, idx: number) => {
-    const patientId = getMatchedPatientId(row, idx);
+  const handlePreview = (row: TrackerRow, id: string) => {
+    const patientId = getMatchedPatientId(row, id);
     if (patientId) {
       window.open(`/r/${patientId}`, '_blank');
     } else {
@@ -81,7 +101,7 @@ export function TasksTable({ data }: TasksTableProps) {
     }
   }
 
-  const handleWhatsApp = (row: TrackerRow, idx: number) => {
+  const handleWhatsApp = (row: TrackerRow, id: string) => {
     let phone = (row["Customer Number"] || "").replace(/\D/g, '');
     if (!phone) {
       alert("No phone number available for this customer.");
@@ -91,7 +111,7 @@ export function TasksTable({ data }: TasksTableProps) {
       phone = '91' + phone;
     }
 
-    const patientId = getMatchedPatientId(row, idx);
+    const patientId = getMatchedPatientId(row, id);
     const cacheBuster = new Date().getTime();
     const link = patientId 
       ? `${window.location.origin}/r/${patientId}?v=${cacheBuster}` 
@@ -106,109 +126,177 @@ export function TasksTable({ data }: TasksTableProps) {
     window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
   }
 
-  return (
-    <div className="rounded-md border bg-card">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Customer Name</TableHead>
-            <TableHead>Customer Number</TableHead>
-            <TableHead className="w-[140px]">Actions</TableHead>
-            <TableHead className="w-[120px]">Preview</TableHead>
-            <TableHead className="w-[130px]">Contact</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                No tasks available for this date.
-              </TableCell>
-            </TableRow>
-          ) : (
-            data.map((row, idx) => {
-              const isExpanded = expandedRowIdx === idx;
-              const patientId = getMatchedPatientId(row, idx);
-              const isFilled = Boolean(patientId) || filledForms.has(idx);
+  // Filter out deleted tasks
+  const activeData = useMemo(() => {
+    return data.filter(row => !deletedTasks.has(getTaskId(row)))
+  }, [data, deletedTasks])
 
-              return (
-                <React.Fragment key={idx}>
-                  <TableRow>
-                    <TableCell className="font-medium">{row["Customer Name"] || 'Unknown'}</TableCell>
-                    <TableCell>{row["Customer Number"] || 'N/A'}</TableCell>
-                    <TableCell>
-                      {isFilled ? (
-                        <Button 
-                          variant="default" 
-                          onClick={() => handleFillFormClick(idx)}
-                          className="bg-green-600 hover:bg-green-700 text-white w-full text-xs"
-                        >
-                          {isExpanded ? 'Cancel' : 'Form Filled'}
-                        </Button>
-                      ) : (
-                        <Button 
-                          variant="destructive" 
-                          onClick={() => handleFillFormClick(idx)}
-                          className="w-full text-xs"
-                        >
-                          {isExpanded ? 'Cancel' : 'Fill Form'}
-                        </Button>
+  // Partition into pending and completed
+  const { pendingTasks, completedTasks } = useMemo(() => {
+    const pending: Array<{ row: TrackerRow, id: string, patientId: string | null }> = []
+    const completed: Array<{ row: TrackerRow, id: string, patientId: string | null }> = []
+
+    activeData.forEach(row => {
+      const id = getTaskId(row)
+      const patientId = getMatchedPatientId(row, id)
+      const isFilled = Boolean(patientId) || filledForms.has(id)
+
+      if (isFilled) {
+        completed.push({ row, id, patientId })
+      } else {
+        pending.push({ row, id, patientId })
+      }
+    })
+
+    return { pendingTasks: pending, completedTasks: completed }
+  }, [activeData, filledForms, filledPatientIds, dbPatients])
+
+
+  const renderTable = (
+    title: string, 
+    tasks: Array<{ row: TrackerRow, id: string, patientId: string | null }>, 
+    emptyMessage: string
+  ) => {
+    return (
+      <div className="mb-8">
+        <h3 className="text-xl font-semibold mb-3">{title}</h3>
+        <div className="rounded-md border bg-card">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Customer Name</TableHead>
+                <TableHead>Customer Number</TableHead>
+                <TableHead className="w-[140px]">Actions</TableHead>
+                <TableHead className="w-[120px]">Preview</TableHead>
+                <TableHead className="w-[180px]">Contact</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {tasks.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                    {emptyMessage}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                tasks.map(({ row, id, patientId }) => {
+                  const isExpanded = expandedRowIdx === id;
+                  const isFilled = Boolean(patientId) || filledForms.has(id);
+
+                  return (
+                    <React.Fragment key={id}>
+                      <TableRow>
+                        <TableCell className="font-medium">{row["Customer Name"] || 'Unknown'}</TableCell>
+                        <TableCell>{row["Customer Number"] || 'N/A'}</TableCell>
+                        <TableCell>
+                          {isFilled ? (
+                            <Button 
+                              variant="default" 
+                              onClick={() => handleFillFormClick(id)}
+                              className="bg-green-600 hover:bg-green-700 text-white w-full text-xs"
+                            >
+                              {isExpanded ? 'Cancel' : 'Form Filled'}
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="destructive" 
+                              onClick={() => handleFillFormClick(id)}
+                              className="w-full text-xs"
+                            >
+                              {isExpanded ? 'Cancel' : 'Fill Form'}
+                            </Button>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="secondary"
+                            className="w-full gap-1.5 text-xs"
+                            onClick={() => handlePreview(row, id)}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            Preview
+                          </Button>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2 w-full">
+                            <Button 
+                              variant="outline"
+                              className="flex-1 gap-1.5 border-green-600 text-green-600 hover:bg-green-50 text-xs px-2"
+                              onClick={() => handleWhatsApp(row, id)}
+                            >
+                              <MessageCircle className="h-3.5 w-3.5" />
+                              WhatsApp
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 hover:border-red-300 px-2.5"
+                              onClick={() => handleDelete(id)}
+                              title="Remove Task"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                      
+                      {isExpanded && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="p-0 border-b-0">
+                            <div className="p-4 bg-muted/30">
+                              <Card>
+                                <CardHeader>
+                                  <CardTitle className="text-lg">
+                                    {isFilled ? 'Update Consult Details' : 'New Consult Form'}
+                                  </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-0 sm:p-6">
+                                  <CaptureForm 
+                                    isEmbedded={true}
+                                    initialData={{
+                                      name: row["Customer Name"],
+                                      phone: row["Customer Number"] ? String(row["Customer Number"]) : "",
+                                      consultDate: row["Date"]
+                                    }}
+                                    onSuccess={(newId?: string) => handleDone(id, newId)}
+                                  />
+                                </CardContent>
+                              </Card>
+                            </div>
+                          </TableCell>
+                        </TableRow>
                       )}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="secondary"
-                        className="w-full gap-1.5 text-xs"
-                        onClick={() => handlePreview(row, idx)}
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        Preview
-                      </Button>
-                    </TableCell>
-                    <TableCell>
-                      <Button 
-                        variant="outline"
-                        className="w-full gap-1.5 border-green-600 text-green-600 hover:bg-green-50 text-xs"
-                        onClick={() => handleWhatsApp(row, idx)}
-                      >
-                        <MessageCircle className="h-3.5 w-3.5" />
-                        WhatsApp
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                  
-                  {isExpanded && (
-                    <TableRow>
-                      <TableCell colSpan={5} className="p-0 border-b-0">
-                        <div className="p-4 bg-muted/30">
-                          <Card>
-                            <CardHeader>
-                              <CardTitle className="text-lg">
-                                {isFilled ? 'Update Consult Details' : 'New Consult Form'}
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-0 sm:p-6">
-                              <CaptureForm 
-                                isEmbedded={true}
-                                initialData={{
-                                  name: row["Customer Name"],
-                                  phone: row["Customer Number"] ? String(row["Customer Number"]) : "",
-                                  consultDate: row["Date"]
-                                }}
-                                onSuccess={(newId?: string) => handleDone(idx, newId)}
-                              />
-                            </CardContent>
-                          </Card>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </React.Fragment>
-              )
-            })
-          )}
-        </TableBody>
-      </Table>
+                    </React.Fragment>
+                  )
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    )
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="rounded-md border bg-card flex items-center justify-center h-32 text-muted-foreground">
+        No tasks available for this date.
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      {renderTable(
+        "Pending Follow-ups", 
+        pendingTasks, 
+        "All caught up! No pending follow-ups."
+      )}
+      
+      {renderTable(
+        "Completed Follow-ups", 
+        completedTasks, 
+        "No completed follow-ups yet."
+      )}
     </div>
   )
 }
