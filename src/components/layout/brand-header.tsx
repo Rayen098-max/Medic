@@ -1,15 +1,13 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import { Activity } from 'lucide-react'
+import { GalleryVerticalEnd } from 'lucide-react'
 
 export function BrandHeader() {
-  const [imgError, setImgError] = useState(false)
-
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -19,24 +17,15 @@ export function BrandHeader() {
           asChild
         >
           <Link to='/' className='flex items-center gap-3'>
-            <div className='flex aspect-square size-9 items-center justify-center rounded-lg bg-primary/10 text-primary overflow-hidden p-1 border border-primary/20'>
-              {!imgError ? (
-                <img
-                  src='/logo.png'
-                  alt='The Sleep Company'
-                  className='size-full object-contain'
-                  onError={() => setImgError(true)}
-                />
-              ) : (
-                <Activity className='size-5 text-primary' />
-              )}
+            <div className='flex aspect-square size-9 items-center justify-center rounded-sm bg-white text-slate-900 shadow-sm'>
+              <GalleryVerticalEnd className='size-5 stroke-[2.5]' />
             </div>
-            <div className='grid flex-1 text-start text-sm leading-tight'>
-              <span className='truncate font-semibold text-sm tracking-tight'>
-                The Sleep Company
+            <div className='grid flex-1 text-start leading-tight'>
+              <span className='truncate font-bold text-[15px] tracking-wide text-slate-100'>
+                Medic
               </span>
-              <span className='truncate text-[12px] font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 uppercase mt-0.5'>
-                MEDIC
+              <span className='truncate text-[11px] text-slate-500 mt-0.5'>
+                The Sleep Company
               </span>
             </div>
           </Link>
