@@ -11,6 +11,7 @@ import CaptureForm from './components/CaptureForm';
 import CustomerPortal from './components/CustomerPortal';
 import EditBodyPanel from './components/EditBodyPanel';
 import Login from './components/Login';
+import SetupPassword from './components/SetupPassword';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LogOut } from 'lucide-react';
@@ -132,6 +133,7 @@ export default function App() {
           {/* Public or Fullscreen Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/sign-in" element={<Navigate to="/login" replace />} />
+          <Route path="/setup-password" element={<SetupPassword />} />
           <Route path="/r/:id" element={<CustomerPortal />} />
           <Route path="/map" element={
             <ProtectedRoute allowedRoles={['admin', 'manager', 'physio']}>

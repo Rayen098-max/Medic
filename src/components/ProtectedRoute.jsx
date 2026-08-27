@@ -19,6 +19,11 @@ export default function ProtectedRoute({ children, allowedRoles }) {
     // Not logged in, redirect to login page with return url
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
+  
+  const hasChangedPassword = user.user_metadata?.password_changed === true;
+  if (!hasChangedPassword && location.pathname !== '/setup-password') {
+    return <Navigate to="/setup-password" replace />;
+  }
 
   if (allowedRoles && !allowedRoles.includes(profile.role)) {
     // Logged in but wrong role, redirect to root or a not-authorized page
