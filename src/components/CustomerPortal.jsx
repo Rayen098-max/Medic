@@ -371,52 +371,52 @@ export default function CustomerPortal() {
         </Canvas>
         {renderHotspotOverlay()}
 
-        {/* Floating PHASE button */}
+        {/* Floating PHASE menu and button */}
         {!activePointId && (
-          <button
-            className="phase-fab"
-            onClick={() => setShowPhasesModal(true)}
-            aria-label="View Recovery Phases"
-            title="Recovery Phases"
-          >
-            <img src="/phase-logo.png" alt="Phases Logo" />
-          </button>
-        )}
+          <div style={{ 
+            position: 'absolute', 
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)', 
+            right: 'calc(env(safe-area-inset-right, 0px) + 18px)', 
+            zIndex: 35, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'flex-end', 
+            gap: '12px' 
+          }}>
+            
+            {showPhasesModal && (
+              <div className="keep-menu-container">
+                <div className="keep-menu-card">
+                  <div className="keep-menu-title">WEEK 1</div>
+                  <div className="keep-menu-desc">Exercises that we will tackle later</div>
+                </div>
+                <div className="keep-menu-card">
+                  <div className="keep-menu-title">WEEK 2</div>
+                  <div className="keep-menu-desc">Exercises that we will tackle later</div>
+                </div>
+                <div className="keep-menu-card highlight">
+                  <div className="keep-menu-title" style={{ color: '#e5409e' }}>WEEK 3</div>
+                  <div className="keep-menu-desc" style={{ fontWeight: 'bold' }}>For further consultations and doubts, visit the physio at the store.</div>
+                </div>
+              </div>
+            )}
 
-        {/* Phases popup */}
-        {showPhasesModal && (
-          <div className="cart-modal-overlay" onClick={() => setShowPhasesModal(false)}>
-            <div className="phase-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-              <div className="cart-modal-header">
-                <div>
-                  <h3 style={{ color: '#00d2ff', fontSize: '1.6rem' }}>Recovery Phases</h3>
-                  <p>Your personalized roadmap to full recovery</p>
-                </div>
-                <button className="cart-modal-close" onClick={() => setShowPhasesModal(false)}>
-                  <X size={24} />
-                </button>
-              </div>
-              <div className="phase-modal-body">
-                <div className="phase-card">
-                  <div className="phase-card-header">WEEK 1</div>
-                  <div className="phase-card-content">
-                    <p>Exercises that we will tackle later</p>
-                  </div>
-                </div>
-                <div className="phase-card">
-                  <div className="phase-card-header">WEEK 2</div>
-                  <div className="phase-card-content">
-                    <p>Exercises that we will tackle later</p>
-                  </div>
-                </div>
-                <div className="phase-card highlight-phase">
-                  <div className="phase-card-header" style={{ color: '#e5409e' }}>WEEK 3</div>
-                  <div className="phase-card-content">
-                    <p style={{ fontWeight: 'bold' }}>For further consultations and doubts, visit the physio at the store.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <button
+              className="phase-fab"
+              onClick={() => setShowPhasesModal(!showPhasesModal)}
+              aria-label="View Recovery Phases"
+              title="Recovery Phases"
+              style={{ position: 'relative', bottom: 'auto', right: 'auto' }}
+            >
+              <img 
+                src="/arrow-logo.png" 
+                alt="Phases Logo" 
+                style={{ 
+                  transform: showPhasesModal ? 'rotate(180deg)' : 'none', 
+                  transition: 'transform 0.3s ease' 
+                }} 
+              />
+            </button>
           </div>
         )}
 
@@ -487,11 +487,8 @@ export default function CustomerPortal() {
       </div>
 
       <style>{`
-        /* ---- Phase FAB ---- */
+        /* ---- Phase FAB & Menu ---- */
         .phase-fab {
-          position: absolute;
-          bottom: calc(env(safe-area-inset-bottom, 0px) + 18px);
-          right: calc(env(safe-area-inset-right, 0px) + 18px);
           width: clamp(64px, 16vw, 76px);
           height: clamp(64px, 16vw, 76px);
           border-radius: 50%;
@@ -534,6 +531,45 @@ export default function CustomerPortal() {
         @keyframes cartRipple {
           0% { transform: scale(1); opacity: 0.8; }
           100% { transform: scale(1.55); opacity: 0; }
+        }
+        
+        .keep-menu-container {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          align-items: flex-end;
+          animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          transform-origin: bottom right;
+        }
+        @keyframes slideUpFade {
+          0% { opacity: 0; transform: translateY(20px) scale(0.9); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .keep-menu-card {
+          background: rgba(15, 23, 42, 0.95);
+          backdrop-filter: blur(8px);
+          border: 1px solid rgba(0, 212, 255, 0.3);
+          border-radius: 12px;
+          padding: 14px 18px;
+          color: white;
+          width: 260px;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+          text-align: left;
+        }
+        .keep-menu-card.highlight {
+          border-color: rgba(229, 64, 158, 0.6);
+          background: rgba(229, 64, 158, 0.05);
+        }
+        .keep-menu-title {
+          color: #00d2ff;
+          font-weight: 800;
+          font-size: 1rem;
+          margin-bottom: 6px;
+        }
+        .keep-menu-desc {
+          font-size: 0.9rem;
+          color: #cbd5e1;
+          line-height: 1.4;
         }
         .exercise-fab {
           position: absolute;
