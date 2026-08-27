@@ -409,11 +409,14 @@ export default function CustomerPortal() {
               style={{ position: 'relative', bottom: 'auto', right: 'auto' }}
             >
               <img 
-                src="/arrow-logo.png" 
+                src="/arrow-logo.jpg" 
                 alt="Phases Logo" 
                 style={{ 
                   transform: showPhasesModal ? 'rotate(180deg)' : 'none', 
-                  transition: 'transform 0.3s ease' 
+                  transition: 'transform 0.3s ease',
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain'
                 }} 
               />
             </button>
@@ -491,36 +494,18 @@ export default function CustomerPortal() {
         .phase-fab {
           width: clamp(64px, 16vw, 76px);
           height: clamp(64px, 16vw, 76px);
-          border-radius: 50%;
           border: none;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #fff;
-          box-shadow: 0 0 25px rgba(0, 212, 255, 0.4);
+          background: transparent;
           z-index: 15;
-          animation: cartHeartbeat 1.6s ease-in-out infinite;
           transition: transform 0.2s ease;
-          padding: 2px;
-        }
-        .phase-fab img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
-          border-radius: 50%;
+          padding: 0;
         }
         .phase-fab:hover { transform: scale(1.08); }
         .phase-fab:active { transform: scale(0.95); }
-        .phase-fab::after {
-          content: "";
-          position: absolute;
-          inset: -6px;
-          border-radius: 50%;
-          border: 2px solid rgba(0, 212, 255, 0.6);
-          animation: cartRipple 1.6s ease-out infinite;
-          pointer-events: none;
-        }
         @keyframes cartHeartbeat {
           0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(255,107,129,.5), 0 0 40px rgba(0,212,255,.3), 0 6px 18px rgba(0,0,0,.45); }
           12% { transform: scale(1.12); box-shadow: 0 0 30px rgba(255,107,129,.75), 0 0 60px rgba(0,212,255,.5), 0 6px 18px rgba(0,0,0,.45); }
