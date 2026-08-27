@@ -28,6 +28,7 @@ export function AppSidebar() {
     items: group.items.filter(item => {
       if (item.url === '/usage-report' && profile?.role === 'physio') return false;
       if (item.url === '/tasks' && (profile?.role === 'admin' || profile?.role === 'manager')) return false;
+      if (item.url === '/edit-body' && profile?.role !== 'admin') return false;
       return true;
     })
   })).filter(group => group.items.length > 0)

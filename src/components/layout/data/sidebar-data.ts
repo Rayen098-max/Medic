@@ -67,6 +67,11 @@ export const sidebarData: SidebarData = {
           url: '/usage-report',
           icon: Bug,
         },
+        {
+          title: 'Edit Body',
+          url: '/edit-body',
+          icon: Palette,
+        },
       ],
     },
   ],
