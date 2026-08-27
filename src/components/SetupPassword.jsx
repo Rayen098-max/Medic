@@ -103,14 +103,24 @@ export default function SetupPassword() {
             />
           </div>
 
-          <Button 
-            type="submit" 
-            disabled={loading}
-            className="w-full mt-4"
-          >
-            {loading ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
-            Save & Continue
-          </Button>
+          <div className="flex gap-2 mt-4">
+            <Button 
+              type="button" 
+              variant="outline"
+              onClick={() => supabase.auth.signOut().then(() => navigate('/login', { replace: true }))}
+              className="flex-1"
+            >
+              Sign Out
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={loading}
+              className="flex-1"
+            >
+              {loading ? <Loader2 className="animate-spin mr-2" size={16} /> : null}
+              Save & Continue
+            </Button>
+          </div>
         </form>
       </div>
     </div>
