@@ -55,6 +55,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
   });
   const [exercises, setExercises] = useState([]);
   const [conditionNotes, setConditionNotes] = useState({});
+  const [whatsappMessage, setWhatsappMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleImageUpload = (index, e) => {
@@ -114,7 +115,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
       physio_id: profile?.id,
       consultDate: formatConsultDateToISO(formData.consultDate),
       recommendedExercises: exercises,
-      conditionNotes: conditionNotes
+      conditionNotes: { ...conditionNotes, whatsappMessage }
     };
 
     try {
@@ -276,6 +277,17 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
           </div>
         ))}
         <button type="button" onClick={addExercise} className="clinical-btn" style={{ fontSize: '0.85rem', padding: '8px 12px', width: 'fit-content' }}>+ Add Exercise</button>
+      </div>
+
+      <div>
+        <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Personalized WhatsApp Message</label>
+        <textarea 
+          value={whatsappMessage} 
+          onChange={(e) => setWhatsappMessage(e.target.value)}
+          rows={4}
+          placeholder="e.g., Hi John, it was great seeing you today! Hope your body is treating you better. Let me know if you have any questions."
+          style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white', resize: 'vertical' }}
+        />
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(0, 210, 255, 0.05)', padding: '16px', borderRadius: '8px' }}>

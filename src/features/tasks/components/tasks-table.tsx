@@ -117,10 +117,16 @@ export function TasksTable({ data }: TasksTableProps) {
       ? `${window.location.origin}/r/${patientId}?v=${cacheBuster}` 
       : `${window.location.origin}/map`;
 
+    const patient = dbPatients.find(p => p.id === patientId);
+    const customMessage = patient?.conditionNotes?.whatsappMessage;
+
     const customerName = row["Customer Name"] || "there";
     const physioName = profile?.full_name?.replace(/^Dr\.?\s+/i, '') || 'Physio';
 
-    const fullMessage = `Hi ${customerName},\n\nHope your body is treating you better!\n\nHere is your *Personalized 3D Recovery Plan* (including exercises and things to avoid):\n👉 ${link}\n\nLet me know if you have any questions.\n\nBest,\nDr. ${physioName}`;
+    const defaultGreeting = `Hi ${customerName},\n\nHope your body is treating you better! Let me know if you have any questions.`;
+    const greeting = (customMessage && customMessage.trim().length > 0) ? customMessage : defaultGreeting;
+
+    const fullMessage = `${greeting}\n\nYour Personalized Plan for ${customerName}:\n👉 ${link}\n\nBest regards,\nDr. ${physioName}`;
 
     const encoded = encodeURIComponent(fullMessage);
     window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
