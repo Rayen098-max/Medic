@@ -35,8 +35,8 @@ export function BrandHeader() {
               <span className='truncate font-semibold text-sm tracking-tight'>
                 The Sleep Company
               </span>
-              <span className='truncate text-[11px] text-muted-foreground'>
-                Clinical Advisor
+              <span className='truncate text-[12px] font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 uppercase mt-0.5'>
+                MEDIC
               </span>
             </div>
           </Link>
