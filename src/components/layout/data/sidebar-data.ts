@@ -72,6 +72,11 @@ export const sidebarData: SidebarData = {
           url: '/edit-body',
           icon: Palette,
         },
+        {
+          title: 'Add Data',
+          url: '/add-data',
+          icon: Settings,
+        },
       ],
     },
   ],

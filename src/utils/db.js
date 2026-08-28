@@ -141,3 +141,26 @@ export const getUsageReport = async () => {
 
   return report.sort((a, b) => new Date(b.lastOpened).getTime() - new Date(a.lastOpened).getTime());
 };
+
+export const getExercises = async () => {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase
+    .from('exercises')
+    .select('*')
+    .order('created_at', { ascending: false });
+    
+  if (error) throw error;
+  return data;
+};
+
+export const addExercise = async (exercise) => {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase
+    .from('exercises')
+    .insert([exercise])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data.id;
+};

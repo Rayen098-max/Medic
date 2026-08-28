@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Camera, ArrowLeft, Loader2 } from 'lucide-react';
 import { z } from 'zod';
-import { addPatient } from '../utils/db';
+import { addPatient, getExercises } from '../utils/db';
 import { useAuth } from '../context/AuthContext';
 import painPointsData from '../data/painPoints.json';
 
@@ -57,6 +57,19 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
   const [conditionNotes, setConditionNotes] = useState({});
   const [whatsappMessage, setWhatsappMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [availableExercises, setAvailableExercises] = useState([]);
+
+  React.useEffect(() => {
+    const fetchExercises = async () => {
+      try {
+        const data = await getExercises();
+        setAvailableExercises(data || []);
+      } catch (err) {
+        console.error('Error fetching exercises:', err);
+      }
+    };
+    fetchExercises();
+  }, []);
 
   const handleImageUpload = (index, e) => {
     const file = e.target.files[0];
@@ -254,6 +267,27 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
           <div key={i} style={{ padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '12px', position: 'relative' }}>
             <button type="button" onClick={() => removeExercise(i)} style={{ position: 'absolute', top: '8px', right: '8px', background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
             
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#ccc' }}>Select from Templates</label>
+              <select
+                onChange={(e) => {
+                  const selectedEx = availableExercises.find(a => a.id === e.target.value);
+                  if (selectedEx) {
+                    const newEx = [...exercises];
+                    newEx[i].image = selectedEx.image_url || '';
+                    newEx[i].instructions = selectedEx.instructions || '';
+                    setExercises(newEx);
+                  }
+                }}
+                style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }}
+              >
+                <option value="">-- Custom Exercise / Keep Current --</option>
+                {availableExercises.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+
             <div style={{ marginBottom: '12px' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#ccc' }}>Exercise Image</label>
               <input type="file" accept="image/*" onChange={(e) => handleImageUpload(i, e)} style={{ color: 'white', fontSize: '0.85rem', width: '100%' }} />

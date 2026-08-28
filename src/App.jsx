@@ -7,6 +7,7 @@ import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 import BodyModel from './components/BodyModel';
 import DetailPanel from './components/DetailPanel';
 import AdminPanel from './components/AdminPanel';
+import AddDataPanel from './components/AddDataPanel';
 import CaptureForm from './components/CaptureForm';
 import CustomerPortal from './components/CustomerPortal';
 import EditBodyPanel from './components/EditBodyPanel';
@@ -147,6 +148,11 @@ export default function App() {
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/capture" element={<CaptureForm />} />
             <Route path="/admin" element={<AdminPanel />} />
+            <Route path="/add-data" element={
+              <ProtectedRoute allowedRoles={['admin', 'manager']}>
+                <AddDataPanel />
+              </ProtectedRoute>
+            } />
             <Route path="/edit-body" element={<EditBodyPanel />} />
             <Route path="/usage-report" element={
               <ProtectedRoute allowedRoles={['admin', 'manager']}>
