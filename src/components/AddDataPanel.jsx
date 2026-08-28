@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getExercises, addExercise } from '../utils/db';
+import { getExercises, addExercise, updateExercise } from '../utils/db';
 import { useAuth } from '../context/AuthContext';
 import { Plus, Image as ImageIcon, Loader2 } from 'lucide-react';
 
@@ -58,6 +58,23 @@ export default function AddDataPanel() {
       alert('Failed to add exercise: ' + err.message);
     }
     setIsSubmitting(false);
+  };
+
+  const handleUpdateImage = async (id, e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        try {
+          await updateExercise(id, { image_url: reader.result });
+          alert('Image attached successfully!');
+          fetchExercises(); // Refresh the list
+        } catch (err) {
+          alert('Failed to attach image: ' + err.message);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   if (profile?.role !== 'admin' && profile?.role !== 'manager') {
@@ -147,9 +164,20 @@ export default function AddDataPanel() {
                   </div>
                 )}
                 <h3 style={{ margin: '0 0 8px 0', color: 'var(--accent)', fontSize: '1.1rem' }}>{ex.name}</h3>
-                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>
+                <p style={{ margin: '0 0 12px 0', color: 'var(--text-muted)', fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>
                   {ex.instructions || 'No instructions provided.'}
                 </p>
+                <div style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#ccc' }}>
+                    {ex.image_url ? 'Replace Image' : 'Attach Image'}
+                  </label>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={(e) => handleUpdateImage(ex.id, e)} 
+                    style={{ color: 'white', fontSize: '0.85rem', width: '100%' }} 
+                  />
+                </div>
               </div>
             ))}
           </div>

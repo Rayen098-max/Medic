@@ -164,3 +164,13 @@ export const addExercise = async (exercise) => {
   if (error) throw error;
   return data.id;
 };
+
+export const updateExercise = async (id, updates) => {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { error } = await supabase
+    .from('exercises')
+    .update(updates)
+    .eq('id', id);
+
+  if (error) throw error;
+};
