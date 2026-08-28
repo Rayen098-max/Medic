@@ -14,6 +14,7 @@ interface TrackerRow {
   "Customer Name": string;
   "Customer Number": string;
   "Physio session Done": string;
+  Dates?: string;
 }
 
 const KNOWN_PHYSIOS = ['Aishwarya', 'Gursheen', 'Dipti', 'Rutuja', 'Pooja', 'Hritika', 'Kritika', 'Gaurav'];
@@ -42,7 +43,7 @@ export function Tasks() {
         const filledData: TrackerRow[] = [];
 
         for (const row of json) {
-          const rawDate = row.Date?.trim();
+          const rawDate = (row.Date || row.Dates)?.trim();
           if (rawDate && rawDate !== '' && !['Start', 'Mid', 'End', 'cc', 'no cc'].includes(rawDate)) {
             lastDate = rawDate;
           }
