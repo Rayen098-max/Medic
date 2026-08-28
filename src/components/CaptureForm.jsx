@@ -84,7 +84,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
     }
   };
 
-  const addExercise = () => setExercises([...exercises, { image: '', instructions: '' }]);
+  const addExercise = () => setExercises([...exercises, { name: '', image: '', instructions: '' }]);
   const removeExercise = (index) => setExercises(exercises.filter((_, i) => i !== index));
 
   const handleSubmit = async (e) => {
@@ -268,24 +268,18 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
             <button type="button" onClick={() => removeExercise(i)} style={{ position: 'absolute', top: '8px', right: '8px', background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
             
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#ccc' }}>Select from Templates</label>
-              <select
+              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#ccc' }}>Exercise Name</label>
+              <input 
+                type="text"
+                value={ex.name || ''}
                 onChange={(e) => {
-                  const selectedEx = availableExercises.find(a => a.id === e.target.value);
-                  if (selectedEx) {
-                    const newEx = [...exercises];
-                    newEx[i].image = selectedEx.image_url || '';
-                    newEx[i].instructions = selectedEx.instructions || '';
-                    setExercises(newEx);
-                  }
+                  const newEx = [...exercises];
+                  newEx[i].name = e.target.value;
+                  setExercises(newEx);
                 }}
-                style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }}
-              >
-                <option value="">-- Custom Exercise / Keep Current --</option>
-                {availableExercises.map(a => (
-                  <option key={a.id} value={a.id}>{a.name}</option>
-                ))}
-              </select>
+                placeholder="e.g., Neck Side Bends"
+                style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white' }}
+              />
             </div>
 
             <div style={{ marginBottom: '12px' }}>
@@ -310,7 +304,30 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
             </div>
           </div>
         ))}
-        <button type="button" onClick={addExercise} className="clinical-btn" style={{ fontSize: '0.85rem', padding: '8px 12px', width: 'fit-content' }}>+ Add Exercise</button>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <select
+            onChange={(e) => {
+              if (!e.target.value) return;
+              const selectedEx = availableExercises.find(a => a.id === e.target.value);
+              if (selectedEx) {
+                setExercises([...exercises, { 
+                  name: selectedEx.name, 
+                  image: selectedEx.image_url || '', 
+                  instructions: selectedEx.instructions || '' 
+                }]);
+                e.target.value = ''; // reset after selection
+              }
+            }}
+            style={{ flex: '1', minWidth: '250px', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }}
+          >
+            <option value="">Select from predefined exercises...</option>
+            {availableExercises.map(a => (
+              <option key={a.id} value={a.id}>{a.name}</option>
+            ))}
+          </select>
+          <span style={{ color: 'var(--text-muted)' }}>OR</span>
+          <button type="button" onClick={addExercise} className="clinical-btn" style={{ fontSize: '0.85rem', padding: '8px 12px', whiteSpace: 'nowrap' }}>+ Add Custom Exercise</button>
+        </div>
       </div>
 
       <div>

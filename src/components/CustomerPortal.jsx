@@ -447,7 +447,7 @@ export default function CustomerPortal() {
                     }}
                     style={{ cursor: 'pointer', borderLeft: '4px solid #2ecc71', width: '220px' }}
                   >
-                    <div className="keep-menu-title" style={{ color: '#2ecc71' }}>EXERCISE {i + 1}</div>
+                    <div className="keep-menu-title" style={{ color: '#2ecc71' }}>{ex.name || `EXERCISE ${i + 1}`}</div>
                     <div className="keep-menu-desc" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {ex.instructions}
                     </div>
@@ -485,7 +485,7 @@ export default function CustomerPortal() {
           <div className="cart-modal-overlay" style={{ zIndex: 40 }} onClick={() => setActiveExercise(null)}>
             <div className="cart-modal" style={{ height: 'auto', maxHeight: '90vh', width: 'min(90vw, 600px)' }} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
               <div className="cart-modal-header">
-                <h3 style={{ color: '#2ecc71' }}>Exercise Detail</h3>
+                <h3 style={{ color: '#2ecc71' }}>{activeExercise.name || 'Exercise Detail'}</h3>
                 <button className="cart-modal-close" onClick={() => setActiveExercise(null)}>
                   <X size={22} />
                 </button>
