@@ -64,14 +64,39 @@ export default function AddDataPanel() {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = async () => {
-        try {
-          await updateExercise(id, { image_url: reader.result });
-          alert('Image attached successfully!');
-          fetchExercises(); // Refresh the list
-        } catch (err) {
-          alert('Failed to attach image: ' + err.message);
-        }
+      reader.onloadend = () => {
+        const img = new Image();
+        img.onload = async () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          
+          // Max dimension 800px
+          if (width > 800) {
+            height = Math.round((height * 800) / width);
+            width = 800;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // Compress to JPEG
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+          
+          try {
+            // Optimistic update
+            setExercises(prev => prev.map(ex => ex.id === id ? { ...ex, image_url: dataUrl } : ex));
+            
+            await updateExercise(id, { image_url: dataUrl });
+            alert('Image attached successfully!');
+          } catch (err) {
+            alert('Failed to attach image: ' + err.message);
+            fetchExercises(); // Revert on failure
+          }
+        };
+        img.src = reader.result;
       };
       reader.readAsDataURL(file);
     }
