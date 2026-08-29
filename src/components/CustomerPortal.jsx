@@ -464,18 +464,17 @@ export default function CustomerPortal() {
               style={{ position: 'relative', bottom: 'auto', left: 'auto' }}
             >
               <img 
-                src="/exercise-logo.png" 
+                src="/exercise-logo-new.png" 
                 alt="Exercises Logo" 
                 style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  borderRadius: '50%',
+                  width: '65%',
+                  height: '65%',
+                  objectFit: 'contain',
                   transform: showExercisesModal ? 'scale(0.9)' : 'none', 
                   transition: 'transform 0.3s ease'
                 }} 
               />
-              <span className="cart-fab-badge" style={{ color: '#2ecc71' }}>{zone.recommendedExercises.length}</span>
+              <span className="cart-fab-badge" style={{ color: '#00d2ff', borderColor: '#00d2ff', background: 'rgba(15, 23, 42, 0.95)' }}>{zone.recommendedExercises.length}</span>
             </button>
           </div>
         )}
@@ -588,13 +587,14 @@ export default function CustomerPortal() {
           width: clamp(54px, 14vw, 66px);
           height: clamp(54px, 14vw, 66px);
           border-radius: 50%;
-          border: none;
+          border: 1px solid rgba(0, 212, 255, 0.3);
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #fff;
-          box-shadow: 0 0 20px rgba(46, 204, 113, 0.55), 0 0 40px rgba(46, 204, 113, 0.35), 0 6px 18px rgba(0, 0, 0, 0.45);
+          background: rgba(15, 23, 42, 0.95);
+          backdrop-filter: blur(8px);
+          box-shadow: 0 0 25px rgba(0, 212, 255, 0.4);
           z-index: 15;
           animation: cartHeartbeat 1.6s ease-in-out infinite;
           animation-delay: 0.8s;
