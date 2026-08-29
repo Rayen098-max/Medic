@@ -409,13 +409,13 @@ export default function CustomerPortal() {
               style={{ position: 'relative', bottom: 'auto', right: 'auto' }}
             >
               <img 
-                src="/arrow-logo.jpg" 
+                src="/arrow-logo-new.png" 
                 alt="Phases Logo" 
                 style={{ 
-                  transform: showPhasesModal ? 'rotate(180deg)' : 'none', 
+                  transform: showPhasesModal ? 'scale(1,-1)' : 'none', 
                   transition: 'transform 0.3s ease',
-                  width: '100%',
-                  height: '100%',
+                  width: '65%',
+                  height: '65%',
                   objectFit: 'contain'
                 }} 
               />
@@ -509,18 +509,18 @@ export default function CustomerPortal() {
           width: clamp(54px, 14vw, 66px);
           height: clamp(54px, 14vw, 66px);
           border-radius: 50%;
-          border: none;
+          border: 1px solid rgba(0, 212, 255, 0.3);
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: #fff;
+          background: rgba(15, 23, 42, 0.95);
+          backdrop-filter: blur(8px);
           box-shadow: 0 0 25px rgba(0, 212, 255, 0.4);
           z-index: 15;
           animation: cartHeartbeat 1.6s ease-in-out infinite;
           transition: transform 0.2s ease;
           overflow: hidden;
-          padding: 8px; /* Give the arrow logo some breathing room inside the circle */
         }
         .phase-fab:hover { transform: scale(1.08); }
         .phase-fab:active { transform: scale(0.95); }
