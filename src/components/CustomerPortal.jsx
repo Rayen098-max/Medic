@@ -513,7 +513,7 @@ export default function CustomerPortal() {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(15, 23, 42, 0.95);
+          background: rgba(150, 240, 255, 0.95);
           backdrop-filter: blur(8px);
           box-shadow: 0 0 25px rgba(150, 240, 255, 0.4);
           z-index: 15;
@@ -591,7 +591,7 @@ export default function CustomerPortal() {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: rgba(15, 23, 42, 0.95);
+          background: rgba(150, 240, 255, 0.95);
           backdrop-filter: blur(8px);
           box-shadow: 0 0 25px rgba(150, 240, 255, 0.4);
           z-index: 15;

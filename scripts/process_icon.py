@@ -8,9 +8,9 @@ def process_icon():
     gray = img.convert("L")
     alpha = ImageOps.invert(gray)
     
-    # Lighter, brighter cyan/sky-blue tone for better contrast
-    light_cyan = (150, 240, 255, 255)
-    cyan = Image.new("RGBA", img.size, light_cyan)
+    # Dark blue/navy tone for the icon
+    dark_blue = (15, 23, 42, 255)
+    cyan = Image.new("RGBA", img.size, dark_blue)
     cyan.putalpha(alpha)
     
     bbox = alpha.getbbox()

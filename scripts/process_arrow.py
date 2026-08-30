@@ -5,13 +5,12 @@ def process_arrow():
     out_path = r"C:\Users\Admin\Desktop\Medic\public\arrow-logo-new.png"
     
     img = Image.open(path).convert("RGBA")
-    
     gray = img.convert("L")
     alpha = ImageOps.invert(gray)
     
-    # Lighter, brighter cyan/sky-blue tone for better contrast
-    light_cyan = (150, 240, 255, 255)
-    cyan = Image.new("RGBA", img.size, light_cyan)
+    # Dark blue/navy tone for the icon
+    dark_blue = (15, 23, 42, 255)
+    cyan = Image.new("RGBA", img.size, dark_blue)
     
     def threshold(p):
         return 255 if p > 20 else 0
