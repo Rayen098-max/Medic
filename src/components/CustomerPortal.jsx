@@ -108,6 +108,9 @@ export default function CustomerPortal() {
           
           const pointIds = data.painPointId ? data.painPointId.split(',') : [];
           const matchedPoints = pointIds.map(id => painPointsData.find(p => p.id === id)).filter(Boolean);
+          if (data.customConditions && Array.isArray(data.customConditions)) {
+            matchedPoints.push(...data.customConditions);
+          }
           
           if (matchedPoints.length > 0) {
             const primaryName = matchedPoints[0].name;
@@ -194,7 +197,7 @@ export default function CustomerPortal() {
     return <div style={{ padding: '40px', color: 'white' }}>Loading or record not found...</div>;
   }
 
-  const activePointData = activePointId ? painPointsData.find(p => p.id === activePointId) : null;
+  const activePointData = activePointId ? [...painPointsData, ...(r?.customConditions || [])].find(p => p.id === activePointId) : null;
 
   const renderScene = () => (
     <>
@@ -214,7 +217,7 @@ export default function CustomerPortal() {
         </Html>
       }>
         <BodyModel 
-          zones={painPointsData}
+          zones={[...painPointsData, ...(r?.customConditions || [])]}
           activeZones={zone.activeZones}
           onZoneClick={(clickedId) => setActivePointId(clickedId)} 
         />

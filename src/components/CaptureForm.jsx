@@ -54,6 +54,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
     consent: false
   });
   const [exercises, setExercises] = useState([]);
+  const [customConditions, setCustomConditions] = useState([]);
   const [conditionNotes, setConditionNotes] = useState({});
   const [whatsappMessage, setWhatsappMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -116,19 +117,34 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
 
     await new Promise(r => setTimeout(r, 600));
 
-    const primaryPoint = painPointsData.find(p => p.id === matchedPointIds[0]);
+    const primaryPoint = painPointsData.find(p => p.id === matchedPointIds[0]) || (customConditions.length > 0 ? customConditions[0] : null);
+
+    const customConditionsPayload = customConditions.map((c, i) => ({
+        id: `CUSTOM_${Date.now()}_${i}`,
+        name: c.name,
+        zone: c.zone,
+        description: c.message,
+        dos: [],
+        donts: []
+    }));
+
+    const combinedNotes = { ...conditionNotes };
+    customConditionsPayload.forEach((c, i) => {
+        combinedNotes[c.id] = customConditions[i].notes;
+    });
 
     const newPatient = {
       name: formData.name,
       phone: formData.phone,
       painArea: primaryPoint ? primaryPoint.zone : 'lower_back',
       painPointId: matchedPointIds.join(','),
+      customConditions: customConditionsPayload,
       transcription: finalTranscription,
       sleepPosition: 'Unknown',
       physio_id: profile?.id,
       consultDate: formatConsultDateToISO(formData.consultDate),
       recommendedExercises: exercises,
-      conditionNotes: { ...conditionNotes, whatsappMessage }
+      conditionNotes: { ...combinedNotes, whatsappMessage }
     };
 
     try {
@@ -189,7 +205,87 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
       </div>
 
       <div>
-        <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Manual Condition Selection (Select up to 5)</label>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+          <label style={{ display: 'block', color: 'var(--text-muted)', margin: 0 }}>Manual Condition Selection (Select up to 5)</label>
+          <button type="button" onClick={() => setCustomConditions([...customConditions, { zone: '', name: '', message: '', notes: '' }])} className="clinical-btn" style={{ fontSize: '0.85rem', padding: '4px 8px', whiteSpace: 'nowrap' }}>+ Add Custom Condition</button>
+        </div>
+
+        {customConditions.length > 0 && (
+          <div style={{ marginBottom: '16px' }}>
+            {customConditions.map((cond, i) => (
+              <div key={i} style={{ padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '12px', position: 'relative' }}>
+                <button type="button" onClick={() => setCustomConditions(customConditions.filter((_, idx) => idx !== i))} style={{ position: 'absolute', top: '8px', right: '8px', background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+                
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#ccc' }}>Body Part (For glowing effect)</label>
+                  <select 
+                    value={cond.zone || ''}
+                    onChange={(e) => {
+                      const newConds = [...customConditions];
+                      newConds[i].zone = e.target.value;
+                      setCustomConditions(newConds);
+                    }}
+                    required
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }}
+                  >
+                    <option value="">Select body part...</option>
+                    {Object.keys(painPointsData.reduce((acc, point) => { if(point.zone) acc[point.zone] = true; return acc; }, {})).map(z => (
+                      <option key={z} value={z}>{z}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#ccc' }}>Condition Name</label>
+                  <input 
+                    type="text"
+                    value={cond.name || ''}
+                    onChange={(e) => {
+                      const newConds = [...customConditions];
+                      newConds[i].name = e.target.value;
+                      setCustomConditions(newConds);
+                    }}
+                    required
+                    placeholder="e.g., Unspecified Neck Pain"
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white' }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '12px' }}>
+                  <span style={{ fontSize: '0.8rem', color: '#ccc', display: 'block', marginBottom: '4px' }}>Personalized Message (Required)</span>
+                  <textarea 
+                    value={cond.notes || ''} 
+                    onChange={(e) => {
+                      const newConds = [...customConditions];
+                      newConds[i].notes = e.target.value;
+                      setCustomConditions(newConds);
+                    }}
+                    rows={2}
+                    required
+                    placeholder="e.g., Hi John, it was great seeing you today! Let's get that back pain sorted."
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', resize: 'vertical' }}
+                  />
+                </div>
+                
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: '#ccc', display: 'block', marginBottom: '4px' }}>Condition Info (Optional)</span>
+                  <textarea 
+                    value={cond.message || ''} 
+                    onChange={(e) => {
+                      const newConds = [...customConditions];
+                      newConds[i].message = e.target.value;
+                      setCustomConditions(newConds);
+                    }}
+                    rows={2}
+                    placeholder="e.g., Information about this specific condition..."
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', resize: 'vertical' }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {Object.entries(painPointsData.reduce((acc, point) => {
             if (!acc[point.zone]) acc[point.zone] = [];
