@@ -144,12 +144,16 @@ export default function App() {
 
           {/* Authenticated Dashboard Routes with Sidebar */}
           <Route element={<ProtectedRoute allowedRoles={['admin', 'manager', 'physio']}><AuthenticatedLayout /></ProtectedRoute>}>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={
+              <ProtectedRoute allowedRoles={['admin', 'manager']} redirectTo="/tasks">
+                <Dashboard />
+              </ProtectedRoute>
+            } />
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/capture" element={<CaptureForm />} />
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/add-data" element={
-              <ProtectedRoute allowedRoles={['admin', 'manager']}>
+              <ProtectedRoute allowedRoles={['admin', 'manager']} redirectTo="/tasks">
                 <AddDataPanel />
               </ProtectedRoute>
             } />
