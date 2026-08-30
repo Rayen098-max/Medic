@@ -466,22 +466,93 @@ export default function CustomerPortal() {
             gap: '12px' 
           }}>
             
-            {showPhasesModal && (
-              <div className="keep-menu-container">
-                <div className="keep-menu-card">
-                  <div className="keep-menu-title">WEEK 1</div>
-                  <div className="keep-menu-desc">Exercises that we will tackle later</div>
+            {showPhasesModal && (() => {
+              const exercises = zone.recommendedExercises || [];
+              const week1Ex = exercises.filter(ex => ex.week === '1');
+              const week2Ex = exercises.filter(ex => ex.week === '2');
+              const week3Ex = exercises.filter(ex => ex.week === '3');
+              
+              const hasWeek1 = week1Ex.length > 0;
+              const hasWeek2 = week2Ex.length > 0;
+              const hasWeek3 = week3Ex.length > 0;
+              
+              const formatDesc = (exList) => (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {exList.map((ex, i) => (
+                    <div key={i}>
+                      <span style={{ color: 'white', fontWeight: 'bold' }}>{ex.name}</span><br/>
+                      Do the exercise for {ex.duration || '0'} minutes and do {ex.sets || '0'} sets daily for this week.
+                      {ex.customPlan && <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: '4px' }}>{ex.customPlan}</div>}
+                    </div>
+                  ))}
                 </div>
-                <div className="keep-menu-card">
-                  <div className="keep-menu-title">WEEK 2</div>
-                  <div className="keep-menu-desc">Exercises that we will tackle later</div>
+              );
+
+              const defaultMode = !hasWeek1 && !hasWeek2 && !hasWeek3;
+              
+              let showStoreConsultationWeek = 3;
+              if (!defaultMode) {
+                  if (hasWeek1 && !hasWeek2 && !hasWeek3) showStoreConsultationWeek = 2;
+                  else if ((hasWeek1 || hasWeek2) && !hasWeek3) showStoreConsultationWeek = 3;
+                  else if (hasWeek3) showStoreConsultationWeek = 4;
+              }
+
+              return (
+                <div className="keep-menu-container">
+                  {hasWeek1 && (
+                    <div className="keep-menu-card">
+                      <div className="keep-menu-title">WEEK 1</div>
+                      <div className="keep-menu-desc">{formatDesc(week1Ex)}</div>
+                    </div>
+                  )}
+                  {defaultMode && (
+                    <div className="keep-menu-card">
+                      <div className="keep-menu-title">WEEK 1</div>
+                      <div className="keep-menu-desc">Exercises that we will tackle later</div>
+                    </div>
+                  )}
+
+                  {hasWeek2 && (
+                    <div className="keep-menu-card">
+                      <div className="keep-menu-title">WEEK 2</div>
+                      <div className="keep-menu-desc">{formatDesc(week2Ex)}</div>
+                    </div>
+                  )}
+                  {defaultMode && (
+                    <div className="keep-menu-card">
+                      <div className="keep-menu-title">WEEK 2</div>
+                      <div className="keep-menu-desc">Exercises that we will tackle later</div>
+                    </div>
+                  )}
+                  {showStoreConsultationWeek === 2 && (
+                    <div className="keep-menu-card highlight">
+                      <div className="keep-menu-title" style={{ color: '#e5409e' }}>WEEK 2</div>
+                      <div className="keep-menu-desc" style={{ fontWeight: 'bold' }}>For further consultations and doubts, visit the physio at the store.</div>
+                    </div>
+                  )}
+
+                  {hasWeek3 && (
+                    <div className="keep-menu-card">
+                      <div className="keep-menu-title">WEEK 3</div>
+                      <div className="keep-menu-desc">{formatDesc(week3Ex)}</div>
+                    </div>
+                  )}
+                  {showStoreConsultationWeek === 3 && (
+                    <div className="keep-menu-card highlight">
+                      <div className="keep-menu-title" style={{ color: '#e5409e' }}>WEEK 3</div>
+                      <div className="keep-menu-desc" style={{ fontWeight: 'bold' }}>For further consultations and doubts, visit the physio at the store.</div>
+                    </div>
+                  )}
+                  
+                  {showStoreConsultationWeek === 4 && (
+                    <div className="keep-menu-card highlight">
+                      <div className="keep-menu-title" style={{ color: '#e5409e' }}>WEEK 4</div>
+                      <div className="keep-menu-desc" style={{ fontWeight: 'bold' }}>For further consultations and doubts, visit the physio at the store.</div>
+                    </div>
+                  )}
                 </div>
-                <div className="keep-menu-card highlight">
-                  <div className="keep-menu-title" style={{ color: '#e5409e' }}>WEEK 3</div>
-                  <div className="keep-menu-desc" style={{ fontWeight: 'bold' }}>For further consultations and doubts, visit the physio at the store.</div>
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             <button
               className="phase-fab"

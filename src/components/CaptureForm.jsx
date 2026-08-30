@@ -85,7 +85,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
     }
   };
 
-  const addExercise = () => setExercises([...exercises, { name: '', image: '', instructions: '' }]);
+  const addExercise = () => setExercises([...exercises, { name: '', image: '', instructions: '', duration: '', sets: '', week: '1', customPlan: '' }]);
   const removeExercise = (index) => setExercises(exercises.filter((_, i) => i !== index));
 
   const handleSubmit = async (e) => {
@@ -398,6 +398,77 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                 style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', resize: 'vertical' }}
               />
             </div>
+
+            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: 'var(--accent)', fontWeight: 'bold' }}>Plan for the exercise</label>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                <div style={{ flex: '1 1 100px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px', color: '#ccc' }}>Duration (min)</label>
+                  <select 
+                    value={ex.duration || ''}
+                    onChange={(e) => {
+                      const newEx = [...exercises];
+                      newEx[i].duration = e.target.value;
+                      setExercises(newEx);
+                    }}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }}
+                  >
+                    <option value="">Select</option>
+                    {Array.from({length: 60}, (_, idx) => idx + 1).map(num => (
+                      <option key={num} value={num}>{num} min</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ flex: '1 1 100px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px', color: '#ccc' }}>Sets</label>
+                  <select 
+                    value={ex.sets || ''}
+                    onChange={(e) => {
+                      const newEx = [...exercises];
+                      newEx[i].sets = e.target.value;
+                      setExercises(newEx);
+                    }}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }}
+                  >
+                    <option value="">Select</option>
+                    {Array.from({length: 60}, (_, idx) => idx + 1).map(num => (
+                      <option key={num} value={num}>{num}</option>
+                    ))}
+                  </select>
+                </div>
+                <div style={{ flex: '1 1 120px' }}>
+                  <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px', color: '#ccc' }}>Week</label>
+                  <select 
+                    value={ex.week || '1'}
+                    onChange={(e) => {
+                      const newEx = [...exercises];
+                      newEx[i].week = e.target.value;
+                      setExercises(newEx);
+                    }}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }}
+                  >
+                    <option value="1">Week 1</option>
+                    <option value="2">Week 2</option>
+                    <option value="3">Week 3</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px', color: '#ccc' }}>Custom Plan (Optional)</label>
+                <textarea 
+                  value={ex.customPlan || ''} 
+                  onChange={(e) => {
+                    const newEx = [...exercises];
+                    newEx[i].customPlan = e.target.value;
+                    setExercises(newEx);
+                  }}
+                  rows={2}
+                  placeholder="e.g., Do these primarily in the morning before breakfast."
+                  style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', resize: 'vertical' }}
+                />
+              </div>
+            </div>
           </div>
         ))}
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -409,7 +480,11 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                 setExercises([...exercises, { 
                   name: selectedEx.name, 
                   image: selectedEx.image_url || '', 
-                  instructions: selectedEx.instructions || '' 
+                  instructions: selectedEx.instructions || '',
+                  duration: '',
+                  sets: '',
+                  week: '1',
+                  customPlan: ''
                 }]);
                 e.target.value = ''; // reset after selection
               }
