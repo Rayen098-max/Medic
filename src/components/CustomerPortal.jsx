@@ -199,7 +199,7 @@ export default function CustomerPortal() {
     return <div style={{ padding: '40px', color: 'white' }}>Loading or record not found...</div>;
   }
 
-  const activePointData = activePointId ? [...painPointsData, ...(r?.customConditions || [])].find(p => p.id === activePointId) : null;
+  const activePointData = activePointId ? [...painPointsData, ...(patient?.customConditions || [])].find(p => p.id === activePointId) : null;
 
   const renderScene = () => (
     <>
@@ -219,7 +219,7 @@ export default function CustomerPortal() {
         </Html>
       }>
         <BodyModel 
-          zones={[...painPointsData, ...(r?.customConditions || [])]}
+          zones={[...painPointsData, ...(patient?.customConditions || [])]}
           activeZones={zone.activeZones}
           onZoneClick={(clickedId) => setActivePointId(clickedId)} 
         />
