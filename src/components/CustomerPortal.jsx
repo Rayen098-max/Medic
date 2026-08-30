@@ -8,7 +8,7 @@ import painPointsData from '../data/painPoints.json';
 import productsCatalog from '../data/products.json';
 import predefinedMessagesData from '../data/predefinedMessages.json';
 import { getPatientById, trackSessionStart, updateSessionDuration } from '../utils/db';
-import { CheckCircle2, XCircle, ShoppingBag, X } from 'lucide-react';
+import { CheckCircle2, XCircle, ShoppingBag, X, AlertTriangle, MessageCircle } from 'lucide-react';
 
 export default function CustomerPortal() {
   const { id } = useParams();
@@ -18,6 +18,7 @@ export default function CustomerPortal() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showPhasesModal, setShowPhasesModal] = useState(false);
+  const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
   const [showExercisesModal, setShowExercisesModal] = useState(false);
   const [activeExercise, setActiveExercise] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -167,6 +168,7 @@ export default function CustomerPortal() {
       if (e.key === 'Escape') {
         setShowPhasesModal(false); 
         setShowExercisesModal(false);
+        setShowDisclaimerModal(false);
         setActiveExercise(null);
       }
     };
@@ -373,6 +375,83 @@ export default function CustomerPortal() {
           {renderScene()}
         </Canvas>
         {renderHotspotOverlay()}
+
+        {/* Medical Disclaimer Button */}
+        <div style={{ position: 'absolute', top: 'max(24px, env(safe-area-inset-top))', right: 'max(24px, env(safe-area-inset-right))', zIndex: 35, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
+          
+          <button
+            className="exercise-fab"
+            onClick={() => setShowDisclaimerModal(!showDisclaimerModal)}
+            aria-label="View Medical Disclaimer"
+            title="Medical Disclaimer"
+            style={{ width: 'clamp(44px, 11vw, 54px)', height: 'clamp(44px, 11vw, 54px)', animationDelay: '0.2s' }}
+          >
+            <img 
+              src="/warning-logo-new.png" 
+              alt="Disclaimer Logo" 
+              style={{
+                width: '65%',
+                height: '65%',
+                objectFit: 'contain',
+                transform: showDisclaimerModal ? 'scale(0.9)' : 'none', 
+                transition: 'transform 0.3s ease'
+              }} 
+            />
+          </button>
+          
+          {showDisclaimerModal && (
+            <div className="keep-menu-container" style={{ transformOrigin: 'top right' }}>
+              <div className="keep-menu-card" style={{ width: 'min(90vw, 400px)', cursor: 'default' }} onClick={(e) => e.stopPropagation()}>
+                <div style={{ padding: '8px' }}>
+                  <h4 style={{ color: '#00d2ff', marginTop: 0, marginBottom: '16px', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <AlertTriangle size={20} color="#00d2ff" /> Medical Disclaimer
+                  </h4>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '0.9rem', color: '#cbd5e1', lineHeight: '1.5' }}>
+                    <p style={{ margin: 0 }}>
+                      <strong style={{ color: 'white' }}>This is a preliminary, visual assessment, not a full diagnosis.</strong><br/>
+                      During your in-store visit, our physiotherapist observed your posture and discussed your concerns, but this was a short consultation, not a complete clinical diagnosis.
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong style={{ color: 'white' }}>These exercises are general guidance, not a personalized treatment plan.</strong><br/>
+                      They're intended to help with common, everyday discomfort based on what was visually observed — not tailored to any underlying condition that hasn't been formally diagnosed.
+                    </p>
+                    <p style={{ margin: 0 }}>
+                      <strong style={{ color: 'white' }}>Stop immediately if anything feels wrong.</strong><br/>
+                      If your symptoms worsen, don't improve, or you notice anything unusual while following this routine, stop the exercises right away and reach out to us using the contact option on this page before continuing.
+                    </p>
+                  </div>
+                  
+                  <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid rgba(0, 212, 255, 0.2)', textAlign: 'center' }}>
+                    <p style={{ margin: '0 0 12px 0', fontSize: '0.85rem', color: '#94a3b8' }}>
+                      Have questions about your specific exercises? Reach out anytime — we're happy to help.
+                    </p>
+                    <button 
+                      onClick={() => window.open(`https://wa.me/${patient?.phone}?text=Hi%20there,%20I%20have%20a%20question%20about%20my%20exercises.`, '_blank')}
+                      className="whatsapp-button"
+                      style={{ 
+                        width: '100%', 
+                        display: 'flex', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        gap: '8px',
+                        background: '#25D366',
+                        color: 'white',
+                        border: 'none',
+                        padding: '10px 16px',
+                        borderRadius: '24px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <MessageCircle size={18} /> Contact Now
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Floating PHASE menu and button */}
         {!activePointId && (
