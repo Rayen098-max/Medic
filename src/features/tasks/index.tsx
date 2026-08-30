@@ -1,4 +1,6 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import { RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -19,12 +21,41 @@ interface TrackerRow {
 
 const KNOWN_PHYSIOS = ['Aishwarya', 'Gursheen', 'Dipti', 'Rutuja', 'Pooja', 'Hritika', 'Kritika', 'Gaurav'];
 
+const CACHE_KEY = 'medic_tasks_cache_v2';
+const CACHE_TIME_KEY = 'medic_tasks_cache_time_v2';
+
+function shouldAutoFetch() {
+  const lastFetchStr = localStorage.getItem(CACHE_TIME_KEY);
+  if (!lastFetchStr) return true;
+  
+  const lastTime = new Date(parseInt(lastFetchStr, 10));
+  const now = new Date();
+  
+  if (now.toDateString() !== lastTime.toDateString()) {
+    return true; // different day
+  }
+  
+  // same day, check slots: 12:00, 17:00, 20:00
+  const slots = [12, 17, 20];
+  const currentHour = now.getHours();
+  const lastHour = lastTime.getHours();
+  
+  for (const slot of slots) {
+    if (currentHour >= slot && lastHour < slot) {
+      return true; // We crossed a schedule slot since last fetch
+    }
+  }
+  
+  return false;
+}
+
 export function Tasks() {
   const [data, setData] = useState<TrackerRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [isFetching, setIsFetching] = useState(false)
   const { profile } = useAuth()
 
-  useEffect(() => {
+  const fetchTasks = useCallback((force = false) => {
     let tabName = 'Master Data';
     if (profile?.role === 'physio' && profile?.full_name) {
       const clean = profile.full_name.toLowerCase();
@@ -34,7 +65,20 @@ export function Tasks() {
       }
     }
 
-    setLoading(true);
+    if (!force && !shouldAutoFetch()) {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        try {
+          setData(JSON.parse(cached));
+          setLoading(false);
+          return;
+        } catch (e) {
+          console.error("Cache parsing error", e);
+        }
+      }
+    }
+
+    setIsFetching(true);
     fetch(`https://opensheet.elk.sh/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/${encodeURIComponent(tabName)}`)
       .then(res => res.json())
       .then((json: TrackerRow[]) => {
@@ -59,13 +103,27 @@ export function Tasks() {
         }
 
         setData(filledData);
+        localStorage.setItem(CACHE_KEY, JSON.stringify(filledData));
+        localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
         setLoading(false);
+        setIsFetching(false);
       })
       .catch(err => {
         console.error("Error fetching data:", err)
-        setLoading(false)
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+            try { setData(JSON.parse(cached)); } catch(e){}
+        }
+        setLoading(false);
+        setIsFetching(false);
       })
   }, [profile])
+
+  useEffect(() => {
+    if (profile) {
+      fetchTasks();
+    }
+  }, [profile, fetchTasks])
 
   const filteredTasks = useMemo(() => {
     if (data.length === 0) return [];
@@ -105,6 +163,16 @@ export function Tasks() {
     <>
       <Header fixed>
         <Search className='me-auto' />
+        <Button 
+          variant='ghost' 
+          size='icon' 
+          className='scale-95 rounded-full' 
+          onClick={() => fetchTasks(true)} 
+          disabled={isFetching}
+          title="Fetch data from sheet"
+        >
+          <RefreshCw size={18} className={isFetching ? "animate-spin" : ""} />
+        </Button>
         <ThemeSwitch />
         <ConfigDrawer />
         <ProfileDropdown />
@@ -120,7 +188,7 @@ export function Tasks() {
           </div>
         </div>
         
-        {loading ? (
+        {loading && data.length === 0 ? (
           <div className="flex h-40 items-center justify-center">
             <p className="text-muted-foreground animate-pulse">Fetching live data from Google Sheets...</p>
           </div>
