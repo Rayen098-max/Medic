@@ -474,7 +474,6 @@ export default function CustomerPortal() {
                   transition: 'transform 0.3s ease'
                 }} 
               />
-              <span className="cart-fab-badge" style={{ color: '#00d2ff', borderColor: '#00d2ff', background: 'rgba(15, 23, 42, 0.95)' }}>{zone.recommendedExercises.length}</span>
             </button>
           </div>
         )}
@@ -509,14 +508,14 @@ export default function CustomerPortal() {
           width: clamp(54px, 14vw, 66px);
           height: clamp(54px, 14vw, 66px);
           border-radius: 50%;
-          border: 1px solid rgba(0, 212, 255, 0.3);
+          border: 1px solid rgba(150, 240, 255, 0.3);
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
           background: rgba(15, 23, 42, 0.95);
           backdrop-filter: blur(8px);
-          box-shadow: 0 0 25px rgba(0, 212, 255, 0.4);
+          box-shadow: 0 0 25px rgba(150, 240, 255, 0.4);
           z-index: 15;
           animation: cartHeartbeat 1.6s ease-in-out infinite;
           transition: transform 0.2s ease;
@@ -529,15 +528,15 @@ export default function CustomerPortal() {
           position: absolute;
           inset: -6px;
           border-radius: 50%;
-          border: 2px solid rgba(0, 212, 255, 0.6);
+          border: 2px solid rgba(150, 240, 255, 0.6);
           animation: cartRipple 1.6s ease-out infinite;
           pointer-events: none;
         }
         @keyframes cartHeartbeat {
-          0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(255,107,129,.5), 0 0 40px rgba(0,212,255,.3), 0 6px 18px rgba(0,0,0,.45); }
-          12% { transform: scale(1.12); box-shadow: 0 0 30px rgba(255,107,129,.75), 0 0 60px rgba(0,212,255,.5), 0 6px 18px rgba(0,0,0,.45); }
+          0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(150, 240, 255, 0.5), 0 6px 18px rgba(0,0,0,.45); }
+          12% { transform: scale(1.12); box-shadow: 0 0 35px rgba(150, 240, 255, 0.75), 0 6px 18px rgba(0,0,0,.45); }
           22% { transform: scale(1); }
-          32% { transform: scale(1.08); box-shadow: 0 0 26px rgba(255,107,129,.65), 0 0 50px rgba(0,212,255,.4), 0 6px 18px rgba(0,0,0,.45); }
+          32% { transform: scale(1.08); box-shadow: 0 0 25px rgba(150, 240, 255, 0.65), 0 6px 18px rgba(0,0,0,.45); }
           44% { transform: scale(1); }
         }
         @keyframes cartRipple {
@@ -587,14 +586,14 @@ export default function CustomerPortal() {
           width: clamp(54px, 14vw, 66px);
           height: clamp(54px, 14vw, 66px);
           border-radius: 50%;
-          border: 1px solid rgba(0, 212, 255, 0.3);
+          border: 1px solid rgba(150, 240, 255, 0.3);
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
           background: rgba(15, 23, 42, 0.95);
           backdrop-filter: blur(8px);
-          box-shadow: 0 0 25px rgba(0, 212, 255, 0.4);
+          box-shadow: 0 0 25px rgba(150, 240, 255, 0.4);
           z-index: 15;
           animation: cartHeartbeat 1.6s ease-in-out infinite;
           animation-delay: 0.8s;
@@ -613,7 +612,7 @@ export default function CustomerPortal() {
           position: absolute;
           inset: -6px;
           border-radius: 50%;
-          border: 2px solid rgba(46, 204, 113, 0.6);
+          border: 2px solid rgba(150, 240, 255, 0.6);
           animation: cartRipple 1.6s ease-out infinite;
           animation-delay: 0.8s;
           pointer-events: none;

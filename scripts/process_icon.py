@@ -1,6 +1,6 @@
 from PIL import Image, ImageOps
 
-def process_image():
+def process_icon():
     path = r"C:\Users\Admin\.gemini\antigravity-ide\brain\e7bf953d-7705-45c8-9ffa-bcebd76df5f6\.user_uploaded\media_1788018563666.png"
     out_path = r"C:\Users\Admin\Desktop\Medic\public\exercise-logo-new.png"
     
@@ -8,17 +8,16 @@ def process_image():
     gray = img.convert("L")
     alpha = ImageOps.invert(gray)
     
-    cyan = Image.new("RGBA", img.size, (0, 210, 255, 255))
+    # Lighter, brighter cyan/sky-blue tone for better contrast
+    light_cyan = (150, 240, 255, 255)
+    cyan = Image.new("RGBA", img.size, light_cyan)
     cyan.putalpha(alpha)
     
     bbox = alpha.getbbox()
     if bbox:
         cyan = cyan.crop(bbox)
         
-    # Resize to a consistent square size so it fits well in a CSS circle
-    # Find the max dimension
     max_dim = max(cyan.width, cyan.height)
-    # Create a square transparent canvas padded a bit
     pad = int(max_dim * 0.2)
     square_size = max_dim + pad * 2
     
@@ -27,6 +26,6 @@ def process_image():
     square.paste(cyan, offset)
     
     square.save(out_path)
-    print("Saved to", out_path)
+    print("Saved icon to", out_path)
 
-process_image()
+process_icon()
