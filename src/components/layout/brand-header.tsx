@@ -17,8 +17,8 @@ export function BrandHeader() {
           asChild
         >
           <Link to='/' className='flex items-center gap-3'>
-            <div className='flex aspect-square size-9 items-center justify-center rounded-sm bg-white text-slate-900 shadow-sm'>
-              <GalleryVerticalEnd className='size-5 stroke-[2.5]' />
+            <div className='flex aspect-square size-9 items-center justify-center rounded-sm bg-white overflow-hidden shadow-sm'>
+              <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div className='grid flex-1 text-start leading-tight'>
               <span className='truncate font-bold text-[15px] tracking-wide text-slate-100'>
