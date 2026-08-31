@@ -401,13 +401,13 @@ export default function CustomerPortal() {
           
           {showDisclaimerModal && (
             <div className="keep-menu-container" style={{ transformOrigin: 'top right' }}>
-              <div className="keep-menu-card" style={{ width: 'min(90vw, 400px)', cursor: 'default' }} onClick={(e) => e.stopPropagation()}>
+              <div className="keep-menu-card" style={{ width: 'min(90vw, 400px)', cursor: 'default', maxHeight: '80vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
                 <div style={{ padding: '8px' }}>
                   <h4 style={{ color: '#00d2ff', marginTop: 0, marginBottom: '16px', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <AlertTriangle size={20} color="#00d2ff" /> Medical Disclaimer
                   </h4>
                   
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '0.9rem', color: '#cbd5e1', lineHeight: '1.5' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: 'clamp(0.75rem, 3.5vw, 0.9rem)', color: '#cbd5e1', lineHeight: '1.5' }}>
                     <p style={{ margin: 0 }}>
                       <strong style={{ color: 'white' }}>This is a preliminary, visual assessment, not a full diagnosis.</strong><br/>
                       During your in-store visit, our physiotherapist observed your posture and discussed your concerns, but this was a short consultation, not a complete clinical diagnosis.
@@ -620,8 +620,8 @@ export default function CustomerPortal() {
                 src="/exercise-logo-new.png" 
                 alt="Exercises Logo" 
                 style={{
-                  width: '65%',
-                  height: '65%',
+                  width: '90%',
+                  height: '90%',
                   objectFit: 'contain',
                   transform: showExercisesModal ? 'scale(0.9)' : 'none', 
                   transition: 'transform 0.3s ease'
