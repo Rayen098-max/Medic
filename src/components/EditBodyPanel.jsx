@@ -212,13 +212,13 @@ export default function EditBodyPanel() {
       <div style={{ width: '350px', background: 'rgba(0,0,0,0.8)', borderLeft: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', maxHeight: '100vh', overflow: 'hidden' }}>
         
         {/* Header */}
-        <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
           <Link to="/" style={{ color: 'var(--text-muted)' }}><ArrowLeft size={20} /></Link>
           <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Map Body Parts</h2>
         </div>
 
         {/* Zone List */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', minHeight: 0 }}>
           <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '16px', textTransform: 'uppercase' }}>Available Parts</h3>
           {uniqueZones.map(zone => (
             <div 
@@ -248,7 +248,7 @@ export default function EditBodyPanel() {
         
         {/* Scale Slider */}
         {activeZone && coordinates[activeZone] && !Array.isArray(coordinates[activeZone]) && (
-          <div style={{ padding: '20px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.4)' }}>
+          <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.4)', flexShrink: 0 }}>
             <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Adjust Glow Size</label>
             <input 
               type="range" 
@@ -266,7 +266,7 @@ export default function EditBodyPanel() {
         )}
 
         {/* Add Body Part */}
-        <div style={{ padding: '20px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.4)' }}>
+        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.4)', flexShrink: 0 }}>
           <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Add New Body Part</label>
           <div style={{ display: 'flex', gap: '8px' }}>
             <input 
@@ -293,7 +293,7 @@ export default function EditBodyPanel() {
         </div>
 
         {/* Footer actions */}
-        <div style={{ padding: '20px', borderTop: '1px solid var(--border-color)' }}>
+        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-color)', flexShrink: 0 }}>
           <button 
             onClick={handleCopy}
             className="clinical-btn"
