@@ -68,8 +68,9 @@ export default function AdminPanel() {
     }
     
     const physioName = physios.find(p => p.id === customer.physio_id)?.full_name || profile?.full_name || 'Physio';
+    const cleanPhysioName = physioName.replace(/^Dr\.?\s+/i, '');
     
-    const fullMessage = `Hi ${customer.name},\n\n${context}Hope your body is treating you better!\n\nHere is your *Personalized 3D Recovery Plan* (including exercises and things to avoid):\n👉 ${link}\n\nLet me know if you have any questions.\n\nBest,\nDr. ${physioName}`;
+    const fullMessage = `Hi ${customer.name},\n\n${context}Hope your body is treating you better!\n\nHere is your *Personalized 3D Recovery Plan* (including exercises and things to avoid):\n👉 ${link}\n\nLet me know if you have any questions.\n\nBest,\nDr. ${cleanPhysioName}`;
 
     const message = encodeURIComponent(fullMessage);
     return `https://wa.me/${phone}?text=${message}`;

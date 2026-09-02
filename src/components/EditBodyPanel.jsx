@@ -152,7 +152,8 @@ function EditBody3D({ coordinates, activeZone, onCoordinateUpdate }) {
 }
 
 export default function EditBodyPanel() {
-  const uniqueZones = useMemo(() => getUniqueZones(), []);
+  const [uniqueZones, setUniqueZones] = useState(() => getUniqueZones());
+  const [newZoneName, setNewZoneName] = useState('');
   
   // Load initial coordinates from file, or empty if not present
   const [coordinates, setCoordinates] = useState(() => {
@@ -208,7 +209,7 @@ export default function EditBodyPanel() {
       </div>
 
       {/* Control Panel */}
-      <div style={{ width: '350px', background: 'rgba(0,0,0,0.8)', borderLeft: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ width: '350px', background: 'rgba(0,0,0,0.8)', borderLeft: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', maxHeight: '100vh', overflow: 'hidden' }}>
         
         {/* Header */}
         <div style={{ padding: '20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -263,6 +264,33 @@ export default function EditBodyPanel() {
             />
           </div>
         )}
+
+        {/* Add Body Part */}
+        <div style={{ padding: '20px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.4)' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Add New Body Part</label>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input 
+              type="text"
+              value={newZoneName}
+              onChange={(e) => setNewZoneName(e.target.value)}
+              placeholder="e.g. elbow"
+              style={{ flex: 1, padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', minWidth: 0 }}
+            />
+            <button
+              onClick={() => {
+                const zone = newZoneName.trim().toLowerCase();
+                if (zone && !uniqueZones.includes(zone)) {
+                  setUniqueZones([...uniqueZones, zone]);
+                  setNewZoneName('');
+                }
+              }}
+              className="clinical-btn"
+              style={{ padding: '8px 16px' }}
+            >
+              Add
+            </button>
+          </div>
+        </div>
 
         {/* Footer actions */}
         <div style={{ padding: '20px', borderTop: '1px solid var(--border-color)' }}>
