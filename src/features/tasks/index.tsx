@@ -79,7 +79,7 @@ export function Tasks() {
     }
 
     setIsFetching(true);
-    fetch(`https://opensheet.elk.sh/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/${encodeURIComponent(tabName)}`)
+    fetch(`https://opensheet.elk.sh/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/${encodeURIComponent(tabName)}?_cb=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then((json: TrackerRow[]) => {
         // Forward-fill the Date field because Google Sheet date headers only appear once per group

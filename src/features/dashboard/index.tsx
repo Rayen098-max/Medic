@@ -73,7 +73,7 @@ export function Dashboard() {
 
   useEffect(() => {
     // Fetch live data from Google Sheets via Opensheet API
-    fetch('https://opensheet.elk.sh/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/Master%20Data')
+    fetch(`https://opensheet.elk.sh/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/Master%20Data?_cb=${Date.now()}`, { cache: 'no-store' })
       .then(res => res.json())
       .then((json: TrackerRow[]) => {
         setData(json)
