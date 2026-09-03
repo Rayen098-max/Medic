@@ -181,7 +181,7 @@ export default function EditBodyPanel() {
   };
 
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', background: 'var(--primary-bg)', color: 'white' }}>
+    <div style={{ display: 'flex', width: '100%', height: '100vh', background: 'var(--primary-bg)', color: 'white', overflow: 'hidden' }}>
       
       {/* 3D Canvas Area */}
       <div style={{ flex: 1, position: 'relative' }}>
