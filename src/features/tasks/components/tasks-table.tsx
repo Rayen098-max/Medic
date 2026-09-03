@@ -83,7 +83,12 @@ export function TasksTable({ data }: TasksTableProps) {
     setExpandedRowIdx(null)
   }
 
-  const getMatchedPatientId = (row: TrackerRow, id: string) => {
+  const getMatchedPatientId = useCallback((row: TrackerRow, id: string) => {
+    // 0. Strong link via database (works across devices)
+    const dbLinked = dbPatients.find(p => p.tracker_id === id);
+    if (dbLinked) return dbLinked.id;
+
+    // 1. Check explicitly linked patient IDs (from local storage / manual linking)
     if (filledPatientIds[id]) return filledPatientIds[id];
     const cleanPhone = (row["Customer Number"] || "").replace(/\D/g, '');
     const cleanName = (row["Customer Name"] || "").trim().toLowerCase();
@@ -96,7 +101,7 @@ export function TasksTable({ data }: TasksTableProps) {
     });
 
     return found ? found.id : null;
-  }
+  }, [dbPatients, filledPatientIds]);
 
   const handlePreview = (row: TrackerRow, id: string) => {
     const patientId = getMatchedPatientId(row, id);
@@ -289,7 +294,8 @@ export function TasksTable({ data }: TasksTableProps) {
                                     initialData={{
                                       name: row["Customer Name"],
                                       phone: row["Customer Number"] ? String(row["Customer Number"]) : "",
-                                      consultDate: row["Date"]
+                                      consultDate: row["Date"],
+                                      tracker_id: id
                                     }}
                                     onSuccess={(newId?: string) => handleDone(id, newId)}
                                   />
