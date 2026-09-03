@@ -9,7 +9,7 @@ import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
 import { TasksTable } from './components/tasks-table'
 import { useAuth } from '@/context/AuthContext'
-
+import Papa from 'papaparse'
 interface TrackerRow {
   Date: string;
   "Physio Name": string;
@@ -79,9 +79,14 @@ export function Tasks() {
     }
 
     setIsFetching(true);
-    fetch(`https://opensheet.elk.sh/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/${encodeURIComponent(tabName)}?_cb=${Date.now()}`, { cache: 'no-store' })
-      .then(res => res.json())
-      .then((json: TrackerRow[]) => {
+    const csvUrl = `https://docs.google.com/spreadsheets/d/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}&_cb=${Date.now()}`;
+    
+    fetch(csvUrl, { cache: 'no-store' })
+      .then(res => res.text())
+      .then(csv => {
+        const result = Papa.parse(csv, { header: true, skipEmptyLines: true });
+        const json = result.data as TrackerRow[];
+
         // Forward-fill the Date field because Google Sheet date headers only appear once per group
         let lastDate = '';
         const filledData: TrackerRow[] = [];
@@ -128,48 +133,42 @@ export function Tasks() {
   const filteredTasks = useMemo(() => {
     if (data.length === 0) return [];
 
-    // Extract unique dates in reverse chronological order
-    const uniqueDates = Array.from(new Set(data.map(row => row.Date?.trim()).filter(Boolean)));
-    
-    // Robust date sorting to handle various formats from the sheet (e.g. 24/8, 23/8, 8/24/2026)
-    uniqueDates.sort((a, b) => {
-      const parseDate = (dStr: string) => {
-        if (!dStr) return 0;
-        
-        const parts = dStr.split(/[\/\\]/);
-        if (parts.length >= 2) {
-           const val1 = parseInt(parts[0], 10);
-           const val2 = parseInt(parts[1], 10);
-           const val3 = parts.length >= 3 ? parseInt(parts[2], 10) : 2026;
-           const year = val3 < 100 ? 2000 + val3 : val3;
+    const parseDate = (dStr: string) => {
+      if (!dStr) return 0;
+      
+      const parts = dStr.split(/[\/\\]/);
+      if (parts.length >= 2) {
+         const val1 = parseInt(parts[0], 10);
+         const val2 = parseInt(parts[1], 10);
+         const val3 = parts.length >= 3 ? parseInt(parts[2], 10) : 2026;
+         const year = val3 < 100 ? 2000 + val3 : val3;
 
-           // If val1 > 12, it must be the day (DD/MM)
-           if (val1 > 12) {
-               return new Date(year, val2 - 1, val1).getTime();
-           } 
-           // If val2 > 12, it must be the day (MM/DD)
-           if (val2 > 12) {
-               return new Date(year, val1 - 1, val2).getTime();
-           }
-           
-           // Ambiguous cases like 1/9 (Sept 1). The sheet standard is DD/MM.
-           return new Date(year, val2 - 1, val1).getTime();
-        }
-        
-        let d = new Date(dStr);
-        if (!isNaN(d.getTime())) return d.getTime();
-        
-        return 0;
-      };
-      return parseDate(b) - parseDate(a);
+         if (val1 > 12) {
+             return new Date(year, val2 - 1, val1).getTime();
+         } 
+         if (val2 > 12) {
+             return new Date(year, val1 - 1, val2).getTime();
+         }
+         
+         return new Date(year, val2 - 1, val1).getTime();
+      }
+      
+      let d = new Date(dStr);
+      if (!isNaN(d.getTime())) return d.getTime();
+      
+      return 0;
+    };
+
+    // Include all data from August 28, 2026 onwards
+    const AUG_28_2026 = new Date(2026, 7, 28).getTime(); // Note: month is 0-indexed (7 = August)
+
+    return data.filter(row => {
+      const dateStr = row.Date?.trim();
+      if (!dateStr) return false;
+      
+      const timestamp = parseDate(dateStr);
+      return timestamp >= AUG_28_2026;
     });
-
-    // Take the two latest available dates for this user
-    const targetDates = uniqueDates.slice(0, 2);
-
-    if (targetDates.length === 0) return [];
-
-    return data.filter(row => targetDates.includes(row.Date?.trim()));
   }, [data]);
 
   return (

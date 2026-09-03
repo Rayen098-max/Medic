@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
+import Papa from 'papaparse'
 import {
   BarChart,
   Bar,
@@ -72,11 +73,13 @@ export function Dashboard() {
   const [timeAgg, setTimeAgg] = useState<string>('daily') // 'daily' or 'weekly'
 
   useEffect(() => {
-    // Fetch live data from Google Sheets via Opensheet API
-    fetch(`https://opensheet.elk.sh/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/Master%20Data?_cb=${Date.now()}`, { cache: 'no-store' })
-      .then(res => res.json())
-      .then((json: TrackerRow[]) => {
-        setData(json)
+    const csvUrl = `https://docs.google.com/spreadsheets/d/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/gviz/tq?tqx=out:csv&sheet=Master%20Data&_cb=${Date.now()}`;
+    
+    fetch(csvUrl, { cache: 'no-store' })
+      .then(res => res.text())
+      .then(csv => {
+        const result = Papa.parse(csv, { header: true, skipEmptyLines: true });
+        setData(result.data as TrackerRow[])
         setLoading(false)
       })
       .catch(err => {
