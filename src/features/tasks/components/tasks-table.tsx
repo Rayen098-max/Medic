@@ -7,6 +7,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MessageCircle, Eye, Trash2 } from 'lucide-react'
@@ -101,7 +107,7 @@ export function TasksTable({ data }: TasksTableProps) {
     }
   }
 
-  const handleWhatsApp = (row: TrackerRow, id: string) => {
+  const handleWhatsApp = (row: TrackerRow, id: string, appType: 'default' | 'business' | 'web' = 'default') => {
     let phone = (row["Customer Number"] || "").replace(/\D/g, '');
     if (!phone) {
       alert("No phone number available for this customer.");
@@ -129,7 +135,15 @@ export function TasksTable({ data }: TasksTableProps) {
     const fullMessage = `${greeting}\n\nYour Personalized Plan for ${customerName}:\n👉 ${link}\n\nBest regards,\nDr. ${physioName}`;
 
     const encoded = encodeURIComponent(fullMessage);
-    window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank');
+    
+    let url = `https://wa.me/${phone}?text=${encoded}`;
+    if (appType === 'business') {
+      url = `intent://send/?phone=${phone}&text=${encoded}#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end`;
+    } else if (appType === 'web') {
+      url = `https://web.whatsapp.com/send?phone=${phone}&text=${encoded}`;
+    }
+
+    window.open(url, '_blank');
   }
 
   // Filter out deleted tasks
@@ -225,14 +239,28 @@ export function TasksTable({ data }: TasksTableProps) {
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-2 w-full">
-                            <Button 
-                              variant="outline"
-                              className="flex-1 gap-1.5 border-green-600 text-green-600 hover:bg-green-50 text-xs px-2"
-                              onClick={() => handleWhatsApp(row, id)}
-                            >
-                              <MessageCircle className="h-3.5 w-3.5" />
-                              WhatsApp
-                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button 
+                                  variant="outline"
+                                  className="flex-1 gap-1.5 border-green-600 text-green-600 hover:bg-green-50 text-xs px-2"
+                                >
+                                  <MessageCircle className="h-3.5 w-3.5" />
+                                  WhatsApp
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent>
+                                <DropdownMenuItem onClick={() => handleWhatsApp(row, id, 'default')}>
+                                  WhatsApp (Default)
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleWhatsApp(row, id, 'business')}>
+                                  WhatsApp Business (Android)
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleWhatsApp(row, id, 'web')}>
+                                  WhatsApp Web
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                             <Button
                               variant="outline"
                               className="border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 hover:border-red-300 px-2.5"

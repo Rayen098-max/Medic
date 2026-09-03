@@ -135,17 +135,30 @@ export function Tasks() {
     uniqueDates.sort((a, b) => {
       const parseDate = (dStr: string) => {
         if (!dStr) return 0;
-        let d = new Date(dStr);
-        if (!isNaN(d.getTime())) return d.getTime();
         
         const parts = dStr.split(/[\/\\]/);
         if (parts.length >= 2) {
            const val1 = parseInt(parts[0], 10);
            const val2 = parseInt(parts[1], 10);
-           // assume val1 is day, val2 is month
-           d = new Date(2026, val2 - 1, val1);
-           if (!isNaN(d.getTime())) return d.getTime();
+           const val3 = parts.length >= 3 ? parseInt(parts[2], 10) : 2026;
+           const year = val3 < 100 ? 2000 + val3 : val3;
+
+           // If val1 > 12, it must be the day (DD/MM)
+           if (val1 > 12) {
+               return new Date(year, val2 - 1, val1).getTime();
+           } 
+           // If val2 > 12, it must be the day (MM/DD)
+           if (val2 > 12) {
+               return new Date(year, val1 - 1, val2).getTime();
+           }
+           
+           // Ambiguous cases like 1/9 (Sept 1). The sheet standard is DD/MM.
+           return new Date(year, val2 - 1, val1).getTime();
         }
+        
+        let d = new Date(dStr);
+        if (!isNaN(d.getTime())) return d.getTime();
+        
         return 0;
       };
       return parseDate(b) - parseDate(a);
