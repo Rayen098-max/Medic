@@ -28,11 +28,15 @@ export function AuthProvider({ children }) {
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        setLoading(true);
+        // Only set loading to true if this is an explicit sign in.
+        // This avoids unmounting the entire app when the token refreshes in the background (e.g. on window focus).
+        if (event === 'SIGNED_IN') {
+          setLoading(true);
+        }
         fetchProfile(session.user.id);
       } else {
         setProfile(null);
