@@ -33,10 +33,8 @@ export function AuthProvider({ children }) {
       setUser(session?.user ?? null);
       if (session?.user) {
         // Only set loading to true if this is an explicit sign in.
-        // This avoids unmounting the entire app when the token refreshes in the background (e.g. on window focus).
-        if (event === 'SIGNED_IN') {
-          setLoading(true);
-        }
+        // Removed setLoading(true) here because it causes the entire app
+        // to unmount when the browser tab regains focus and Supabase fires a session event.
         fetchProfile(session.user.id);
       } else {
         setProfile(null);
