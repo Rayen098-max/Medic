@@ -43,8 +43,13 @@ export function TasksTable({ data }: TasksTableProps) {
   
   // Track deleted tasks in localStorage
   const [deletedTasks, setDeletedTasks] = useState<Set<string>>(() => {
-    const saved = localStorage.getItem('deleted_tasks')
-    return saved ? new Set(JSON.parse(saved)) : new Set()
+    try {
+      const saved = localStorage.getItem('deleted_tasks')
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    } catch (e) {
+      console.error("Error parsing deleted_tasks from localStorage", e)
+      return new Set()
+    }
   })
 
   useEffect(() => {

@@ -69,9 +69,12 @@ export function Tasks() {
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
         try {
-          setData(JSON.parse(cached));
-          setLoading(false);
-          return;
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) {
+            setData(parsed);
+            setLoading(false);
+            return;
+          }
         } catch (e) {
           console.error("Cache parsing error", e);
         }
@@ -128,7 +131,10 @@ export function Tasks() {
         console.error("Error fetching data:", err)
         const cached = localStorage.getItem(CACHE_KEY);
         if (cached) {
-            try { setData(JSON.parse(cached)); } catch(e){}
+            try { 
+              const parsed = JSON.parse(cached);
+              if (Array.isArray(parsed)) setData(parsed); 
+            } catch(e){}
         }
         setLoading(false);
         setIsFetching(false);
@@ -142,7 +148,7 @@ export function Tasks() {
   }, [profile, fetchTasks])
 
   const filteredTasks = useMemo(() => {
-    if (data.length === 0) return [];
+    if (!Array.isArray(data) || data.length === 0) return [];
 
     const parseDate = (dStr: string) => {
       if (!dStr) return 0;
