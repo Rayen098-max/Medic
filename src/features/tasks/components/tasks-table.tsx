@@ -156,25 +156,26 @@ export function TasksTable({ data }: TasksTableProps) {
     window.open(url, '_blank');
   }
 
-  // Filter out deleted tasks
-  const activeData = useMemo(() => {
-    return data.filter(row => !deletedTasks.has(getTaskId(row)))
-  }, [data, deletedTasks])
-
   // Partition into pending and completed
   const { pendingTasks, completedTasks } = useMemo(() => {
     const pending: Array<{ row: TrackerRow, id: string, patientId: string | null }> = []
     const completed: Array<{ row: TrackerRow, id: string, patientId: string | null }> = []
     const matchedPatientIds = new Set<string>()
 
-    activeData.forEach(row => {
+    data.forEach(row => {
       const id = getTaskId(row)
       const patientId = getMatchedPatientId(row, id)
-      const isFilled = Boolean(patientId) || filledForms.has(id)
       
       if (patientId) {
         matchedPatientIds.add(patientId)
       }
+
+      // If the row was deleted by the user, we skip rendering it
+      if (deletedTasks.has(id)) {
+        return;
+      }
+
+      const isFilled = Boolean(patientId) || filledForms.has(id)
 
       if (isFilled) {
         completed.push({ row, id, patientId })
@@ -186,17 +187,24 @@ export function TasksTable({ data }: TasksTableProps) {
     // Add manually created forms (patients in db not matched to any Google Sheet row)
     dbPatients.forEach(p => {
       if (!matchedPatientIds.has(p.id)) {
+        const manualId = p.tracker_id || p.id;
+        
+        // Skip rendering if the user deleted this manual entry
+        if (deletedTasks.has(manualId)) {
+          return;
+        }
+
         const fakeRow: TrackerRow = {
           "Date": p.consultDate ? new Date(p.consultDate).toLocaleDateString() : new Date(p.created_at).toLocaleDateString(),
           "Customer Name": p.name || 'Unknown',
           "Customer Number": p.phone || 'N/A',
         }
-        completed.push({ row: fakeRow, id: p.tracker_id || p.id, patientId: p.id })
+        completed.push({ row: fakeRow, id: manualId, patientId: p.id })
       }
     })
 
     return { pendingTasks: pending, completedTasks: completed }
-  }, [activeData, filledForms, filledPatientIds, dbPatients])
+  }, [data, deletedTasks, filledForms, filledPatientIds, dbPatients])
 
 
   const renderTable = (
