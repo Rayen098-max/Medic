@@ -165,16 +165,33 @@ export function TasksTable({ data }: TasksTableProps) {
   const { pendingTasks, completedTasks } = useMemo(() => {
     const pending: Array<{ row: TrackerRow, id: string, patientId: string | null }> = []
     const completed: Array<{ row: TrackerRow, id: string, patientId: string | null }> = []
+    const matchedPatientIds = new Set<string>()
 
     activeData.forEach(row => {
       const id = getTaskId(row)
       const patientId = getMatchedPatientId(row, id)
       const isFilled = Boolean(patientId) || filledForms.has(id)
+      
+      if (patientId) {
+        matchedPatientIds.add(patientId)
+      }
 
       if (isFilled) {
         completed.push({ row, id, patientId })
       } else {
         pending.push({ row, id, patientId })
+      }
+    })
+
+    // Add manually created forms (patients in db not matched to any Google Sheet row)
+    dbPatients.forEach(p => {
+      if (!matchedPatientIds.has(p.id)) {
+        const fakeRow: TrackerRow = {
+          "Date": p.consultDate ? new Date(p.consultDate).toLocaleDateString() : new Date(p.created_at).toLocaleDateString(),
+          "Customer Name": p.name || 'Unknown',
+          "Customer Number": p.phone || 'N/A',
+        }
+        completed.push({ row: fakeRow, id: p.tracker_id || p.id, patientId: p.id })
       }
     })
 

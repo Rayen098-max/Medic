@@ -31,6 +31,7 @@ export function AppSidebar() {
       if (item.url === '/edit-body' && profile?.role !== 'admin') return false;
       if (item.url === '/' && profile?.role === 'physio') return false;
       if (item.url === '/add-data' && profile?.role === 'physio') return false;
+      if (item.url === '/capture' && (profile?.role === 'admin' || profile?.role === 'manager')) return false;
       return true;
     })
   })).filter(group => group.items.length > 0)
