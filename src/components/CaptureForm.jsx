@@ -144,7 +144,8 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
       physio_id: profile?.id,
       consultDate: formatConsultDateToISO(formData.consultDate),
       recommendedExercises: exercises,
-      conditionNotes: { ...combinedNotes, whatsappMessage }
+      conditionNotes: { ...combinedNotes, whatsappMessage },
+      tracker_id: initialData?.tracker_id || null
     };
 
     try {
