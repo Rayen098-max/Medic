@@ -90,12 +90,12 @@ export function TasksTable({ data }: TasksTableProps) {
 
     // 1. Check explicitly linked patient IDs (from local storage / manual linking)
     if (filledPatientIds[id]) return filledPatientIds[id];
-    const cleanPhone = (row["Customer Number"] || "").replace(/\D/g, '');
-    const cleanName = (row["Customer Name"] || "").trim().toLowerCase();
+    const cleanPhone = String(row["Customer Number"] || "").replace(/\D/g, '');
+    const cleanName = String(row["Customer Name"] || "").trim().toLowerCase();
     
     const found = dbPatients.find(p => {
-      const pPhone = (p.phone || "").replace(/\D/g, '');
-      const pName = (p.name || "").trim().toLowerCase();
+      const pPhone = String(p.phone || "").replace(/\D/g, '');
+      const pName = String(p.name || "").trim().toLowerCase();
       return (cleanPhone.length >= 7 && pPhone.length >= 7 && (pPhone.includes(cleanPhone) || cleanPhone.includes(pPhone))) ||
              (cleanName && pName && (cleanName === pName));
     });
@@ -113,7 +113,7 @@ export function TasksTable({ data }: TasksTableProps) {
   }
 
   const handleWhatsApp = (row: TrackerRow, id: string, appType: 'default' | 'business' | 'web' = 'default') => {
-    let phone = (row["Customer Number"] || "").replace(/\D/g, '');
+    let phone = String(row["Customer Number"] || "").replace(/\D/g, '');
     if (!phone) {
       alert("No phone number available for this customer.");
       return;

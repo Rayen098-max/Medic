@@ -84,7 +84,16 @@ export function Tasks() {
     fetch(csvUrl, { cache: 'no-store' })
       .then(res => res.text())
       .then(csv => {
-        const result = Papa.parse(csv, { header: true, skipEmptyLines: true });
+        const result = Papa.parse(csv, { 
+          header: true, 
+          skipEmptyLines: true,
+          transformHeader: (h) => {
+            let ht = h.trim();
+            if (ht.toLowerCase().startsWith('date')) return 'Date';
+            if (ht.toLowerCase() === 'name') return 'Customer Name';
+            return ht;
+          }
+        });
         const json = result.data as TrackerRow[];
 
         // Forward-fill the Date field because Google Sheet date headers only appear once per group
@@ -92,13 +101,15 @@ export function Tasks() {
         const filledData: TrackerRow[] = [];
 
         for (const row of json) {
-          const rawDate = (row.Date || row.Dates)?.trim();
+          const val = row.Date || row.Dates;
+          const rawDate = typeof val === 'string' ? val.trim() : (val ? String(val).trim() : undefined);
           if (rawDate && rawDate !== '' && !['Start', 'Mid', 'End', 'cc', 'no cc'].includes(rawDate)) {
             lastDate = rawDate;
           }
-          // Only include rows that actually represent a customer entry
-          const hasCustomer = (row['Customer Name'] && row['Customer Name'].trim() !== '') || 
-                              (row['Customer Number'] && row['Customer Number'].trim() !== '');
+          const nameVal = row['Customer Name'];
+          const numVal = row['Customer Number'];
+          const hasCustomer = (nameVal && String(nameVal).trim() !== '') || 
+                              (numVal && String(numVal).trim() !== '');
           if (hasCustomer) {
             filledData.push({
               ...row,
@@ -163,7 +174,8 @@ export function Tasks() {
     const AUG_28_2026 = new Date(2026, 7, 28).getTime(); // Note: month is 0-indexed (7 = August)
 
     return data.filter(row => {
-      const dateStr = row.Date?.trim();
+      const val = row.Date;
+      const dateStr = typeof val === 'string' ? val.trim() : (val ? String(val).trim() : undefined);
       if (!dateStr) return false;
       
       const timestamp = parseDate(dateStr);
