@@ -188,7 +188,7 @@ export default function CustomerPortal() {
         if (diff > 0) day = String(diff);
       }
     }
-    document.title = day ? `${person} Recovery Plan — Day ${day}` : `${person} Personalized Recovery Plan`;
+    document.title = `${person} Personalized Recovery Plan`;
   }, [patient]);
 
   if (loading) {

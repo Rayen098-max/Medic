@@ -16,19 +16,13 @@ function clean(s, max = 20) {
   return String(s).replace(/[<>&"'`]/g, '').trim().slice(0, max);
 }
 
-function buildCopy(nameRaw, dayRaw) {
+function buildCopy(nameRaw) {
   const name = clean(nameRaw) || 'Your';
-  const day = clean(dayRaw, 3);
-  const hasDay = /^\d+$/.test(day);
 
-  const line1 = hasDay
-    ? `${name === 'Your' ? '' : `${name}'s `}Day ${day}`.trim()
-    : name === 'Your' ? 'Your Personalized' : `${name}'s Personalized`;
+  const line1 = name === 'Your' ? 'Your Personalized' : `${name}'s Personalized`;
   const line2 = 'Recovery Plan';
 
-  const sub = hasDay
-    ? `${name === 'Your' ? 'Your' : `${name}'s`} personalized 3D recovery plan, built from your physio consult. Tap to see it.`
-    : 'A personalized 3D recovery plan, built from your physio consult. Tap to see yours.';
+  const sub = 'A personalized 3D recovery plan, built from your physio consult. Tap to see yours.';
 
   const fsize = name.length <= 12 ? 72 : name.length <= 18 ? 62 : 52;
   return { line1, line2, sub, fsize };
@@ -125,7 +119,7 @@ function FallbackPoster({ line1, line2, sub, fsize }) {
 export default async function handler(req) {
   const { searchParams } = new URL(req.url);
   const origin = new URL(req.url).origin;
-  const copy = buildCopy(searchParams.get('name'), searchParams.get('day'));
+  const copy = buildCopy(searchParams.get('name'));
 
   let res;
   try {

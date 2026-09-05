@@ -62,10 +62,8 @@ export default async function handler(req) {
   }
 
   const person = name ? `${name}'s` : 'Your';
-  const title = day ? `${person} Recovery Plan — Day ${day}` : `${person} Personalized Recovery Plan`;
-  const desc = day
-    ? `${person} personalized 3D recovery plan — Day ${day}. Tap to view.`
-    : `${person} personalized interactive 3D recovery plan. Tap to view.`;
+  const title = `${person} Personalized Recovery Plan`;
+  const desc = `${person} personalized interactive 3D recovery plan. Tap to view.`;
 
   // og:image points at the dynamic poster route; ?v= passes through so each
   // WhatsApp send (with its own ?v=timestamp) cache-busts the preview.
