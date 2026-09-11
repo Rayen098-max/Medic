@@ -14,13 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { Clock, MousePointerClick, CalendarDays, ArrowLeft, UserSquare2, Users } from 'lucide-react'
+import { Clock, MousePointerClick, CalendarDays } from 'lucide-react'
 
 export function UsageReport() {
   const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
-  const [selectedPhysio, setSelectedPhysio] = useState(null)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
     getUsageReport()
@@ -30,6 +29,7 @@ export function UsageReport() {
       })
       .catch(err => {
         console.error("Error fetching usage report:", err)
+        setError(err.message || "Failed to load usage report")
         setLoading(false)
       })
   }, [])
@@ -53,23 +53,6 @@ export function UsageReport() {
     })
   }
 
-  // Group data by physio
-  const physioGroups = data.reduce((acc, row) => {
-    if (!acc[row.physioName]) {
-      acc[row.physioName] = {
-        name: row.physioName,
-        count: 0,
-        patients: []
-      }
-    }
-    acc[row.physioName].count += 1
-    acc[row.physioName].patients.push(row.name)
-    return acc
-  }, {})
-
-  const physioCards = Object.values(physioGroups).sort((a, b) => b.count - a.count)
-  const filteredData = selectedPhysio ? data.filter(r => r.physioName === selectedPhysio) : []
-
   return (
     <>
       <Header fixed>
@@ -84,71 +67,24 @@ export function UsageReport() {
           <div>
             <h2 className='text-2xl font-bold tracking-tight'>Usage Report</h2>
             <p className='text-muted-foreground'>
-              {selectedPhysio 
-                ? `Detailed usage stats for ${selectedPhysio}'s patients.`
-                : 'Track how often and how long customers view their personalized 3D recovery links.'}
+              Track how often and how long customers view their personalized 3D recovery links.
             </p>
           </div>
-          {selectedPhysio && (
-            <Button variant="outline" onClick={() => setSelectedPhysio(null)} className="gap-2">
-              <ArrowLeft size={16} /> Back to Overview
-            </Button>
-          )}
         </div>
 
         {loading ? (
           <div className="flex h-40 items-center justify-center">
             <p className="text-muted-foreground animate-pulse">Gathering tracking data...</p>
           </div>
-        ) : !selectedPhysio ? (
-          // CARD GRID VIEW
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {physioCards.length === 0 ? (
-              <div className="col-span-full h-32 flex items-center justify-center border rounded-lg bg-card text-muted-foreground">
-                No usage data recorded yet.
-              </div>
-            ) : (
-              physioCards.map((physio, idx) => (
-                <div 
-                  key={idx} 
-                  onClick={() => setSelectedPhysio(physio.name)}
-                  className="group relative flex flex-col rounded-xl border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md hover:border-primary/50 cursor-pointer overflow-hidden"
-                >
-                  <div className="p-6 pb-4 flex items-start justify-between border-b border-muted/20 bg-muted/10">
-                    <div className="space-y-1">
-                      <h3 className="font-semibold text-lg flex items-center gap-2">
-                        <UserSquare2 className="text-primary/70" size={20} />
-                        {physio.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-                        <Users size={14} /> Follow-ups Sent
-                      </p>
-                    </div>
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xl ring-4 ring-primary/5">
-                      {physio.count}
-                    </div>
-                  </div>
-                  <div className="p-0 flex-1">
-                    <div className="h-40 overflow-y-auto p-4 custom-scrollbar">
-                      <ul className="space-y-2.5">
-                        {physio.patients.map((pName, pIdx) => (
-                          <li key={pIdx} className="flex items-center gap-2 text-sm text-muted-foreground group-hover:text-foreground/90 transition-colors">
-                            <div className="h-1.5 w-1.5 rounded-full bg-primary/40"></div>
-                            {pName}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                  <div className="bg-primary/5 p-3 text-center text-xs font-medium text-primary uppercase tracking-wider group-hover:bg-primary/10 transition-colors">
-                    Click to view detailed stats
-                  </div>
-                </div>
-              ))
-            )}
+        ) : error ? (
+           <div className="flex h-40 items-center justify-center border rounded-lg bg-red-500/10 text-red-500">
+            Error: {error}
+          </div>
+        ) : data.length === 0 ? (
+          <div className="flex h-40 items-center justify-center border rounded-lg bg-card text-muted-foreground">
+            No usage data recorded yet.
           </div>
         ) : (
-          // DETAILED TABLE VIEW
           <div className="rounded-md border bg-card animate-in fade-in slide-in-from-bottom-4 duration-300">
             <Table>
               <TableHeader>
@@ -177,7 +113,7 @@ export function UsageReport() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredData.map((row) => (
+                {data.map((row) => (
                   <TableRow key={row.id}>
                     <TableCell className="font-medium">{row.name}</TableCell>
                     <TableCell>{row.phone}</TableCell>

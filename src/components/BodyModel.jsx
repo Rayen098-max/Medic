@@ -109,7 +109,7 @@ export default function BodyModel({ zones, activeZones = [], onZoneClick }) {
   const isBilateralZone = (zoneName) => {
     if (!zoneName) return false;
     const z = zoneName.toLowerCase();
-    return z.includes('shoulder') || z.includes('knee') || z.includes('leg') || z.includes('foot');
+    return z.includes('shoulder') || z.includes('knee') || z.includes('leg') || z.includes('foot') || z.includes('elbow') || z.includes('wrist') || z.includes('arm') || z.includes('hand');
   };
 
   useFrame((state) => {
