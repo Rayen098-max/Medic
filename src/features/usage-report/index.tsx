@@ -69,9 +69,11 @@ export function UsageReport() {
   }
 
   const uniquePhysios = useMemo(() => {
-    const physios = new Set(followupsData.map(f => f.physioName))
+    const physios = new Set()
+    data.forEach(d => { if (d.physioName && d.physioName !== 'Unknown') physios.add(d.physioName) })
+    followupsData.forEach(f => { if (f.physioName && f.physioName !== 'Unknown') physios.add(f.physioName) })
     return Array.from(physios).sort()
-  }, [followupsData])
+  }, [data, followupsData])
 
   const filteredFollowups = useMemo(() => {
     return followupsData.filter(f => {
