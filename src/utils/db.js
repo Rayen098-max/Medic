@@ -174,3 +174,37 @@ export const updateExercise = async (id, updates) => {
 
   if (error) throw error;
 };
+
+export const recordFollowup = async (patientId, physioId) => {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  try {
+    const { error } = await supabase
+      .from('followups')
+      .insert([{ patient_id: patientId, physio_id: physioId }]);
+    if (error) throw error;
+  } catch (err) {
+    console.error("Error recording followup:", err);
+  }
+};
+
+export const getFollowupsReport = async () => {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  const { data, error } = await supabase
+    .from('followups')
+    .select(`
+      id,
+      created_at,
+      profiles!physio_id (full_name),
+      patients!patient_id (name)
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  return data.map(f => ({
+    id: f.id,
+    dateSent: f.created_at,
+    physioName: f.profiles?.full_name || 'Unknown',
+    patientName: f.patients?.name || 'Unknown'
+  }));
+};

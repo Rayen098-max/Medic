@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MessageCircle, Eye, Trash2 } from 'lucide-react'
 import CaptureForm from '@/components/CaptureForm'
-import { getPatients } from '@/utils/db'
+import { getPatients, recordFollowup } from '@/utils/db'
 import { useAuth } from '@/context/AuthContext'
 
 interface TrackerRow {
@@ -151,6 +151,10 @@ export function TasksTable({ data }: TasksTableProps) {
       url = `intent://send/?phone=${phone}&text=${encoded}#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end`;
     } else if (appType === 'web') {
       url = `https://web.whatsapp.com/send?phone=${phone}&text=${encoded}`;
+    }
+
+    if (patientId && profile?.id) {
+      recordFollowup(patientId, profile.id);
     }
 
     window.open(url, '_blank');
