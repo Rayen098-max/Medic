@@ -28,3 +28,8 @@ using (exists (select 1 from profiles where id = auth.uid() and role = 'admin'))
 create policy "manager can view sessions"
 on patient_sessions for select
 using (exists (select 1 from profiles where id = auth.uid() and role = 'manager'));
+
+-- Allow ANYONE to select a session (so insert().select() works for anon users)
+create policy "anon can select session"
+on patient_sessions for select
+using (true);
