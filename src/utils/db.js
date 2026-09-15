@@ -175,12 +175,19 @@ export const updateExercise = async (id, updates) => {
   if (error) throw error;
 };
 
-export const recordFollowup = async (patientId, physioId) => {
+export const recordFollowup = async (patientId, physioId, fallbackName = null) => {
   if (!supabase) throw new Error("Supabase is not configured.");
   try {
+    const payload = { physio_id: physioId };
+    if (patientId) {
+      payload.patient_id = patientId;
+    }
+    if (fallbackName) {
+      payload.patient_name_fallback = fallbackName;
+    }
     const { error } = await supabase
       .from('followups')
-      .insert([{ patient_id: patientId, physio_id: physioId }]);
+      .insert([payload]);
     if (error) throw error;
   } catch (err) {
     console.error("Error recording followup:", err);
@@ -194,6 +201,7 @@ export const getFollowupsReport = async () => {
     .select(`
       id,
       created_at,
+      patient_name_fallback,
       profiles!physio_id (full_name),
       patients!patient_id (name)
     `)
@@ -205,6 +213,6 @@ export const getFollowupsReport = async () => {
     id: f.id,
     dateSent: f.created_at,
     physioName: f.profiles?.full_name || 'Unknown',
-    patientName: f.patients?.name || 'Unknown'
+    patientName: f.patients?.name || f.patient_name_fallback || 'Unknown (Unlinked)'
   }));
 };

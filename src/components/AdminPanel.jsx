@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getPatients, deletePatient, supabase, updatePatientStatus } from '../utils/db';
+import { getPatients, deletePatient, supabase, updatePatientStatus, recordFollowup } from '../utils/db';
 import { Search, Download, Trash2, LogOut, ShieldAlert, Eye, MessageCircle, Check, Clock, X, FastForward } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Papa from 'papaparse';
@@ -81,6 +81,9 @@ export default function AdminPanel() {
       const now = new Date().toISOString();
       setPatients(prev => prev.map(p => p.id === id ? { ...p, followup_sent_at: now } : p));
       await updatePatientStatus(id, { followup_sent_at: now });
+      if (profile?.id) {
+        await recordFollowup(id, profile.id);
+      }
     } catch (error) {
       console.error("Failed to mark as sent:", error);
       alert("Failed to update status in database.");

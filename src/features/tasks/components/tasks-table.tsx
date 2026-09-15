@@ -153,8 +153,8 @@ export function TasksTable({ data }: TasksTableProps) {
       url = `https://web.whatsapp.com/send?phone=${phone}&text=${encoded}`;
     }
 
-    if (patientId && profile?.id) {
-      recordFollowup(patientId, profile.id);
+    if (profile?.id) {
+      recordFollowup(patientId, profile.id, customerName);
     }
 
     window.open(url, '_blank');

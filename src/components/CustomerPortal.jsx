@@ -31,17 +31,20 @@ export default function CustomerPortal() {
 
   // Usage Tracking Effect
   useEffect(() => {
-    if (!id || loading) return;
+    if (!patient?.id || loading) return;
     let sessionId = null;
-    let secondsSpent = 0;
     let intervalId = null;
+    let startTime = null;
 
     const startTracking = async () => {
-      sessionId = await trackSessionStart(id);
+      sessionId = await trackSessionStart(patient.id);
       if (sessionId) {
+        startTime = Date.now();
         intervalId = setInterval(() => {
-          secondsSpent += 5;
-          updateSessionDuration(sessionId, secondsSpent);
+          if (startTime) {
+            const actualSecondsSpent = Math.floor((Date.now() - startTime) / 1000);
+            updateSessionDuration(sessionId, actualSecondsSpent);
+          }
         }, 5000);
       }
     };
@@ -50,8 +53,14 @@ export default function CustomerPortal() {
 
     return () => {
       if (intervalId) clearInterval(intervalId);
+      // Optional: do one final update on unmount if we had a valid session
+      if (sessionId && startTime) {
+         const finalSeconds = Math.floor((Date.now() - startTime) / 1000);
+         // This is fire-and-forget
+         updateSessionDuration(sessionId, finalSeconds);
+      }
     };
-  }, [id, loading]);
+  }, [patient?.id, loading]);
 
   useEffect(() => {
     async function loadData() {
