@@ -21,10 +21,10 @@ export function BrandHeader() {
               <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
             </div>
             <div className='grid flex-1 text-start leading-tight'>
-              <span className='truncate font-bold text-[15px] tracking-wide text-slate-100'>
+              <span className='truncate font-bold text-[15px] tracking-wide text-foreground'>
                 Medic
               </span>
-              <span className='truncate text-[11px] text-slate-500 mt-0.5'>
+              <span className='truncate text-[11px] text-muted-foreground mt-0.5'>
                 The Sleep Company
               </span>
             </div>

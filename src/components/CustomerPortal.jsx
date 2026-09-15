@@ -205,7 +205,7 @@ export default function CustomerPortal() {
   }
 
   if (!patient || !zone) {
-    return <div style={{ padding: '40px', color: 'white' }}>Loading or record not found...</div>;
+    return <div style={{ padding: '40px', color: 'var(--text-main)' }}>Loading or record not found...</div>;
   }
 
   const activePointData = activePointId ? [...painPointsData, ...(patient?.customConditions || [])].find(p => p.id === activePointId) : null;
@@ -418,15 +418,15 @@ export default function CustomerPortal() {
                   
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: 'clamp(0.75rem, 3.5vw, 0.9rem)', color: '#cbd5e1', lineHeight: '1.5' }}>
                     <p style={{ margin: 0 }}>
-                      <strong style={{ color: 'white' }}>This is a preliminary, visual assessment, not a full diagnosis.</strong><br/>
+                      <strong style={{ color: 'var(--text-main)' }}>This is a preliminary, visual assessment, not a full diagnosis.</strong><br/>
                       During your in-store visit, our physiotherapist observed your posture and discussed your concerns, but this was a short consultation, not a complete clinical diagnosis.
                     </p>
                     <p style={{ margin: 0 }}>
-                      <strong style={{ color: 'white' }}>These exercises are general guidance, not a personalized treatment plan.</strong><br/>
+                      <strong style={{ color: 'var(--text-main)' }}>These exercises are general guidance, not a personalized treatment plan.</strong><br/>
                       They're intended to help with common, everyday discomfort based on what was visually observed — not tailored to any underlying condition that hasn't been formally diagnosed.
                     </p>
                     <p style={{ margin: 0 }}>
-                      <strong style={{ color: 'white' }}>Stop immediately if anything feels wrong.</strong><br/>
+                      <strong style={{ color: 'var(--text-main)' }}>Stop immediately if anything feels wrong.</strong><br/>
                       If your symptoms worsen, don't improve, or you notice anything unusual while following this routine, stop the exercises right away and reach out to us using the contact option on this page before continuing.
                     </p>
                   </div>
@@ -445,7 +445,7 @@ export default function CustomerPortal() {
                         alignItems: 'center', 
                         gap: '8px',
                         background: '#25D366',
-                        color: 'white',
+                        color: 'var(--text-main)',
                         border: 'none',
                         padding: '10px 16px',
                         borderRadius: '24px',
@@ -489,7 +489,7 @@ export default function CustomerPortal() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {exList.map((ex, i) => (
                     <div key={i}>
-                      <span style={{ color: 'white', fontWeight: 'bold' }}>{ex.name}</span><br/>
+                      <span style={{ color: 'var(--text-main)', fontWeight: 'bold' }}>{ex.name}</span><br/>
                       Do the exercise for {ex.duration || '0'} minutes and do {ex.sets || '0'} sets daily for this week.
                       {ex.customPlan && <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: '4px' }}>{ex.customPlan}</div>}
                     </div>
@@ -655,7 +655,7 @@ export default function CustomerPortal() {
                   <img src={activeExercise.image} alt="Exercise Detail" style={{ width: '100%', maxHeight: '45vh', objectFit: 'contain', background: '#000' }} />
                 )}
                 <div style={{ padding: '24px', flex: 1, overflowY: 'auto' }}>
-                  <h4 style={{ color: 'white', marginTop: 0, marginBottom: '16px', fontSize: '1.2rem' }}>Instructions</h4>
+                  <h4 style={{ color: 'var(--text-main)', marginTop: 0, marginBottom: '16px', fontSize: '1.2rem' }}>Instructions</h4>
                   <p style={{ color: '#e2e8f0', whiteSpace: 'pre-wrap', lineHeight: 1.6, fontSize: '1rem', margin: 0 }}>{activeExercise.instructions}</p>
                 </div>
               </div>

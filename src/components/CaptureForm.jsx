@@ -174,7 +174,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
           type="text" 
           value={formData.name}
           onChange={e => setFormData({...formData, name: e.target.value})}
-          style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white' }} 
+          style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} 
         />
       </div>
 
@@ -185,7 +185,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
           type="tel" 
           value={formData.phone}
           onChange={e => setFormData({...formData, phone: e.target.value})}
-          style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white' }} 
+          style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} 
         />
       </div>
 
@@ -195,7 +195,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
           required
           value={formData.consultDate}
           onChange={e => setFormData({...formData, consultDate: e.target.value})}
-          style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }}
+          style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-main)', colorScheme: 'dark' }}
         >
           {formData.consultDate && !['Few Days ago', 'a week ago'].includes(formData.consultDate) && (
             <option value={formData.consultDate}>{formData.consultDate}</option>
@@ -227,7 +227,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                       setCustomConditions(newConds);
                     }}
                     required
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', colorScheme: 'dark' }}
                   >
                     <option value="">Select body part...</option>
                     {Object.keys(painPointsData.reduce((acc, point) => { if(point.zone) acc[point.zone] = true; return acc; }, {})).map(z => (
@@ -248,7 +248,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                     }}
                     required
                     placeholder="e.g., Unspecified Neck Pain"
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white' }}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
                   />
                 </div>
 
@@ -264,7 +264,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                     rows={2}
                     required
                     placeholder="e.g., Hi John, it was great seeing you today! Let's get that back pain sorted."
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', resize: 'vertical' }}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', resize: 'vertical' }}
                   />
                 </div>
                 
@@ -279,7 +279,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                     }}
                     rows={2}
                     placeholder="e.g., Information about this specific condition..."
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', resize: 'vertical' }}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', resize: 'vertical' }}
                   />
                 </div>
               </div>
@@ -342,7 +342,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                     onChange={(e) => setConditionNotes({...conditionNotes, [id]: e.target.value})}
                     rows={3}
                     placeholder="e.g., Hi John, it was great seeing you today! Let's get that back pain sorted."
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', resize: 'vertical' }}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', resize: 'vertical' }}
                   />
                 </div>
                 
@@ -375,13 +375,13 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                   setExercises(newEx);
                 }}
                 placeholder="e.g., Neck Side Bends"
-                style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white' }}
+                style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
               />
             </div>
 
             <div style={{ marginBottom: '12px' }}>
               <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#ccc' }}>Exercise Image</label>
-              <input type="file" accept="image/*" onChange={(e) => handleImageUpload(i, e)} style={{ color: 'white', fontSize: '0.85rem', width: '100%' }} />
+              <input type="file" accept="image/*" onChange={(e) => handleImageUpload(i, e)} style={{ color: 'var(--text-main)', fontSize: '0.85rem', width: '100%' }} />
               {ex.image && <img src={ex.image} alt="Preview" style={{ marginTop: '8px', width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-color)' }} />}
             </div>
             
@@ -396,7 +396,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                 }}
                 rows={3}
                 placeholder="e.g., Hold for 30 seconds, repeat 3 times."
-                style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', resize: 'vertical' }}
+                style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', resize: 'vertical' }}
               />
             </div>
 
@@ -412,7 +412,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                       newEx[i].duration = e.target.value;
                       setExercises(newEx);
                     }}
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', colorScheme: 'dark' }}
                   >
                     <option value="">Select</option>
                     {Array.from({length: 60}, (_, idx) => idx + 1).map(num => (
@@ -429,7 +429,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                       newEx[i].sets = e.target.value;
                       setExercises(newEx);
                     }}
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', colorScheme: 'dark' }}
                   >
                     <option value="">Select</option>
                     {Array.from({length: 60}, (_, idx) => idx + 1).map(num => (
@@ -446,7 +446,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                       newEx[i].week = e.target.value;
                       setExercises(newEx);
                     }}
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }}
+                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', colorScheme: 'dark' }}
                   >
                     <option value="1">Week 1</option>
                     <option value="2">Week 2</option>
@@ -466,7 +466,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                   }}
                   rows={2}
                   placeholder="e.g., Do these primarily in the morning before breakfast."
-                  style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', resize: 'vertical' }}
+                  style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', resize: 'vertical' }}
                 />
               </div>
             </div>
@@ -490,7 +490,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                 e.target.value = ''; // reset after selection
               }
             }}
-            style={{ flex: '1', minWidth: '250px', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', colorScheme: 'dark' }}
+            style={{ flex: '1', minWidth: '250px', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', colorScheme: 'dark' }}
           >
             <option value="">Select from predefined exercises...</option>
             {availableExercises.map(a => (
@@ -509,7 +509,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
           onChange={(e) => setWhatsappMessage(e.target.value)}
           rows={4}
           placeholder="e.g., Hi John, it was great seeing you today! Hope your body is treating you better. Let me know if you have any questions."
-          style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white', resize: 'vertical' }}
+          style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-main)', resize: 'vertical' }}
         />
       </div>
 

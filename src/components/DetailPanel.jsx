@@ -79,7 +79,7 @@ export default function DetailPanel({ zone, onClose }) {
               <div key={i} style={{ display: 'flex', gap: '12px', background: 'rgba(13, 17, 23, 0.8)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)', alignItems: 'center' }}>
                 <img src={catProd.image} alt={catProd.name} style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-color)' }} />
                 <div style={{ flex: 1 }}>
-                  <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', color: 'white' }}>{catProd.name}</h4>
+                  <h4 style={{ margin: '0 0 4px 0', fontSize: '0.95rem', color: 'var(--text-main)' }}>{catProd.name}</h4>
                   <p style={{ margin: '0 0 8px 0', fontSize: '0.8rem', color: 'var(--text-muted)' }}>{p.reason}</p>
                   <a 
                     href={catProd.url} 

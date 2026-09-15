@@ -224,7 +224,7 @@ export default function AdminPanel() {
   }).length;
 
   if (loading) {
-    return <div style={{ color: 'white', padding: '40px' }}>Loading dashboard...</div>;
+    return <div style={{ color: 'var(--text-main)', padding: '40px' }}>Loading dashboard...</div>;
   }
 
   return (
@@ -276,7 +276,7 @@ export default function AdminPanel() {
               placeholder="Search patients by name or phone..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white' }}
+              style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
             />
           </div>
           
@@ -284,7 +284,7 @@ export default function AdminPanel() {
             <select 
               value={physioFilter} 
               onChange={(e) => setPhysioFilter(e.target.value)}
-              style={{ padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white' }}
+              style={{ padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
             >
               <option value="">All Physios</option>
               {physios.map(p => (
@@ -441,7 +441,7 @@ export default function AdminPanel() {
             <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '30px', position: 'relative', border: '1px solid rgba(0, 212, 255, 0.35)', boxShadow: '0 0 40px rgba(0, 212, 255, 0.15)' }}>
               <button 
                 onClick={() => setIsQueueOpen(false)} 
-                style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-color)', color: 'white', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-color)', color: 'var(--text-main)', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
               >
                 <X size={18} />
               </button>
@@ -452,17 +452,17 @@ export default function AdminPanel() {
               </div>
               
               <div style={{ background: 'rgba(13, 17, 23, 0.8)', padding: '24px', borderRadius: '12px', marginBottom: '24px', border: '1px solid var(--border-color)' }}>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '1.2rem', color: 'white' }}>To: {queueList[queueIndex].name}</h3>
+                <h3 style={{ margin: '0 0 12px 0', fontSize: '1.2rem', color: 'var(--text-main)' }}>To: {queueList[queueIndex].name}</h3>
                 <div style={{ color: '#e2e8f0', fontSize: '0.95rem', whiteSpace: 'pre-wrap', fontFamily: 'monospace', background: 'rgba(0,0,0,0.4)', padding: '16px', borderRadius: '8px', lineHeight: 1.5, maxHeight: '250px', overflowY: 'auto' }}>
                   {decodeURIComponent(generateWhatsAppLink(queueList[queueIndex]).split('?text=')[1])}
                 </div>
               </div>
               
               <div style={{ display: 'flex', gap: '16px' }}>
-                <button onClick={handleQueueSkip} className="clinical-btn" style={{ flex: 1, background: 'rgba(255,255,255,0.05)', color: 'white' }}>
+                <button onClick={handleQueueSkip} className="clinical-btn" style={{ flex: 1, background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)' }}>
                   Skip
                 </button>
-                <button onClick={handleQueueSend} className="clinical-btn" style={{ flex: 2, background: 'linear-gradient(180deg, #2ecc71, #27ae60)', color: 'white', borderColor: '#27ae60', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <button onClick={handleQueueSend} className="clinical-btn" style={{ flex: 2, background: 'linear-gradient(180deg, #2ecc71, #27ae60)', color: 'var(--text-main)', borderColor: '#27ae60', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                   <MessageCircle size={18} /> Send WhatsApp
                 </button>
               </div>

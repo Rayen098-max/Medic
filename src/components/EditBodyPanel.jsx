@@ -181,7 +181,7 @@ export default function EditBodyPanel() {
   };
 
   return (
-    <div style={{ display: 'flex', width: '100%', height: '100vh', background: 'var(--primary-bg)', color: 'white', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', width: '100%', height: '100vh', background: 'var(--primary-bg)', color: 'var(--text-main)', overflow: 'hidden' }}>
       
       {/* 3D Canvas Area */}
       <div style={{ flex: 1, position: 'relative' }}>
@@ -274,7 +274,7 @@ export default function EditBodyPanel() {
               value={newZoneName}
               onChange={(e) => setNewZoneName(e.target.value)}
               placeholder="e.g. elbow"
-              style={{ flex: 1, padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'white', minWidth: 0 }}
+              style={{ flex: 1, padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', minWidth: 0 }}
             />
             <button
               onClick={() => {

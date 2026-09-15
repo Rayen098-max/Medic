@@ -108,7 +108,7 @@ export default function AddDataPanel() {
       <h1 style={{ color: 'var(--accent)', marginBottom: '24px', fontSize: '2rem' }}>Add Data - Exercises</h1>
       
       <div className="glass-panel" style={{ padding: '24px', marginBottom: '32px' }}>
-        <h2 style={{ marginBottom: '16px', fontSize: '1.25rem', color: 'white' }}>Upload New Exercise</h2>
+        <h2 style={{ marginBottom: '16px', fontSize: '1.25rem', color: 'var(--text-main)' }}>Upload New Exercise</h2>
         
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
@@ -118,7 +118,7 @@ export default function AddDataPanel() {
               type="text" 
               value={formData.name}
               onChange={e => setFormData({...formData, name: e.target.value})}
-              style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white' }} 
+              style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} 
               placeholder="e.g., Hamstring Stretch"
             />
           </div>
@@ -152,7 +152,7 @@ export default function AddDataPanel() {
               value={formData.instructions}
               onChange={e => setFormData({...formData, instructions: e.target.value})}
               rows={4}
-              style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'white', resize: 'vertical' }} 
+              style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-main)', resize: 'vertical' }} 
               placeholder="e.g., Hold the stretch for 30 seconds..."
             />
           </div>
@@ -170,7 +170,7 @@ export default function AddDataPanel() {
       </div>
 
       <div className="glass-panel" style={{ padding: '24px' }}>
-        <h2 style={{ marginBottom: '16px', fontSize: '1.25rem', color: 'white' }}>Available Exercises</h2>
+        <h2 style={{ marginBottom: '16px', fontSize: '1.25rem', color: 'var(--text-main)' }}>Available Exercises</h2>
         
         {loading ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)' }}>
