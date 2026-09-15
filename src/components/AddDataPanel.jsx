@@ -102,9 +102,6 @@ export default function AddDataPanel() {
     }
   };
 
-  if (profile?.role !== 'admin' && profile?.role !== 'manager') {
-    return <div style={{ padding: '20px', color: 'white' }}>Access Denied. Admins only.</div>;
-  }
 
   return (
     <div style={{ padding: '24px', maxWidth: '1000px', margin: '0 auto', color: 'var(--text-main)' }}>
@@ -129,12 +126,16 @@ export default function AddDataPanel() {
           <div>
             <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Exercise Image (Optional)</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <input 
-                type="file" 
-                accept="image/*" 
-                onChange={handleImageUpload} 
-                style={{ color: 'white' }} 
-              />
+              <label className="clinical-btn" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px' }}>
+                <ImageIcon size={18} />
+                Choose Image
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleImageUpload} 
+                  style={{ display: 'none' }} 
+                />
+              </label>
               {formData.image_url && (
                 <img 
                   src={formData.image_url} 
@@ -193,15 +194,16 @@ export default function AddDataPanel() {
                   {ex.instructions || 'No instructions provided.'}
                 </p>
                 <div style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px' }}>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#ccc' }}>
+                  <label className="clinical-btn" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '8px 12px', fontSize: '0.85rem', width: '100%', marginTop: '4px' }}>
+                    <ImageIcon size={16} />
                     {ex.image_url ? 'Replace Image' : 'Attach Image'}
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => handleUpdateImage(ex.id, e)} 
+                      style={{ display: 'none' }} 
+                    />
                   </label>
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={(e) => handleUpdateImage(ex.id, e)} 
-                    style={{ color: 'white', fontSize: '0.85rem', width: '100%' }} 
-                  />
                 </div>
               </div>
             ))}
