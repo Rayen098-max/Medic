@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Link, Navigate } from 'react-router-dom';
 import { AuthenticatedLayout } from './components/layout/authenticated-layout';
-import { Dashboard } from './features/dashboard';
+import { PhysioDashboard as Dashboard } from './features/physioDashboard';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 import BodyModel from './components/BodyModel';

@@ -1,0 +1,258 @@
+.physio-dashboard {
+  padding: 24px;
+  min-height: 100vh;
+  background: radial-gradient(circle at top right, #1a1a2e, #101015);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.physio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px;
+  margin-bottom: 32px;
+}
+
+.physio-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.physio-subtitle {
+  color: #8892b0;
+  margin: 8px 0 0 0;
+  font-size: 0.95rem;
+}
+
+.export-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 210, 255, 0.1);
+  color: #00d2ff;
+  border: 1px solid rgba(0, 210, 255, 0.3);
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.export-btn:hover {
+  background: rgba(0, 210, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Tabs */
+.physio-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 16px;
+}
+
+.physio-tab {
+  background: transparent;
+  color: #8892b0;
+  border: none;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.physio-tab:hover {
+  background: rgba(255,255,255,0.05);
+  color: #fff;
+}
+
+.physio-tab.active {
+  background: rgba(0, 210, 255, 0.15);
+  color: #00d2ff;
+}
+
+.what-if-tab {
+  margin-left: auto;
+  border: 1px dashed rgba(255,255,255,0.3);
+}
+
+/* Metrics */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+
+.metric-card {
+  padding: 24px;
+  transition: transform 0.3s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-5px);
+}
+
+.metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.metric-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #8892b0;
+}
+
+.tooltip-icon {
+  color: #555;
+  cursor: help;
+}
+
+.tooltip-icon:hover {
+  color: #00d2ff;
+}
+
+.metric-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.metric-value.positive {
+  color: #4ade80;
+}
+
+.metric-subtext {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+/* Utilities */
+.mt-6 { margin-top: 24px; }
+.mt-8 { margin-top: 32px; }
+.p-8 { padding: 32px; }
+.text-center { text-align: center; }
+.text-gray-400 { color: #9ca3af; }
+.text-blue-400 { color: #60a5fa; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+
+.fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.chart-container {
+  padding: 24px;
+}
+
+/* Side Panel */
+.what-if-panel {
+  position: fixed;
+  top: 0;
+  right: -450px;
+  width: 450px;
+  height: 100vh;
+  background: rgba(15, 15, 20, 0.95);
+  backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(255,255,255,0.1);
+  z-index: 1000;
+  transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.what-if-panel.open {
+  right: 0;
+}
+
+.panel-header {
+  padding: 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-header h2 { margin: 0; }
+
+.close-btn {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
+.panel-body {
+  padding: 24px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.panel-desc {
+  color: #8892b0;
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.slider-group label {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.slider-group label span {
+  color: #00d2ff;
+}
+
+.slider-group input[type=range] {
+  width: 100%;
+  accent-color: #00d2ff;
+}
+
+.projection-result {
+  padding: 32px;
+  background: linear-gradient(135deg, rgba(0, 210, 255, 0.1) 0%, rgba(58, 123, 213, 0.1) 100%);
+  border-color: rgba(0, 210, 255, 0.3);
+}
+
+.result-value {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #00d2ff;
+  margin-top: 16px;
+}
+
+.panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.5);
+  z-index: 999;
+}

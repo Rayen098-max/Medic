@@ -142,7 +142,7 @@ export function TasksTable({ data }: TasksTableProps) {
     const defaultGreeting = `Hi ${customerName},\n\nHope your body is treating you better! Let me know if you have any questions.`;
     const greeting = (customMessage && customMessage.trim().length > 0) ? customMessage : defaultGreeting;
 
-    const fullMessage = `${greeting}\n\nYour Personalized Plan for ${customerName}:\n👉 ${link}\n\nBest regards,\nDr. ${physioName}`;
+    const fullMessage = `${greeting}\n\nYour Personalized Plan for ${customerName}:\n👉 ${link}\n\nBest regards,\nDr. ${physioName} (PT)`;
 
     const encoded = encodeURIComponent(fullMessage);
     
