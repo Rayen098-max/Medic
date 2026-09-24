@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "sync:physio": "node scripts/syncPhysioData.js"
   },
   "dependencies": {
     "@faker-js/faker": "^10.6.0",
