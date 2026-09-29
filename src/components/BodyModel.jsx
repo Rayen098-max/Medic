@@ -5,40 +5,6 @@ import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import initialZoneCoordinates from '../data/zoneCoordinates.json';
 
-// SmartGrid Pressure Relief Bed Visualization
-function SmartGridBed({ visible }) {
-  const meshRef = useRef();
-
-  useFrame(() => {
-    if (meshRef.current && visible) {
-      meshRef.current.material.opacity = THREE.MathUtils.lerp(meshRef.current.material.opacity, 0.85, 0.05);
-    }
-  });
-
-  if (!visible) return null;
-
-  return (
-    <group position={[0, -3.4, 0]}>
-      {/* SmartGrid Layer */}
-      <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[4.5, 9, 32, 64]} />
-        <meshStandardMaterial 
-          color="#00d2ff" 
-          emissive="#005588" 
-          emissiveIntensity={0.5} 
-          wireframe={true} 
-          transparent={true} 
-          opacity={0.8}
-        />
-      </mesh>
-      {/* Glow halo under mattress */}
-      <mesh position={[0, -0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[4.8, 9.4]} />
-        <meshBasicMaterial color="#00ffff" transparent opacity={0.15} />
-      </mesh>
-    </group>
-  );
-}
 
 // Laser projectile shooting from the right side towards pain point
 function LaserProjectile({ targetPos, scale, startTime, onArrived }) {
@@ -107,7 +73,6 @@ export default function BodyModel({
   activeZones = [], 
   onZoneClick,
   introStage = 'ready', // 'assembling' | 'targeting' | 'locked' | 'ready'
-  showSmartGrid = false,
   activePointId = null
 }) {
   const group = useRef();
@@ -323,8 +288,6 @@ export default function BodyModel({
         />
       ))}
 
-      {/* SmartGrid Ergonomic Bed Visualization */}
-      <SmartGridBed visible={showSmartGrid} />
     </group>
   );
 }

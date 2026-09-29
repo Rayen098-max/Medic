@@ -47,7 +47,6 @@ export default function CustomerPortal() {
   const [activeWeekTab, setActiveWeekTab] = useState('1'); // '1' | '2' | '3' | 'consult'
 
   // Upgrades state
-  const [showSmartGrid, setShowSmartGrid] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [completedExercises, setCompletedExercises] = useState({});
   const [streakDays, setStreakDays] = useState(1);
@@ -349,7 +348,6 @@ export default function CustomerPortal() {
             setActivePointId(clickedId);
           }} 
           introStage={introStage}
-          showSmartGrid={showSmartGrid}
           activePointId={activePointId}
         />
         <ContactShadows resolution={256} frames={1} position={[0, -3.5, 0]} opacity={0.5} scale={20} blur={2} far={4.5} />
@@ -564,37 +562,6 @@ export default function CustomerPortal() {
         </div>
 
         {/* Top Center: Daily Streak & Routine Progress Tracker HUD */}
-        {introStage === 'ready' && (
-          <div 
-            style={{ 
-              position: 'absolute', 
-              top: 'max(14px, env(safe-area-inset-top))', 
-              left: '50%', 
-              transform: 'translateX(-50%)', 
-              zIndex: 25,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              background: 'rgba(15, 23, 42, 0.85)',
-              border: '1px solid rgba(0, 210, 255, 0.3)',
-              borderRadius: '24px',
-              padding: '6px 16px',
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 0 20px rgba(0, 210, 255, 0.15)',
-              animation: 'slideDownFade 0.4s ease-out'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#ff9900', fontWeight: 800, fontSize: '0.85rem' }}>
-              <Flame size={16} fill="#ff9900" />
-              <span>{streakDays} DAY STREAK</span>
-            </div>
-            <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#2ecc71', fontWeight: 700, fontSize: '0.82rem' }}>
-              <CheckCircle2 size={15} />
-              <span>{completedCount}/{exercises.length} TODAY</span>
-            </div>
-          </div>
-        )}
 
         {/* Cinematic Intro Banner & Controls during Intro */}
         {introStage !== 'ready' && (
@@ -1110,30 +1077,31 @@ export default function CustomerPortal() {
             gap: '12px' 
           }}>
             
-            {/* SmartGrid Mattress Ergonomic Toggle Button */}
-            <button
-              onClick={() => setShowSmartGrid(!showSmartGrid)}
-              style={{
-                background: showSmartGrid ? 'rgba(0, 210, 255, 0.25)' : 'rgba(15, 23, 42, 0.85)',
-                border: showSmartGrid ? '1px solid #00d2ff' : '1px solid rgba(0, 210, 255, 0.3)',
-                color: showSmartGrid ? '#00d2ff' : '#cbd5e1',
-                borderRadius: '20px',
-                padding: '7px 14px',
-                fontSize: '0.78rem',
-                fontWeight: 700,
+            {/* Daily Streak & Routine Progress Tracker Badge placed above exercises */}
+            <div 
+              style={{ 
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                cursor: 'pointer',
-                backdropFilter: 'blur(8px)',
-                boxShadow: showSmartGrid ? '0 0 15px rgba(0, 210, 255, 0.4)' : 'none',
-                transition: 'all 0.2s'
+                gap: '8px',
+                background: 'rgba(15, 23, 42, 0.85)',
+                border: '1px solid rgba(0, 210, 255, 0.3)',
+                borderRadius: '20px',
+                padding: '6px 14px',
+                backdropFilter: 'blur(10px)',
+                boxShadow: '0 0 15px rgba(0, 210, 255, 0.2)',
+                animation: 'slideUpFade 0.3s ease-out'
               }}
-              title="Toggle SmartGrid Pressure Relief Bed Visualization"
             >
-              <Layers size={14} color="#00d2ff" />
-              <span>{showSmartGrid ? 'SmartGrid™ Active' : 'SmartGrid™ Support'}</span>
-            </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#ff9900', fontWeight: 800, fontSize: '0.82rem' }}>
+                <Flame size={15} fill="#ff9900" />
+                <span>{streakDays} DAY STREAK</span>
+              </div>
+              <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#2ecc71', fontWeight: 700, fontSize: '0.78rem' }}>
+                <CheckCircle2 size={13} />
+                <span>{completedCount}/{exercises.length} TODAY</span>
+              </div>
+            </div>
 
             {/* Exercise List Popup */}
             {showExercisesModal && exercises.length > 0 && (
