@@ -55,6 +55,21 @@ export const updatePatientStatus = async (id, statusData) => {
   if (error) throw error;
 };
 
+export const updatePatientProgress = async (id, streak, completedExercises) => {
+  if (!supabase || !id) return;
+  try {
+    await supabase
+      .from('patients')
+      .update({
+        daily_streak: streak,
+        completed_exercises: completedExercises
+      })
+      .eq('id', id);
+  } catch (err) {
+    console.warn("Could not sync progress to Supabase:", err);
+  }
+};
+
 export const deletePatient = async (id) => {
   if (!supabase) throw new Error("Supabase is not configured.");
   // Soft delete

@@ -1,14 +1,34 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, Html } from '@react-three/drei';
 import BodyModel from './BodyModel';
+import ExerciseTimerModal from './ExerciseTimerModal';
 import contentData from '../data/content.json';
 import painPointsData from '../data/painPoints.json';
 import productsCatalog from '../data/products.json';
 import predefinedMessagesData from '../data/predefinedMessages.json';
-import { getPatientById, trackSessionStart, updateSessionDuration } from '../utils/db';
-import { CheckCircle2, XCircle, ShoppingBag, X, AlertTriangle, MessageCircle } from 'lucide-react';
+import { getPatientById, trackSessionStart, updateSessionDuration, updatePatientProgress } from '../utils/db';
+import { 
+  CheckCircle2, 
+  XCircle, 
+  X, 
+  AlertTriangle, 
+  MessageCircle, 
+  Flame, 
+  Clock, 
+  Play, 
+  Sparkles, 
+  Layers, 
+  Volume2, 
+  VolumeX, 
+  RotateCcw, 
+  ChevronRight,
+  ShieldCheck,
+  Calendar,
+  Activity
+} from 'lucide-react';
+import { sounds } from '../utils/soundEffects';
 
 export default function CustomerPortal() {
   const { id } = useParams();
@@ -17,17 +37,45 @@ export default function CustomerPortal() {
   const [activePointId, setActivePointId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // Popups & Panels state
   const [showPhasesModal, setShowPhasesModal] = useState(false);
   const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
   const [showExercisesModal, setShowExercisesModal] = useState(false);
   const [activeExercise, setActiveExercise] = useState(null);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [activeWeekTab, setActiveWeekTab] = useState('1'); // '1' | '2' | '3' | 'consult'
+
+  // Upgrades state
+  const [showSmartGrid, setShowSmartGrid] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [completedExercises, setCompletedExercises] = useState({});
+  const [streakDays, setStreakDays] = useState(1);
+
+  // Cinematic Intro Animation state
+  // stages: 'assembling' (0-1.6s) -> 'targeting' (1.6-3.0s) -> 'locked' (3.0-3.6s) -> 'ready' (3.6s+)
+  const [introStage, setIntroStage] = useState('assembling');
+  const [introProgress, setIntroProgress] = useState(0);
+
+  useEffect(() => {
+    sounds.setMuted(!soundEnabled);
+  }, [soundEnabled]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Universal close for any open popup when clicking backdrop / outside
+  const closeAllPopups = () => {
+    setShowDisclaimerModal(false);
+    setShowPhasesModal(false);
+    setShowExercisesModal(false);
+    setActivePointId(null);
+  };
+
+  const isAnyPopupOpen = showDisclaimerModal || showPhasesModal || showExercisesModal || activePointId;
 
   // Usage Tracking Effect
   useEffect(() => {
@@ -53,15 +101,14 @@ export default function CustomerPortal() {
 
     return () => {
       if (intervalId) clearInterval(intervalId);
-      // Optional: do one final update on unmount if we had a valid session
       if (sessionId && startTime) {
-         const finalSeconds = Math.floor((Date.now() - startTime) / 1000);
-         // This is fire-and-forget
-         updateSessionDuration(sessionId, finalSeconds);
+        const finalSeconds = Math.floor((Date.now() - startTime) / 1000);
+        updateSessionDuration(sessionId, finalSeconds);
       }
     };
   }, [patient?.id, loading]);
 
+  // Load patient data & streak
   useEffect(() => {
     async function loadData() {
       try {
@@ -69,7 +116,7 @@ export default function CustomerPortal() {
         if (data) {
           processData(data);
         } else {
-           loadDummyData();
+          loadDummyData();
         }
       } catch (err) {
         console.warn("DB Error, falling back to dummy data", err);
@@ -80,104 +127,175 @@ export default function CustomerPortal() {
     }
     
     function loadDummyData() {
-        setPatient({ name: 'Test', physioName: 'Smith' });
-        const matchedPoints = [painPointsData[0]];
-        const combinedName = matchedPoints[0].name;
-        const combinedDesc = matchedPoints[0].description || '';
-        const uniqueProductsMap = new Map();
-        matchedPoints.forEach(p => {
-          (p.products || []).forEach(prod => {
-            if (!uniqueProductsMap.has(prod.id)) {
-              uniqueProductsMap.set(prod.id, prod);
-            }
-          });
-        });
-        let fullProducts = Array.from(uniqueProductsMap.values()).map(p => {
-          const catProd = productsCatalog.find(c => c.id === p.id);
-          return { ...catProd, reason: p.reason };
-        }).filter(p => p.id);
-        const isBackPain = matchedPoints.some(p => {
-           const z = p.zone?.toLowerCase() || '';
-           return z.includes('back') || z.includes('neck') || z.includes('shoulder');
-        });
-
-        setZone({
-            name: combinedName,
-            description: combinedDesc,
-            dos: matchedPoints[0].dos || [],
-            donts: matchedPoints[0].donts || [],
-            products: fullProducts,
-            activeZones: [matchedPoints[0].id],
-            recommendedExercises: [],
-            isBack: isBackPain
-        });
+      setPatient({ id: 'demo', name: 'Valued Customer', physioName: 'Kritika', phone: '919876543210' });
+      const matchedPoints = [painPointsData[0]];
+      const combinedName = matchedPoints[0].name;
+      const combinedDesc = matchedPoints[0].description || '';
+      
+      setZone({
+        name: combinedName,
+        description: combinedDesc,
+        dos: matchedPoints[0].dos || [],
+        donts: matchedPoints[0].donts || [],
+        products: [],
+        activeZones: [matchedPoints[0].id],
+        recommendedExercises: [
+          { name: 'Neck Retraction', duration: '', sets: '', week: '1', instructions: 'Sit tall, gently glide your chin straight back like making a double chin. Hold 5 sec.', customPlan: 'Perform in the morning before starting work at your desk.' },
+          { name: 'Thoracic Extension', duration: '10', sets: '3', week: '1', instructions: 'Gently arch backwards over a rolled towel placed at upper back.' }
+        ],
+        isBack: false
+      });
     }
 
     function processData(data) {
-          setPatient(data);
-          
-          const pointIds = data.painPointId ? data.painPointId.split(',') : [];
-          const matchedPoints = pointIds.map(id => painPointsData.find(p => p.id === id)).filter(Boolean);
-          if (data.customConditions && Array.isArray(data.customConditions)) {
-            matchedPoints.push(...data.customConditions);
-          }
-          
-          if (matchedPoints.length > 0) {
-            const primaryName = matchedPoints[0].name;
-            const combinedName = matchedPoints.length > 1 ? `${primaryName} + ${matchedPoints.length - 1} other${matchedPoints.length > 2 ? 's' : ''}` : primaryName;
-            const combinedDesc = matchedPoints.map(p => p.description || '').filter(Boolean).join('\n\n');
-            const combinedDos = [...new Set(matchedPoints.flatMap(p => p.dos || []))];
-            const combinedDonts = [...new Set(matchedPoints.flatMap(p => p.donts || []))];
-            
-            const uniqueProductsMap = new Map();
-            matchedPoints.forEach(p => {
-              (p.products || []).forEach(prod => {
-                if (!uniqueProductsMap.has(prod.id)) {
-                  uniqueProductsMap.set(prod.id, prod);
-                }
-              });
-            });
-            
-            let fullProducts = Array.from(uniqueProductsMap.values()).map(p => {
-              const catProd = productsCatalog.find(c => c.id === p.id);
-              return { ...catProd, reason: p.reason };
-            }).filter(p => p.id);
+      setPatient(data);
+      if (data.daily_streak) setStreakDays(data.daily_streak);
+      if (data.completed_exercises && typeof data.completed_exercises === 'object') {
+        setCompletedExercises(data.completed_exercises);
+      }
+      
+      const pointIds = data.painPointId ? data.painPointId.split(',') : [];
+      const matchedPoints = pointIds.map(pid => painPointsData.find(p => p.id === pid)).filter(Boolean);
+      if (data.customConditions && Array.isArray(data.customConditions)) {
+        matchedPoints.push(...data.customConditions);
+      }
+      
+      if (matchedPoints.length > 0) {
+        const primaryName = matchedPoints[0].name;
+        const combinedName = matchedPoints.length > 1 ? `${primaryName} + ${matchedPoints.length - 1} other${matchedPoints.length > 2 ? 's' : ''}` : primaryName;
+        const combinedDesc = matchedPoints.map(p => p.description || '').filter(Boolean).join('\n\n');
+        const combinedDos = [...new Set(matchedPoints.flatMap(p => p.dos || []))];
+        const combinedDonts = [...new Set(matchedPoints.flatMap(p => p.donts || []))];
+        
+        const activeZoneIds = matchedPoints.map(p => p.id);
+        const isBackPain = matchedPoints.some(p => {
+          const z = p.zone?.toLowerCase() || '';
+          return z.includes('back') || z.includes('neck') || z.includes('shoulder');
+        });
 
-            fullProducts.sort((a, b) => a.priority - b.priority);
-
-            const activeZoneIds = matchedPoints.map(p => p.id);
-
-            const isBackPain = matchedPoints.some(p => {
-               const z = p.zone?.toLowerCase() || '';
-               return z.includes('back') || z.includes('neck') || z.includes('shoulder');
-            });
-
-            setZone({
-              name: combinedName,
-              description: combinedDesc,
-              dos: combinedDos,
-              donts: combinedDonts,
-              products: fullProducts,
-              activeZones: activeZoneIds,
-              recommendedExercises: data.recommendedExercises || [],
-              conditionNotes: data.conditionNotes || {},
-              isBack: isBackPain
-            });
-          } else {
-            const matchedZone = contentData.zones.find(z => z.id === data.painArea);
-            setZone({ ...matchedZone, activeZones: matchedZone ? [matchedZone.id] : [] });
-          }
+        setZone({
+          name: combinedName,
+          description: combinedDesc,
+          dos: combinedDos,
+          donts: combinedDonts,
+          activeZones: activeZoneIds,
+          recommendedExercises: data.recommendedExercises || [],
+          conditionNotes: data.conditionNotes || {},
+          isBack: isBackPain
+        });
+      } else {
+        const matchedZone = contentData.zones.find(z => z.id === data.painArea);
+        setZone({ ...matchedZone, activeZones: matchedZone ? [matchedZone.id] : [] });
+      }
     }
+
     loadData();
   }, [id]);
 
-  // Close the solutions popup with the Escape key
+  // Load and sync Daily Streak & Exercise completion from localStorage
+  useEffect(() => {
+    if (!patient?.id) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const savedDone = localStorage.getItem(`medic_done_${patient.id}_${today}`);
+    if (savedDone) {
+      try { setCompletedExercises(JSON.parse(savedDone)); } catch(e) {}
+    }
+
+    const savedStreak = localStorage.getItem(`medic_streak_${patient.id}`);
+    if (savedStreak) {
+      setStreakDays(parseInt(savedStreak, 10) || 1);
+    }
+  }, [patient?.id]);
+
+  const toggleExerciseDone = (exerciseName) => {
+    if (!patient?.id || !exerciseName) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const updated = {
+      ...completedExercises,
+      [exerciseName]: !completedExercises[exerciseName]
+    };
+    setCompletedExercises(updated);
+    localStorage.setItem(`medic_done_${patient.id}_${today}`, JSON.stringify(updated));
+
+    // Update streak if completing first exercise today
+    const anyDone = Object.values(updated).some(Boolean);
+    const currentStreak = anyDone ? (streakDays || 1) : streakDays;
+    if (anyDone) {
+      setStreakDays(currentStreak);
+      localStorage.setItem(`medic_streak_${patient.id}`, currentStreak.toString());
+    }
+
+    // Persist to Supabase if table columns exist
+    updatePatientProgress(patient.id, currentStreak, updated);
+  };
+
+  // Cinematic Intro Animation Orchestration
+  useEffect(() => {
+    if (loading || !zone) return;
+
+    // Check if user already saw intro in this tab session
+    const seen = sessionStorage.getItem(`medic_intro_seen_${id}`);
+    if (seen) {
+      setIntroStage('ready');
+      return;
+    }
+
+    // Phase 1: Assembling 3D Body (0.0s - 1.6s)
+    setIntroStage('assembling');
+    sounds.playAssemblyWhoosh();
+
+    const t1 = setTimeout(() => {
+      // Phase 2: Shooting Laser Projectile Dots (1.6s - 3.0s)
+      setIntroStage('targeting');
+      sounds.playLaserShot();
+    }, 1600);
+
+    const t2 = setTimeout(() => {
+      // Phase 3: Pain Points Lock & Beacon Chime (3.0s - 3.6s)
+      setIntroStage('locked');
+      sounds.playTargetLock();
+    }, 3000);
+
+    const t3 = setTimeout(() => {
+      // Phase 4: Settle into Ready & Reveal Interactive UI HUD (3.6s+)
+      setIntroStage('ready');
+      sessionStorage.setItem(`medic_intro_seen_${id}`, 'true');
+    }, 3700);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [loading, zone, id]);
+
+  const skipIntro = () => {
+    setIntroStage('ready');
+    sessionStorage.setItem(`medic_intro_seen_${id}`, 'true');
+  };
+
+  const replayIntro = () => {
+    sessionStorage.removeItem(`medic_intro_seen_${id}`);
+    setIntroStage('assembling');
+    sounds.playAssemblyWhoosh();
+    setTimeout(() => {
+      setIntroStage('targeting');
+      sounds.playLaserShot();
+    }, 1600);
+    setTimeout(() => {
+      setIntroStage('locked');
+      sounds.playTargetLock();
+    }, 3000);
+    setTimeout(() => {
+      setIntroStage('ready');
+    }, 3700);
+  };
+
+  // Close modals on Escape key
   useEffect(() => {
     const onKey = (e) => { 
       if (e.key === 'Escape') {
-        setShowPhasesModal(false); 
-        setShowExercisesModal(false);
-        setShowDisclaimerModal(false);
+        closeAllPopups();
         setActiveExercise(null);
       }
     };
@@ -185,30 +303,36 @@ export default function CustomerPortal() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // Personalized browser tab title, mirroring the server-side og:title
+  // Personalized browser tab title
   useEffect(() => {
     if (!patient) return;
     const person = patient.name ? `${patient.name}'s` : 'Your';
-    let day = '';
-    if (patient.consultDate) {
-      const t = new Date(`${patient.consultDate}T00:00:00`).getTime();
-      if (!Number.isNaN(t)) {
-        const diff = Math.floor((Date.now() - t) / 86400000) + 1;
-        if (diff > 0) day = String(diff);
-      }
-    }
-    document.title = `${person} Personalized Recovery Plan`;
+    document.title = `${person} Personalized Recovery Plan | The Sleep Company`;
   }, [patient]);
 
   if (loading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--primary-bg)', color: 'var(--accent)' }}>Loading portal data...</div>;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#030814', color: '#00d2ff', gap: '16px' }}>
+        <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: '3px solid rgba(0, 210, 255, 0.2)', borderTopColor: '#00d2ff', animation: 'spin 1s linear infinite' }} />
+        <div style={{ letterSpacing: '2px', textTransform: 'uppercase', fontSize: '0.9rem', fontWeight: 700 }}>
+          Initializing Recovery Portal...
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
   }
 
   if (!patient || !zone) {
-    return <div style={{ padding: '40px', color: 'var(--text-main)' }}>Loading or record not found...</div>;
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#030814', color: '#e2e8f0' }}>
+        Record not found or link has expired.
+      </div>
+    );
   }
 
   const activePointData = activePointId ? [...painPointsData, ...(patient?.customConditions || [])].find(p => p.id === activePointId) : null;
+  const exercises = zone.recommendedExercises || [];
+  const completedCount = Object.values(completedExercises).filter(Boolean).length;
 
   const renderScene = () => (
     <>
@@ -216,21 +340,17 @@ export default function CustomerPortal() {
       <directionalLight position={[10, 10, 10]} intensity={2} />
       <directionalLight position={[-10, 10, -10]} intensity={2} />
       <directionalLight position={[0, -10, 0]} intensity={1} />
-      <React.Suspense fallback={
-        <Html center>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '3px solid rgba(0, 210, 255, 0.2)', borderTopColor: '#00d2ff', animation: 'spin 1s linear infinite' }} />
-            <div style={{ color: '#00d2ff', fontSize: '1rem', whiteSpace: 'nowrap', letterSpacing: '1px', textTransform: 'uppercase' }}>
-              Loading Model...
-            </div>
-          </div>
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        </Html>
-      }>
+      <React.Suspense fallback={null}>
         <BodyModel 
           zones={[...painPointsData, ...(patient?.customConditions || [])]}
           activeZones={zone.activeZones}
-          onZoneClick={(clickedId) => setActivePointId(clickedId)} 
+          onZoneClick={(clickedId) => {
+            closeAllPopups();
+            setActivePointId(clickedId);
+          }} 
+          introStage={introStage}
+          showSmartGrid={showSmartGrid}
+          activePointId={activePointId}
         />
         <ContactShadows resolution={256} frames={1} position={[0, -3.5, 0]} opacity={0.5} scale={20} blur={2} far={4.5} />
         <Environment preset="city" />
@@ -242,59 +362,99 @@ export default function CustomerPortal() {
         maxDistance={10}
         minPolarAngle={Math.PI / 2}
         maxPolarAngle={Math.PI / 2}
-        autoRotate={!activePointId}
-        autoRotateSpeed={1}
+        autoRotate={introStage === 'ready' && !activePointId && !isAnyPopupOpen}
+        autoRotateSpeed={0.8}
       />
     </>
   );
 
+  // Render Hotspot / Pain Point Detail Overlay
   const renderHotspotOverlay = () => {
     if (!activePointData) return null;
     const customNote = zone?.conditionNotes?.[activePointData.id];
 
     return (
-      <div style={{ 
-        position: 'absolute', bottom: '24px', left: '50%', transform: 'translateX(-50%)', 
-        width: 'calc(100% - 48px)', maxWidth: '500px',
-        background: 'rgba(5, 12, 25, 0.85)', border: '1px solid #00d2ff', 
-        borderRadius: '12px', padding: '24px', zIndex: 20, 
-        maxHeight: '60%', overflowY: 'auto', backdropFilter: 'blur(12px)',
-        boxShadow: '0 0 20px rgba(0, 210, 255, 0.2)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-          <h4 style={{ margin: 0, color: '#00d2ff', fontSize: '1.2rem', textTransform: 'uppercase', letterSpacing: '1px' }}>{activePointData.name}</h4>
-          <button onClick={() => setActivePointId(null)} style={{ background: 'transparent', border: 'none', color: '#00d2ff', padding: 0, cursor: 'pointer' }}><X size={20}/></button>
+      <div 
+        style={{ 
+          position: 'absolute', 
+          bottom: '24px', 
+          left: '50%', 
+          transform: 'translateX(-50%)', 
+          width: 'calc(100% - 32px)', 
+          maxWidth: '520px',
+          background: 'rgba(9, 14, 28, 0.95)', 
+          border: '1px solid #00d2ff', 
+          borderRadius: '16px', 
+          padding: '20px 24px', 
+          zIndex: 45, 
+          maxHeight: 'min(70vh, 480px)', 
+          overflowY: 'auto', 
+          backdropFilter: 'blur(16px)',
+          boxShadow: '0 0 35px rgba(0, 210, 255, 0.25)',
+          animation: 'slideUpFade 0.3s ease-out'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid rgba(0, 210, 255, 0.2)', paddingBottom: '10px' }}>
+          <div>
+            <span style={{ fontSize: '0.72rem', color: '#00d2ff', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 800 }}>
+              Physio Diagnosed Pain Point
+            </span>
+            <h4 style={{ margin: '2px 0 0', color: '#f8fafc', fontSize: '1.25rem', fontWeight: 800 }}>
+              {activePointData.name}
+            </h4>
+          </div>
+          <button 
+            onClick={() => setActivePointId(null)} 
+            style={{ 
+              background: 'rgba(255,255,255,0.06)', 
+              border: '1px solid rgba(255,255,255,0.1)', 
+              color: '#94a3b8', 
+              width: '32px', 
+              height: '32px', 
+              borderRadius: '50%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            <X size={18} />
+          </button>
         </div>
         
         {customNote || (predefinedMessagesData && predefinedMessagesData[activePointData.id]) ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {customNote && (
-              <div>
-                <div style={{ fontSize: '0.95rem', color: '#22c55e', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ background: 'rgba(34, 197, 94, 0.08)', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '10px', padding: '12px' }}>
+                <div style={{ fontSize: '0.85rem', color: '#22c55e', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <CheckCircle2 size={16}/> 
-                  {patient?.physioName ? `${patient.physioName.toLowerCase().startsWith('dr') ? '' : 'DR. '}${patient.physioName.toUpperCase()}'S NOTES` : 'PHYSIO NOTES'}
+                  {patient?.physioName ? `${patient.physioName.toLowerCase().startsWith('dr') ? '' : 'DR. '}${patient.physioName.toUpperCase()}'S CLINICAL NOTES` : 'PHYSIO NOTES'}
                 </div>
-                <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+                <p style={{ margin: '6px 0 0 0', fontSize: '0.9rem', color: '#f1f5f9', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
                   {customNote}
                 </p>
               </div>
             )}
             {predefinedMessagesData && predefinedMessagesData[activePointData.id] && (
-              <div style={{ borderTop: customNote ? '1px solid rgba(0, 210, 255, 0.2)' : 'none', paddingTop: customNote ? '12px' : '0' }}>
-                <div style={{ fontSize: '0.95rem', color: '#00d2ff', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  CONDITION INFO
+              <div style={{ borderTop: customNote ? '1px solid rgba(0, 210, 255, 0.15)' : 'none', paddingTop: customNote ? '12px' : '0' }}>
+                <div style={{ fontSize: '0.85rem', color: '#00d2ff', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                  CONDITION OVERVIEW
                 </div>
-                <div style={{ margin: '8px 0 0 0', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5, whiteSpace: 'pre-wrap' }} dangerouslySetInnerHTML={{ __html: predefinedMessagesData[activePointData.id].message.replace(/\n/g, '<br/>') }} />
+                <div style={{ fontSize: '0.88rem', color: '#cbd5e1', lineHeight: 1.5, whiteSpace: 'pre-wrap' }} dangerouslySetInnerHTML={{ __html: predefinedMessagesData[activePointData.id].message.replace(/\n/g, '<br/>') }} />
               </div>
             )}
           </div>
         ) : (
           <div>
-            <div style={{ fontSize: '0.95rem', color: '#ef4444', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}><XCircle size={16}/> AVOID</div>
-            <ul style={{ margin: '8px 0 0 0', paddingLeft: '24px', fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5 }}>
-              {(activePointData.donts || []).map((item, i) => <li key={i} style={{marginBottom: '4px'}}>{item}</li>)}
+            <div style={{ fontSize: '0.9rem', color: '#ef4444', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <XCircle size={16}/> THINGS TO AVOID
+            </div>
+            <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px', fontSize: '0.88rem', color: '#cbd5e1', lineHeight: 1.5 }}>
+              {(activePointData.donts || []).map((item, i) => <li key={i} style={{ marginBottom: '4px' }}>{item}</li>)}
               {(!activePointData.donts || activePointData.donts.length === 0) && (
-                <li style={{marginBottom: '4px', fontStyle: 'italic', color: '#94a3b8'}}>No specific avoidances listed.</li>
+                <li style={{ fontStyle: 'italic', color: '#94a3b8' }}>No specific avoidances recorded.</li>
               )}
             </ul>
           </div>
@@ -306,8 +466,7 @@ export default function CustomerPortal() {
   return (
     <div style={{ 
       position: 'fixed',
-      top: 0,
-      left: 0,
+      inset: 0,
       width: '100vw',
       height: '100dvh',
       backgroundImage: 'url(/grid_background.jpg)',
@@ -316,11 +475,40 @@ export default function CustomerPortal() {
       backgroundRepeat: 'no-repeat',
       overflow: 'hidden',
       display: 'flex',
-      flexDirection: 'column'
+      flexDirection: 'column',
+      userSelect: 'none'
     }}>
-      <div style={{ flex: 1, position: 'relative' }} onClick={(e) => { if(e.target === e.currentTarget) setActivePointId(null); }}>
-        {/* Static Overlay Logo */}
-        <div className="futuristic-logo-container overlay-logo" style={{ position: 'absolute', top: 'max(14px, env(safe-area-inset-top))', left: 'max(14px, env(safe-area-inset-left))', zIndex: 10 }}>
+
+      {/* Universal Backdrop / Click Outside to Close Any Modal */}
+      {isAnyPopupOpen && (
+        <div 
+          onClick={closeAllPopups} 
+          style={{ 
+            position: 'absolute', 
+            inset: 0, 
+            zIndex: 30, 
+            background: 'rgba(0, 0, 0, 0.4)', 
+            backdropFilter: 'blur(3px)',
+            transition: 'opacity 0.25s ease'
+          }} 
+        />
+      )}
+
+      {/* 3D Canvas Area */}
+      <div style={{ flex: 1, position: 'relative' }}>
+        
+        {/* Futuristic Holographic Logo */}
+        <div 
+          className="futuristic-logo-container overlay-logo" 
+          style={{ 
+            position: 'absolute', 
+            top: 'max(14px, env(safe-area-inset-top))', 
+            left: 'max(14px, env(safe-area-inset-left))', 
+            zIndex: 25,
+            opacity: introStage === 'ready' ? 1 : 0.8,
+            transition: 'opacity 0.8s ease'
+          }}
+        >
           <svg className="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 150" role="img" aria-label="The Sleep Company">
             <defs>
               <filter id="neonHologramGlow" x="-50%" y="-50%" width="200%" height="200%">
@@ -373,71 +561,240 @@ export default function CustomerPortal() {
               <text x="140" y="98" className="neon-text-wireframe" fontSize="34">COMPANY</text>
             </g>
           </svg>
-          <div className="circuit-lines">
-            <span className="circuit-line-left"></span>
-            <span className="circuit-line-right"></span>
-            <span className="circuit-floor-glow"></span>
-          </div>
         </div>
 
-        <Canvas style={{ position: 'absolute', inset: 0, touchAction: 'none' }} dpr={[1, 1.5]} camera={{ position: [0, 0, zone.isBack ? -(isMobile ? 14 : 9) : (isMobile ? 14 : 9)], fov: 45 }}>
+        {/* Top Center: Daily Streak & Routine Progress Tracker HUD */}
+        {introStage === 'ready' && (
+          <div 
+            style={{ 
+              position: 'absolute', 
+              top: 'max(14px, env(safe-area-inset-top))', 
+              left: '50%', 
+              transform: 'translateX(-50%)', 
+              zIndex: 25,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              background: 'rgba(15, 23, 42, 0.85)',
+              border: '1px solid rgba(0, 210, 255, 0.3)',
+              borderRadius: '24px',
+              padding: '6px 16px',
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 0 20px rgba(0, 210, 255, 0.15)',
+              animation: 'slideDownFade 0.4s ease-out'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#ff9900', fontWeight: 800, fontSize: '0.85rem' }}>
+              <Flame size={16} fill="#ff9900" />
+              <span>{streakDays} DAY STREAK</span>
+            </div>
+            <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#2ecc71', fontWeight: 700, fontSize: '0.82rem' }}>
+              <CheckCircle2 size={15} />
+              <span>{completedCount}/{exercises.length} TODAY</span>
+            </div>
+          </div>
+        )}
+
+        {/* Cinematic Intro Banner & Controls during Intro */}
+        {introStage !== 'ready' && (
+          <div style={{ position: 'absolute', top: 'max(20px, env(safe-area-inset-top))', right: 'max(20px, env(safe-area-inset-right))', zIndex: 35, display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              style={{
+                background: 'rgba(15, 23, 42, 0.8)',
+                border: '1px solid rgba(0, 210, 255, 0.3)',
+                color: '#00d2ff',
+                borderRadius: '50%',
+                width: '36px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+              title={soundEnabled ? 'Mute' : 'Unmute'}
+            >
+              {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            </button>
+            <button
+              onClick={skipIntro}
+              style={{
+                background: 'rgba(0, 210, 255, 0.15)',
+                border: '1px solid #00d2ff',
+                color: '#00d2ff',
+                borderRadius: '20px',
+                padding: '6px 14px',
+                fontSize: '0.78rem',
+                fontWeight: 800,
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                backdropFilter: 'blur(8px)'
+              }}
+            >
+              SKIP INTRO ⏭
+            </button>
+          </div>
+        )}
+
+        {/* Intro Scan HUD Overlay Status */}
+        {introStage !== 'ready' && (
+          <div style={{ 
+            position: 'absolute', 
+            bottom: '40px', 
+            left: '50%', 
+            transform: 'translateX(-50%)', 
+            zIndex: 25, 
+            textAlign: 'center',
+            pointerEvents: 'none'
+          }}>
+            <div style={{ 
+              color: '#00d2ff', 
+              fontSize: '0.85rem', 
+              letterSpacing: '3px', 
+              textTransform: 'uppercase', 
+              fontWeight: 800,
+              textShadow: '0 0 15px rgba(0, 210, 255, 0.8)'
+            }}>
+              {introStage === 'assembling' && 'SYNTHESIZING 3D ANATOMICAL MODEL...'}
+              {introStage === 'targeting' && 'SCANNING & ACQUIRING DIAGNOSED PAIN POINTS...'}
+              {introStage === 'locked' && 'PAIN BEACONS SYNCHRONIZED • RECOVERY PLAN LOADED'}
+            </div>
+          </div>
+        )}
+
+        {/* 3D Canvas */}
+        <Canvas 
+          style={{ position: 'absolute', inset: 0, touchAction: 'none' }} 
+          dpr={[1, 1.5]} 
+          camera={{ position: [0, 0, zone.isBack ? -(isMobile ? 14 : 9) : (isMobile ? 14 : 9)], fov: 45 }}
+        >
           {renderScene()}
         </Canvas>
+
+        {/* Pain Point Hotspot Details Panel */}
         {renderHotspotOverlay()}
 
-        {/* Medical Disclaimer Button */}
-        <div style={{ position: 'absolute', top: 'max(24px, env(safe-area-inset-top))', right: 'max(24px, env(safe-area-inset-right))', zIndex: 35, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
-          
-          <button
-            className="exercise-fab"
-            onClick={() => setShowDisclaimerModal(!showDisclaimerModal)}
-            aria-label="View Medical Disclaimer"
-            title="Medical Disclaimer"
-            style={{ width: 'clamp(44px, 11vw, 54px)', height: 'clamp(44px, 11vw, 54px)', animationDelay: '0.2s' }}
-          >
-            <img 
-              src="/warning-logo-new.png" 
-              alt="Disclaimer Logo" 
-              style={{
-                width: '65%',
-                height: '65%',
-                objectFit: 'contain',
-                transform: showDisclaimerModal ? 'scale(0.9)' : 'none', 
-                transition: 'transform 0.3s ease'
-              }} 
-            />
-          </button>
-          
-          {showDisclaimerModal && (
-            <div className="keep-menu-container" style={{ transformOrigin: 'top right' }}>
-              <div className="keep-menu-card" style={{ width: 'min(90vw, 400px)', cursor: 'default', maxHeight: '80vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
-                <div style={{ padding: '8px' }}>
-                  <h4 style={{ color: '#00d2ff', marginTop: 0, marginBottom: '16px', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <AlertTriangle size={20} color="#00d2ff" /> Medical Disclaimer
-                  </h4>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: 'clamp(0.75rem, 3.5vw, 0.9rem)', color: '#cbd5e1', lineHeight: '1.5' }}>
-                    <p style={{ margin: 0 }}>
-                      <strong style={{ color: 'var(--text-main)' }}>This is a preliminary, visual assessment, not a full diagnosis.</strong><br/>
-                      During your in-store visit, our physiotherapist observed your posture and discussed your concerns, but this was a short consultation, not a complete clinical diagnosis.
-                    </p>
-                    <p style={{ margin: 0 }}>
-                      <strong style={{ color: 'var(--text-main)' }}>These exercises are general guidance, not a personalized treatment plan.</strong><br/>
-                      They're intended to help with common, everyday discomfort based on what was visually observed — not tailored to any underlying condition that hasn't been formally diagnosed.
-                    </p>
-                    <p style={{ margin: 0 }}>
-                      <strong style={{ color: 'var(--text-main)' }}>Stop immediately if anything feels wrong.</strong><br/>
-                      If your symptoms worsen, don't improve, or you notice anything unusual while following this routine, stop the exercises right away and reach out to us using the contact option on this page before continuing.
-                    </p>
+        {/* Top Right: Medical Disclaimer Button & Properly Contrained Modal */}
+        {introStage === 'ready' && (
+          <div style={{ 
+            position: 'absolute', 
+            top: 'max(20px, env(safe-area-inset-top))', 
+            right: 'max(20px, env(safe-area-inset-right))', 
+            zIndex: 35, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'flex-end', 
+            gap: '12px' 
+          }}>
+            <button
+              className="exercise-fab"
+              onClick={() => {
+                const nextState = !showDisclaimerModal;
+                closeAllPopups();
+                setShowDisclaimerModal(nextState);
+              }}
+              aria-label="View Medical Disclaimer"
+              title="Medical Disclaimer"
+              style={{ width: 'clamp(44px, 11vw, 54px)', height: 'clamp(44px, 11vw, 54px)', animationDelay: '0.2s' }}
+            >
+              <img 
+                src="/warning-logo-new.png" 
+                alt="Disclaimer Logo" 
+                style={{
+                  width: '65%',
+                  height: '65%',
+                  objectFit: 'contain',
+                  transform: showDisclaimerModal ? 'scale(0.9)' : 'none', 
+                  transition: 'transform 0.3s ease'
+                }} 
+              />
+            </button>
+            
+            {showDisclaimerModal && (
+              <div 
+                className="keep-menu-container" 
+                style={{ transformOrigin: 'top right', zIndex: 40 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div 
+                  className="keep-menu-card" 
+                  style={{ 
+                    width: 'min(92vw, 420px)', 
+                    maxHeight: 'min(75vh, 520px)', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    padding: '0', 
+                    borderRadius: '16px',
+                    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 210, 255, 0.25)',
+                    border: '1px solid #00d2ff'
+                  }}
+                >
+                  {/* Sticky Header */}
+                  <div style={{ 
+                    padding: '16px 20px', 
+                    borderBottom: '1px solid rgba(0, 210, 255, 0.2)', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    background: 'rgba(15, 23, 42, 0.95)'
+                  }}>
+                    <h4 style={{ color: '#00d2ff', margin: 0, fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}>
+                      <AlertTriangle size={18} color="#00d2ff" /> Medical Disclaimer
+                    </h4>
+                    <button 
+                      onClick={() => setShowDisclaimerModal(false)}
+                      style={{ 
+                        background: 'transparent', 
+                        border: 'none', 
+                        color: '#94a3b8', 
+                        cursor: 'pointer', 
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <X size={18} />
+                    </button>
                   </div>
                   
-                  <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid rgba(0, 212, 255, 0.2)', textAlign: 'center' }}>
-                    <p style={{ margin: '0 0 12px 0', fontSize: '0.85rem', color: '#94a3b8' }}>
-                      Have questions about your specific exercises? Reach out anytime — we're happy to help.
-                    </p>
+                  {/* Scrollable Content Body with Guaranteed Fit */}
+                  <div style={{ 
+                    padding: '18px 20px', 
+                    overflowY: 'auto', 
+                    flex: 1, 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '14px', 
+                    fontSize: '0.88rem', 
+                    color: '#cbd5e1', 
+                    lineHeight: '1.5' 
+                  }}>
+                    <div style={{ background: 'rgba(0, 210, 255, 0.05)', borderRadius: '8px', padding: '10px 12px', borderLeft: '3px solid #00d2ff' }}>
+                      <strong style={{ color: '#fff', display: 'block', marginBottom: '4px' }}>Preliminary Visual Assessment</strong>
+                      During your in-store visit, our physiotherapist observed your posture and discussed your concerns. This was a short consultation, not a complete clinical diagnosis.
+                    </div>
+
+                    <div style={{ background: 'rgba(0, 210, 255, 0.05)', borderRadius: '8px', padding: '10px 12px', borderLeft: '3px solid #00d2ff' }}>
+                      <strong style={{ color: '#fff', display: 'block', marginBottom: '4px' }}>General Guidance</strong>
+                      These exercises are intended to help with common, everyday discomfort based on visual observations — not tailored to any underlying medical condition.
+                    </div>
+
+                    <div style={{ background: 'rgba(239, 68, 68, 0.08)', borderRadius: '8px', padding: '10px 12px', borderLeft: '3px solid #ef4444' }}>
+                      <strong style={{ color: '#ef4444', display: 'block', marginBottom: '4px' }}>Stop if Symptoms Worsen</strong>
+                      If your discomfort increases or you notice anything unusual while following this routine, stop right away and reach out to our team.
+                    </div>
+                  </div>
+                  
+                  {/* Sticky Footer CTA */}
+                  <div style={{ 
+                    padding: '14px 20px', 
+                    borderTop: '1px solid rgba(0, 212, 255, 0.2)', 
+                    background: 'rgba(10, 16, 30, 0.95)',
+                    textAlign: 'center'
+                  }}>
                     <button 
-                      onClick={() => window.open(`https://wa.me/${patient?.phone}?text=Hi%20there,%20I%20have%20a%20question%20about%20my%20exercises.`, '_blank')}
-                      className="whatsapp-button"
+                      onClick={() => window.open(`https://wa.me/${patient?.phone || '919876543210'}?text=${encodeURIComponent(`Hi Dr. ${patient?.physioName || 'Physio'}, I have a question regarding my recovery routine from The Sleep Company.`)}`, '_blank')}
                       style={{ 
                         width: '100%', 
                         display: 'flex', 
@@ -445,25 +802,27 @@ export default function CustomerPortal() {
                         alignItems: 'center', 
                         gap: '8px',
                         background: '#25D366',
-                        color: 'var(--text-main)',
+                        color: '#fff',
                         border: 'none',
                         padding: '10px 16px',
                         borderRadius: '24px',
-                        fontWeight: 'bold',
-                        cursor: 'pointer'
+                        fontWeight: 800,
+                        fontSize: '0.9rem',
+                        cursor: 'pointer',
+                        boxShadow: '0 0 15px rgba(37, 211, 102, 0.35)'
                       }}
                     >
-                      <MessageCircle size={18} /> Contact Now
+                      <MessageCircle size={18} /> Contact Physio on WhatsApp
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
 
-        {/* Floating PHASE menu and button */}
-        {!activePointId && (
+        {/* Bottom Right: Tabbed Futuristic WEEK Section & Button */}
+        {introStage === 'ready' && !activePointId && (
           <div style={{ 
             position: 'absolute', 
             bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)', 
@@ -476,98 +835,251 @@ export default function CustomerPortal() {
           }}>
             
             {showPhasesModal && (() => {
-              const exercises = zone.recommendedExercises || [];
-              const week1Ex = exercises.filter(ex => ex.week === '1');
+              const week1Ex = exercises.filter(ex => ex.week === '1' || !ex.week);
               const week2Ex = exercises.filter(ex => ex.week === '2');
               const week3Ex = exercises.filter(ex => ex.week === '3');
               
-              const hasWeek1 = week1Ex.length > 0;
-              const hasWeek2 = week2Ex.length > 0;
-              const hasWeek3 = week3Ex.length > 0;
-              
-              const formatDesc = (exList) => (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {exList.map((ex, i) => (
-                    <div key={i}>
-                      <span style={{ color: 'var(--text-main)', fontWeight: 'bold' }}>{ex.name}</span><br/>
-                      Do the exercise for {ex.duration || '0'} minutes and do {ex.sets || '0'} sets daily for this week.
-                      {ex.customPlan && <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: '4px' }}>{ex.customPlan}</div>}
+              const formatWeekList = (list) => {
+                if (!list || list.length === 0) {
+                  return (
+                    <div style={{ color: '#94a3b8', fontStyle: 'italic', padding: '16px 0', textAlign: 'center' }}>
+                      No specific exercises assigned for this week.
                     </div>
-                  ))}
-                </div>
-              );
+                  );
+                }
 
-              const defaultMode = !hasWeek1 && !hasWeek2 && !hasWeek3;
-              
-              let showStoreConsultationWeek = 3;
-              if (!defaultMode) {
-                  if (hasWeek1 && !hasWeek2 && !hasWeek3) showStoreConsultationWeek = 2;
-                  else if ((hasWeek1 || hasWeek2) && !hasWeek3) showStoreConsultationWeek = 3;
-                  else if (hasWeek3) showStoreConsultationWeek = 4;
-              }
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {list.map((ex, i) => {
+                      const hasDuration = ex.duration && parseInt(ex.duration, 10) > 0;
+                      const hasSets = ex.sets && parseInt(ex.sets, 10) > 0;
+                      const hasStructuredPlan = hasDuration || hasSets;
+                      const isDone = !!completedExercises[ex.name];
+
+                      return (
+                        <div 
+                          key={i} 
+                          style={{ 
+                            background: 'rgba(255, 255, 255, 0.04)', 
+                            border: '1px solid rgba(0, 210, 255, 0.2)', 
+                            borderRadius: '10px', 
+                            padding: '12px 14px' 
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <span style={{ color: '#fff', fontWeight: 800, fontSize: '0.95rem' }}>{ex.name}</span>
+                            <button
+                              onClick={() => toggleExerciseDone(ex.name)}
+                              style={{ 
+                                background: isDone ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.06)', 
+                                border: isDone ? '1px solid #22c55e' : '1px solid rgba(255,255,255,0.2)',
+                                color: isDone ? '#22c55e' : '#cbd5e1',
+                                borderRadius: '6px',
+                                padding: '3px 8px',
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <CheckCircle2 size={12} /> {isDone ? 'DONE' : 'MARK'}
+                            </button>
+                          </div>
+
+                          {/* Plan Details: Only show duration & sets if filled! */}
+                          {hasStructuredPlan && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '6px 0', fontSize: '0.82rem', color: '#00d2ff' }}>
+                              {hasDuration && <span>⏱️ {ex.duration} min</span>}
+                              {hasDuration && hasSets && <span>•</span>}
+                              {hasSets && <span>🔁 {ex.sets} sets daily</span>}
+                            </div>
+                          )}
+
+                          {/* Custom Plan Note (Physio's special instructions) */}
+                          {ex.customPlan && (
+                            <div style={{ fontSize: '0.84rem', color: '#e2e8f0', marginTop: '6px', background: 'rgba(0, 210, 255, 0.06)', padding: '6px 10px', borderRadius: '6px', borderLeft: '2px solid #00d2ff' }}>
+                              <strong style={{ color: '#00d2ff', fontSize: '0.75rem', textTransform: 'uppercase', display: 'block' }}>Physio Plan:</strong>
+                              {ex.customPlan}
+                            </div>
+                          )}
+
+                          {/* Standard Instructions */}
+                          {ex.instructions && !ex.customPlan && !hasStructuredPlan && (
+                            <div style={{ fontSize: '0.82rem', color: '#cbd5e1', marginTop: '6px', lineHeight: 1.4 }}>
+                              {ex.instructions}
+                            </div>
+                          )}
+
+                          {/* Quick Timer CTA button */}
+                          <button
+                            onClick={() => {
+                              setActiveExercise(ex);
+                              setShowPhasesModal(false);
+                            }}
+                            style={{
+                              marginTop: '8px',
+                              background: 'transparent',
+                              border: 'none',
+                              color: '#2ecc71',
+                              fontSize: '0.8rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: 0
+                            }}
+                          >
+                            <Play size={12} fill="#2ecc71" /> Open Hold Timer & Guide →
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              };
 
               return (
-                <div className="keep-menu-container">
-                  {hasWeek1 && (
-                    <div className="keep-menu-card">
-                      <div className="keep-menu-title">WEEK 1</div>
-                      <div className="keep-menu-desc">{formatDesc(week1Ex)}</div>
+                <div 
+                  className="keep-menu-container"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ zIndex: 40 }}
+                >
+                  <div 
+                    className="keep-menu-card" 
+                    style={{ 
+                      width: 'min(92vw, 360px)', 
+                      maxHeight: 'min(70vh, 500px)', 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      padding: 0,
+                      borderRadius: '16px',
+                      overflow: 'hidden',
+                      boxShadow: '0 20px 40px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 210, 255, 0.25)',
+                      border: '1px solid #00d2ff'
+                    }}
+                  >
+                    {/* Card Title & Close */}
+                    <div style={{ 
+                      padding: '14px 16px', 
+                      borderBottom: '1px solid rgba(0, 210, 255, 0.2)', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      background: 'rgba(15, 23, 42, 0.95)'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Calendar size={18} color="#00d2ff" />
+                        <span style={{ color: '#00d2ff', fontWeight: 800, fontSize: '0.95rem', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                          Recovery Routine
+                        </span>
+                      </div>
+                      <button 
+                        onClick={() => setShowPhasesModal(false)}
+                        style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '4px' }}
+                      >
+                        <X size={18} />
+                      </button>
                     </div>
-                  )}
-                  {defaultMode && (
-                    <div className="keep-menu-card">
-                      <div className="keep-menu-title">WEEK 1</div>
-                      <div className="keep-menu-desc">Exercises that we will tackle later</div>
-                    </div>
-                  )}
 
-                  {hasWeek2 && (
-                    <div className="keep-menu-card">
-                      <div className="keep-menu-title">WEEK 2</div>
-                      <div className="keep-menu-desc">{formatDesc(week2Ex)}</div>
+                    {/* Tab Navigation: [Week 1] [Week 2] [Week 3] [Store Consult] */}
+                    <div style={{ display: 'flex', borderBottom: '1px solid rgba(0, 210, 255, 0.15)', background: 'rgba(10, 16, 30, 0.9)' }}>
+                      {[
+                        { key: '1', label: 'Week 1' },
+                        { key: '2', label: 'Week 2' },
+                        { key: '3', label: 'Week 3' },
+                        { key: 'consult', label: 'Store Visit' }
+                      ].map(tab => (
+                        <button
+                          key={tab.key}
+                          onClick={() => setActiveWeekTab(tab.key)}
+                          style={{
+                            flex: 1,
+                            padding: '10px 4px',
+                            background: activeWeekTab === tab.key ? 'rgba(0, 210, 255, 0.15)' : 'transparent',
+                            border: 'none',
+                            borderBottom: activeWeekTab === tab.key ? '2px solid #00d2ff' : '2px solid transparent',
+                            color: activeWeekTab === tab.key ? '#00d2ff' : '#94a3b8',
+                            fontWeight: activeWeekTab === tab.key ? 800 : 600,
+                            fontSize: '0.78rem',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            textAlign: 'center'
+                          }}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
                     </div>
-                  )}
-                  {defaultMode && (
-                    <div className="keep-menu-card">
-                      <div className="keep-menu-title">WEEK 2</div>
-                      <div className="keep-menu-desc">Exercises that we will tackle later</div>
-                    </div>
-                  )}
-                  {showStoreConsultationWeek === 2 && (
-                    <div className="keep-menu-card highlight">
-                      <div className="keep-menu-title" style={{ color: '#e5409e' }}>WEEK 2</div>
-                      <div className="keep-menu-desc" style={{ fontWeight: 'bold' }}>For further consultations and doubts, visit the physio at the store.</div>
-                    </div>
-                  )}
 
-                  {hasWeek3 && (
-                    <div className="keep-menu-card">
-                      <div className="keep-menu-title">WEEK 3</div>
-                      <div className="keep-menu-desc">{formatDesc(week3Ex)}</div>
+                    {/* Scrollable Tab Content: Guaranteed Never Overflow */}
+                    <div style={{ padding: '16px', overflowY: 'auto', flex: 1, background: 'rgba(15, 23, 42, 0.95)' }}>
+                      {activeWeekTab === '1' && formatWeekList(week1Ex)}
+                      {activeWeekTab === '2' && (
+                        week2Ex.length > 0 ? formatWeekList(week2Ex) : (
+                          <div style={{ color: '#cbd5e1', fontSize: '0.88rem', lineHeight: 1.5, textAlign: 'center', padding: '20px 10px' }}>
+                            <Activity size={28} color="#00d2ff" style={{ margin: '0 auto 10px' }} />
+                            <strong style={{ color: '#fff', display: 'block', marginBottom: '6px' }}>Week 2 Progression</strong>
+                            Continue Week 1 exercises with increased repetitions, or visit store for posture re-evaluation.
+                          </div>
+                        )
+                      )}
+                      {activeWeekTab === '3' && (
+                        week3Ex.length > 0 ? formatWeekList(week3Ex) : (
+                          <div style={{ color: '#cbd5e1', fontSize: '0.88rem', lineHeight: 1.5, textAlign: 'center', padding: '20px 10px' }}>
+                            <Activity size={28} color="#00d2ff" style={{ margin: '0 auto 10px' }} />
+                            <strong style={{ color: '#fff', display: 'block', marginBottom: '6px' }}>Week 3 Maintenance</strong>
+                            Perform maintenance stretches 3 times weekly to sustain spinal alignment.
+                          </div>
+                        )
+                      )}
+                      {activeWeekTab === 'consult' && (
+                        <div style={{ 
+                          background: 'rgba(229, 64, 158, 0.08)', 
+                          border: '1px solid rgba(229, 64, 158, 0.4)', 
+                          borderRadius: '12px', 
+                          padding: '16px', 
+                          textAlign: 'center' 
+                        }}>
+                          <ShieldCheck size={32} color="#e5409e" style={{ margin: '0 auto 8px' }} />
+                          <h5 style={{ color: '#e5409e', margin: '0 0 6px', fontSize: '1rem' }}>In-Store Follow-Up</h5>
+                          <p style={{ color: '#cbd5e1', fontSize: '0.85rem', lineHeight: 1.5, margin: '0 0 14px' }}>
+                            For further clinical consultations, posture recalibration, and ergonomic doubts, visit your physiotherapist at The Sleep Company store.
+                          </p>
+                          <button
+                            onClick={() => window.open(`https://wa.me/${patient?.phone || '919876543210'}?text=${encodeURIComponent(`Hi Dr. ${patient?.physioName || 'Physio'}, I would like to book a follow-up visit at the store.`)}`, '_blank')}
+                            style={{
+                              background: 'linear-gradient(135deg, #e5409e 0%, #a82070 100%)',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '20px',
+                              padding: '8px 16px',
+                              fontSize: '0.82rem',
+                              fontWeight: 800,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            Book In-Store Revisit
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {showStoreConsultationWeek === 3 && (
-                    <div className="keep-menu-card highlight">
-                      <div className="keep-menu-title" style={{ color: '#e5409e' }}>WEEK 3</div>
-                      <div className="keep-menu-desc" style={{ fontWeight: 'bold' }}>For further consultations and doubts, visit the physio at the store.</div>
-                    </div>
-                  )}
-                  
-                  {showStoreConsultationWeek === 4 && (
-                    <div className="keep-menu-card highlight">
-                      <div className="keep-menu-title" style={{ color: '#e5409e' }}>WEEK 4</div>
-                      <div className="keep-menu-desc" style={{ fontWeight: 'bold' }}>For further consultations and doubts, visit the physio at the store.</div>
-                    </div>
-                  )}
+                  </div>
                 </div>
               );
             })()}
 
             <button
               className="phase-fab"
-              onClick={() => setShowPhasesModal(!showPhasesModal)}
+              onClick={() => {
+                const nextState = !showPhasesModal;
+                closeAllPopups();
+                setShowPhasesModal(nextState);
+              }}
               aria-label="View Recovery Phases"
-              title="Recovery Phases"
+              title="Recovery Routine"
               style={{ position: 'relative', bottom: 'auto', right: 'auto' }}
             >
               <img 
@@ -585,8 +1097,8 @@ export default function CustomerPortal() {
           </div>
         )}
 
-        {/* Floating exercises menu and button */}
-        {!activePointId && zone.recommendedExercises && zone.recommendedExercises.length > 0 && (
+        {/* Bottom Left: Floating Exercises Menu & SmartGrid Mode Toggle */}
+        {introStage === 'ready' && !activePointId && (
           <div style={{ 
             position: 'absolute', 
             bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)', 
@@ -597,80 +1109,152 @@ export default function CustomerPortal() {
             alignItems: 'flex-start', 
             gap: '12px' 
           }}>
-            {showExercisesModal && (
-              <div className="keep-menu-container" style={{ alignItems: 'flex-start', transformOrigin: 'bottom left' }}>
-                {zone.recommendedExercises.map((ex, i) => (
-                  <div 
-                    className="keep-menu-card" 
-                    key={i} 
-                    onClick={() => {
-                      setActiveExercise(ex);
-                      setShowExercisesModal(false);
-                    }}
-                    style={{ cursor: 'pointer', borderLeft: '4px solid #2ecc71', width: '220px' }}
-                  >
-                    <div className="keep-menu-title" style={{ color: '#2ecc71' }}>{ex.name || `EXERCISE ${i + 1}`}</div>
-                    <div className="keep-menu-desc" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {ex.instructions}
-                    </div>
+            
+            {/* SmartGrid Mattress Ergonomic Toggle Button */}
+            <button
+              onClick={() => setShowSmartGrid(!showSmartGrid)}
+              style={{
+                background: showSmartGrid ? 'rgba(0, 210, 255, 0.25)' : 'rgba(15, 23, 42, 0.85)',
+                border: showSmartGrid ? '1px solid #00d2ff' : '1px solid rgba(0, 210, 255, 0.3)',
+                color: showSmartGrid ? '#00d2ff' : '#cbd5e1',
+                borderRadius: '20px',
+                padding: '7px 14px',
+                fontSize: '0.78rem',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                backdropFilter: 'blur(8px)',
+                boxShadow: showSmartGrid ? '0 0 15px rgba(0, 210, 255, 0.4)' : 'none',
+                transition: 'all 0.2s'
+              }}
+              title="Toggle SmartGrid Pressure Relief Bed Visualization"
+            >
+              <Layers size={14} color="#00d2ff" />
+              <span>{showSmartGrid ? 'SmartGrid™ Active' : 'SmartGrid™ Support'}</span>
+            </button>
+
+            {/* Exercise List Popup */}
+            {showExercisesModal && exercises.length > 0 && (
+              <div 
+                className="keep-menu-container" 
+                style={{ alignItems: 'flex-start', transformOrigin: 'bottom left', zIndex: 40 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div 
+                  className="keep-menu-card" 
+                  style={{ 
+                    width: 'min(90vw, 320px)', 
+                    maxHeight: 'min(65vh, 440px)', 
+                    overflowY: 'auto',
+                    borderRadius: '16px',
+                    border: '1px solid #2ecc71',
+                    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.7), 0 0 30px rgba(46, 204, 113, 0.25)',
+                    padding: '12px'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', paddingBottom: '6px', borderBottom: '1px solid rgba(46, 204, 113, 0.2)' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#2ecc71', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                      Assigned Exercises
+                    </span>
+                    <button 
+                      onClick={() => setShowExercisesModal(false)}
+                      style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+                    >
+                      <X size={16} />
+                    </button>
                   </div>
-                ))}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {exercises.map((ex, i) => {
+                      const isDone = !!completedExercises[ex.name];
+                      return (
+                        <div 
+                          key={i} 
+                          onClick={() => {
+                            setActiveExercise(ex);
+                            setShowExercisesModal(false);
+                          }}
+                          style={{ 
+                            cursor: 'pointer', 
+                            borderLeft: `4px solid ${isDone ? '#22c55e' : '#2ecc71'}`,
+                            background: 'rgba(255, 255, 255, 0.04)',
+                            borderRadius: '8px',
+                            padding: '10px 12px',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          <div>
+                            <div style={{ color: '#fff', fontWeight: 700, fontSize: '0.88rem' }}>
+                              {ex.name || `Exercise ${i + 1}`}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>
+                              {ex.instructions || 'Tap to view instructions & timer'}
+                            </div>
+                          </div>
+                          {isDone ? (
+                            <CheckCircle2 size={16} color="#22c55e" />
+                          ) : (
+                            <ChevronRight size={16} color="#64748b" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             )}
             
-            <button
-              className="exercise-fab"
-              onClick={() => setShowExercisesModal(!showExercisesModal)}
-              aria-label="View recommended exercises"
-              title="Recommended Exercises"
-              style={{ position: 'relative', bottom: 'auto', left: 'auto' }}
-            >
-              <img 
-                src="/exercise-logo-new.png" 
-                alt="Exercises Logo" 
-                style={{
-                  width: '90%',
-                  height: '90%',
-                  objectFit: 'contain',
-                  transform: showExercisesModal ? 'scale(0.9)' : 'none', 
-                  transition: 'transform 0.3s ease'
-                }} 
-              />
-            </button>
+            {exercises.length > 0 && (
+              <button
+                className="exercise-fab"
+                onClick={() => {
+                  const nextState = !showExercisesModal;
+                  closeAllPopups();
+                  setShowExercisesModal(nextState);
+                }}
+                aria-label="View recommended exercises"
+                title="Recommended Exercises"
+                style={{ position: 'relative', bottom: 'auto', left: 'auto' }}
+              >
+                <img 
+                  src="/exercise-logo-new.png" 
+                  alt="Exercises Logo" 
+                  style={{
+                    width: '90%',
+                    height: '90%',
+                    objectFit: 'contain',
+                    transform: showExercisesModal ? 'scale(0.9)' : 'none', 
+                    transition: 'transform 0.3s ease'
+                  }} 
+                />
+              </button>
+            )}
           </div>
         )}
 
-        {/* Detailed Exercise View */}
+        {/* Detailed Guided Exercise Timer & Instructions Modal */}
         {activeExercise && (
-          <div className="cart-modal-overlay" style={{ zIndex: 40 }} onClick={() => setActiveExercise(null)}>
-            <div className="cart-modal" style={{ height: 'auto', maxHeight: '90vh', width: 'min(90vw, 600px)' }} role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
-              <div className="cart-modal-header">
-                <h3 style={{ color: '#2ecc71' }}>{activeExercise.name || 'Exercise Detail'}</h3>
-                <button className="cart-modal-close" onClick={() => setActiveExercise(null)}>
-                  <X size={22} />
-                </button>
-              </div>
-              <div className="cart-modal-body" style={{ padding: '0', display: 'flex', flexDirection: 'column' }}>
-                {activeExercise.image && (
-                  <img src={activeExercise.image} alt="Exercise Detail" style={{ width: '100%', maxHeight: '45vh', objectFit: 'contain', background: '#000' }} />
-                )}
-                <div style={{ padding: '24px', flex: 1, overflowY: 'auto' }}>
-                  <h4 style={{ color: 'var(--text-main)', marginTop: 0, marginBottom: '16px', fontSize: '1.2rem' }}>Instructions</h4>
-                  <p style={{ color: '#e2e8f0', whiteSpace: 'pre-wrap', lineHeight: 1.6, fontSize: '1rem', margin: 0 }}>{activeExercise.instructions}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ExerciseTimerModal 
+            exercise={activeExercise}
+            onClose={() => setActiveExercise(null)}
+            onMarkDone={(name) => toggleExerciseDone(name)}
+            isDone={!!completedExercises[activeExercise.name]}
+          />
         )}
       </div>
 
       <style>{`
-        /* ---- Phase FAB & Menu ---- */
-        .phase-fab {
-          width: clamp(54px, 14vw, 66px);
-          height: clamp(54px, 14vw, 66px);
+        /* ---- Phase & Exercise FABs ---- */
+        .phase-fab, .exercise-fab {
+          width: clamp(52px, 13vw, 64px);
+          height: clamp(52px, 13vw, 64px);
           border-radius: 50%;
-          border: 1px solid rgba(150, 240, 255, 0.3);
+          border: 1px solid rgba(150, 240, 255, 0.35);
           cursor: pointer;
           display: flex;
           align-items: center;
@@ -683,9 +1267,10 @@ export default function CustomerPortal() {
           transition: transform 0.2s ease;
           overflow: hidden;
         }
-        .phase-fab:hover { transform: scale(1.08); }
-        .phase-fab:active { transform: scale(0.95); }
-        .phase-fab::after {
+        .exercise-fab { animation-delay: 0.8s; }
+        .phase-fab:hover, .exercise-fab:hover { transform: scale(1.08); }
+        .phase-fab:active, .exercise-fab:active { transform: scale(0.95); }
+        .phase-fab::after, .exercise-fab::after {
           content: "";
           position: absolute;
           inset: -6px;
@@ -694,6 +1279,8 @@ export default function CustomerPortal() {
           animation: cartRipple 1.6s ease-out infinite;
           pointer-events: none;
         }
+        .exercise-fab::after { animation-delay: 0.8s; }
+        
         @keyframes cartHeartbeat {
           0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(150, 240, 255, 0.5), 0 6px 18px rgba(0,0,0,.45); }
           12% { transform: scale(1.12); box-shadow: 0 0 35px rgba(150, 240, 255, 0.75), 0 6px 18px rgba(0,0,0,.45); }
@@ -711,115 +1298,44 @@ export default function CustomerPortal() {
           flex-direction: column;
           gap: 12px;
           align-items: flex-end;
-          animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          transform-origin: bottom right;
+          animation: slideUpFade 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
         @keyframes slideUpFade {
-          0% { opacity: 0; transform: translateY(20px) scale(0.9); }
+          0% { opacity: 0; transform: translateY(16px) scale(0.96); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .keep-menu-card {
-          background: rgba(15, 23, 42, 0.95);
-          backdrop-filter: blur(8px);
-          border: 1px solid rgba(0, 212, 255, 0.3);
-          border-radius: 12px;
-          padding: 14px 18px;
-          color: white;
-          width: 260px;
-          box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-          text-align: left;
-        }
-        .keep-menu-card.highlight {
-          border-color: rgba(229, 64, 158, 0.6);
-          background: rgba(229, 64, 158, 0.05);
-        }
-        .keep-menu-title {
-          color: #00d2ff;
-          font-weight: 800;
-          font-size: 1rem;
-          margin-bottom: 6px;
-        }
-        .keep-menu-desc {
-          font-size: 0.9rem;
-          color: #cbd5e1;
-          line-height: 1.4;
-        }
-        .exercise-fab {
-          width: clamp(54px, 14vw, 66px);
-          height: clamp(54px, 14vw, 66px);
-          border-radius: 50%;
-          border: 1px solid rgba(150, 240, 255, 0.3);
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: rgba(150, 240, 255, 0.95);
-          backdrop-filter: blur(8px);
-          box-shadow: 0 0 25px rgba(150, 240, 255, 0.4);
-          z-index: 15;
-          animation: cartHeartbeat 1.6s ease-in-out infinite;
-          animation-delay: 0.8s;
-          transition: transform 0.2s ease;
-          overflow: hidden;
-        }
-        .exercise-fab img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-        .exercise-fab:hover { transform: scale(1.08); }
-        .exercise-fab:active { transform: scale(0.95); }
-        .exercise-fab::after {
-          content: "";
-          position: absolute;
-          inset: -6px;
-          border-radius: 50%;
-          border: 2px solid rgba(150, 240, 255, 0.6);
-          animation: cartRipple 1.6s ease-out infinite;
-          animation-delay: 0.8s;
-          pointer-events: none;
-        }
-        .cart-fab-badge {
-          position: absolute;
-          top: -2px;
-          right: -2px;
-          min-width: 22px;
-          height: 22px;
-          padding: 0 5px;
-          border-radius: 11px;
-          background: #fff;
-          color: #e5409e;
-          font-size: 12px;
-          font-weight: 800;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+        @keyframes slideDownFade {
+          0% { opacity: 0; transform: translate(-50%, -16px); }
+          100% { opacity: 1; transform: translate(-50%, 0); }
         }
 
-        /* ---- Solutions modal ---- */
+        .keep-menu-card {
+          background: rgba(15, 23, 42, 0.95);
+          backdrop-filter: blur(12px);
+          border: 1px solid rgba(0, 212, 255, 0.35);
+          border-radius: 14px;
+          color: white;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+        }
+
+        /* Modal Overlay & Card */
         .cart-modal-overlay {
-          position: absolute;
+          position: fixed;
           inset: 0;
-          background: rgba(3, 8, 20, 0.55);
-          backdrop-filter: blur(4px);
-          -webkit-backdrop-filter: blur(4px);
-          z-index: 30;
+          background: rgba(3, 8, 20, 0.65);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          z-index: 50;
           display: flex;
           align-items: center;
           justify-content: center;
           animation: cartFadeIn 0.25s ease-out;
         }
         .cart-modal {
-          width: min(440px, calc(100vw - 32px));
-          max-height: min(78vh, 640px);
           background: linear-gradient(180deg, rgba(13, 18, 30, 0.98), rgba(9, 13, 24, 0.98));
           border: 1px solid rgba(0, 212, 255, 0.35);
           border-radius: 20px;
-          box-shadow: 0 0 40px rgba(0, 212, 255, 0.25), 0 24px 60px rgba(0, 0, 0, 0.6);
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
+          box-shadow: 0 0 40px rgba(0, 212, 255, 0.25), 0 24px 60px rgba(0, 0, 0, 0.7);
           animation: cartModalIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
         }
         .cart-modal-header {
@@ -827,20 +1343,12 @@ export default function CustomerPortal() {
           justify-content: space-between;
           align-items: flex-start;
           gap: 12px;
-          padding: 20px 20px 14px;
+          padding: 18px 20px;
           border-bottom: 1px solid rgba(0, 212, 255, 0.2);
         }
-        .cart-modal-header h3 {
-          margin: 0;
-          font-size: 1.25rem;
-          color: #00d2ff;
-          letter-spacing: 0.5px;
-          text-transform: uppercase;
-        }
-        .cart-modal-header p { margin: 4px 0 0; font-size: 0.8rem; color: var(--text-muted); }
         .cart-modal-close {
           background: rgba(255,255,255,0.06);
-          border: 1px solid var(--border-color);
+          border: 1px solid rgba(255,255,255,0.15);
           color: #fff;
           width: 36px;
           height: 36px;
@@ -852,179 +1360,22 @@ export default function CustomerPortal() {
           transition: all 0.2s;
           flex-shrink: 0;
         }
-        .cart-modal-close:hover { background: rgba(239, 68, 68, 0.2); border-color: #ef4444; color: #ef4444; }
-        
-        .phase-modal {
-          width: min(900px, calc(100vw - 32px));
-          max-height: min(85vh, 700px);
-          background: linear-gradient(180deg, rgba(13, 18, 30, 0.98), rgba(9, 13, 24, 0.98));
-          border: 1px solid rgba(0, 212, 255, 0.4);
-          border-radius: 20px;
-          box-shadow: 0 0 40px rgba(0, 212, 255, 0.25), 0 24px 60px rgba(0, 0, 0, 0.6);
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-          animation: cartModalIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+        .cart-modal-close:hover { 
+          background: rgba(239, 68, 68, 0.2); 
+          border-color: #ef4444; 
+          color: #ef4444; 
         }
-        .phase-modal-body {
-          padding: 24px;
-          overflow-y: auto;
-          display: flex;
-          gap: 20px;
-          justify-content: space-between;
-        }
-        .phase-card {
-          flex: 1;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 16px;
-          padding: 24px;
-          display: flex;
-          flex-direction: column;
-          transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .phase-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 10px 30px rgba(0, 212, 255, 0.15);
-          border-color: rgba(0, 212, 255, 0.3);
-        }
-        .highlight-phase {
-          background: rgba(229, 64, 158, 0.05);
-          border-color: rgba(229, 64, 158, 0.3);
-        }
-        .highlight-phase:hover {
-          box-shadow: 0 10px 30px rgba(229, 64, 158, 0.15);
-          border-color: rgba(229, 64, 158, 0.5);
-        }
-        .phase-card-header {
-          font-size: 1.4rem;
-          font-weight: 900;
-          color: #00d2ff;
-          margin-bottom: 16px;
-          letter-spacing: 2px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-          padding-bottom: 12px;
-          text-align: center;
-        }
-        .phase-card-content {
-          color: #e2e8f0;
-          font-size: 1.1rem;
-          line-height: 1.6;
-          text-align: center;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex: 1;
-        }
-        
-        .cart-modal-body {
-          padding: 16px 20px;
-          overflow-y: auto;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-        .cart-product-card {
-          display: flex;
-          gap: 12px;
-          background: rgba(13, 17, 23, 0.8);
-          border: 1px solid var(--border-color);
-          border-radius: 12px;
-          padding: 12px;
-          align-items: flex-start;
-        }
-        .cart-product-card img {
-          width: 76px;
-          height: 76px;
-          object-fit: cover;
-          border-radius: 8px;
-          border: 1px solid var(--border-color);
-          flex-shrink: 0;
-        }
-        .cart-product-info { flex: 1; min-width: 0; }
-        .cart-product-category {
-          display: inline-block;
-          font-size: 0.68rem;
-          font-weight: 700;
-          letter-spacing: 1px;
-          text-transform: uppercase;
-          color: #00d2ff;
-          background: rgba(0, 210, 255, 0.12);
-          border: 1px solid rgba(0, 210, 255, 0.3);
-          border-radius: 999px;
-          padding: 2px 8px;
-          margin-bottom: 6px;
-        }
-        .cart-product-info h4 { margin: 0 0 4px; font-size: 0.92rem; color: #fff; line-height: 1.3; }
-        .cart-product-info p { margin: 0 0 8px; font-size: 0.78rem; color: var(--text-muted); line-height: 1.45; }
-        .cart-product-link {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 0.8rem;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          color: #00d2ff;
-          text-decoration: none;
-          border: 1px solid #00d2ff;
-          border-radius: 999px;
-          padding: 5px 14px;
-          transition: all 0.2s;
-        }
-        .cart-product-link:hover { background: rgba(0, 210, 255, 0.15); box-shadow: 0 0 12px rgba(0, 210, 255, 0.35); }
-        .cart-modal-footer {
-          padding: 10px 20px;
-          border-top: 1px solid rgba(0, 212, 255, 0.15);
-          text-align: center;
-          font-size: 0.72rem;
-          letter-spacing: 1.5px;
-          text-transform: uppercase;
-          color: var(--text-muted);
-        }
+
         @keyframes cartFadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes cartModalIn {
-          from { opacity: 0; transform: translateY(28px) scale(0.97); }
+          from { opacity: 0; transform: translateY(24px) scale(0.96); }
           to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
-        @media (max-width: 768px) {
-          .phase-modal-body {
-            flex-direction: column;
-          }
-          .phase-card {
-            padding: 16px;
-          }
-          .phase-card-header {
-            font-size: 1.2rem;
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-          }
-        }
         @media (max-width: 640px) {
-          .cart-modal, .phase-modal {
-            width: calc(100vw - 24px);
-            max-height: 85vh;
-            border-radius: 20px 20px 14px 14px;
-            animation: cartSheetIn 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+          .keep-menu-card {
+            width: calc(100vw - 32px) !important;
           }
-          .phase-fab {
-            bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
-            right: calc(env(safe-area-inset-right, 0px) + 14px);
-          }
-          .exercise-fab {
-            bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
-            left: calc(env(safe-area-inset-left, 0px) + 14px);
-          }
-          @keyframes cartSheetIn {
-            from { opacity: 0.4; transform: translateY(100%); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .cart-fab, .cart-fab::after { animation: none; }
-          .cart-modal, .cart-modal-overlay { animation-duration: 0.01s; }
         }
       `}</style>
     </div>
