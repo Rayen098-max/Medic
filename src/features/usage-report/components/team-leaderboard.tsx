@@ -285,12 +285,97 @@ export function TeamLeaderboard() {
           <div className="absolute -bottom-24 left-1/3 w-80 h-80 rounded-full bg-purple-400/20 blur-3xl pointer-events-none" />
 
           {/* Header Title Section */}
-          <div className="relative z-10 flex flex-col items-center text-center mb-8 sm:mb-12">
+          <div className="relative z-10 flex flex-col items-center text-center mb-6 sm:mb-8">
             <h1 className="text-3xl sm:text-5xl font-black text-white uppercase tracking-wider drop-shadow-md">
               TEAM LEADERBOARD
             </h1>
-            <div className="flex flex-wrap items-center justify-center gap-2 mt-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white/95 text-xs sm:text-sm font-medium shadow-inner">
-              <Calendar className="w-3.5 h-3.5" />
+
+            {/* In-Poster Date Switcher & Quick Pills */}
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-3 mb-3">
+              <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white shadow-sm">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-white hover:bg-white/20 rounded-full"
+                  onClick={handlePrevDay}
+                  title="Previous Day"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+
+                <div className="flex items-center gap-1.5 px-2 text-xs sm:text-sm font-bold">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="bg-transparent text-white font-bold text-xs sm:text-sm border-none focus:outline-hidden cursor-pointer [color-scheme:dark]"
+                  />
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-white hover:bg-white/20 rounded-full"
+                  onClick={handleNextDay}
+                  title="Next Day"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Quick Date Shortcuts */}
+              <button
+                type="button"
+                onClick={() => setSelectedDate('2026-10-14')}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all shadow-xs ${
+                  selectedDate === '2026-10-14'
+                    ? 'bg-white text-purple-900 ring-2 ring-white/80'
+                    : 'bg-white/15 text-white/90 hover:bg-white/25 border border-white/20'
+                }`}
+              >
+                Oct 14 (Yesterday)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedDate('2026-10-13')}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all shadow-xs ${
+                  selectedDate === '2026-10-13'
+                    ? 'bg-white text-purple-900 ring-2 ring-white/80'
+                    : 'bg-white/15 text-white/90 hover:bg-white/25 border border-white/20'
+                }`}
+              >
+                Oct 13 (Full Team)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedDate('2026-10-12')}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all shadow-xs ${
+                  selectedDate === '2026-10-12'
+                    ? 'bg-white text-purple-900 ring-2 ring-white/80'
+                    : 'bg-white/15 text-white/90 hover:bg-white/25 border border-white/20'
+                }`}
+              >
+                Oct 12
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedDate('2026-10-11')}
+                className={`px-3 py-1 rounded-full text-xs font-bold transition-all shadow-xs ${
+                  selectedDate === '2026-10-11'
+                    ? 'bg-white text-purple-900 ring-2 ring-white/80'
+                    : 'bg-white/15 text-white/90 hover:bg-white/25 border border-white/20'
+                }`}
+              >
+                Oct 11
+              </button>
+            </div>
+
+            {/* Metrics Overview Pill */}
+            <div className="flex flex-wrap items-center justify-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white/95 text-xs sm:text-sm font-medium shadow-inner">
               <span>{data?.displayDate}</span>
               <span className="text-white/60">•</span>
               <span className="text-white font-semibold flex items-center gap-1">
@@ -308,6 +393,21 @@ export function TeamLeaderboard() {
                 {data?.totalTeamPending || 0} Left Without Follow-up
               </span>
             </div>
+
+            {/* Helpful Context Note when viewing Oct 14 */}
+            {selectedDate === '2026-10-14' && (
+              <div className="mt-3 px-4 py-1.5 rounded-xl bg-black/25 backdrop-blur-md border border-white/20 text-xs text-white/90 flex items-center gap-1.5">
+                <span>💡 On Wed, Oct 14, only Dr. Kritika had clinic consultations logged (8 attended).</span>
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate('2026-10-13')}
+                  className="underline font-bold text-amber-300 hover:text-white"
+                >
+                  Click here to switch to Oct 13
+                </button>
+                <span>to see Dr. Hritika (11), Dr. Rutuja (11), Dr. Dipti (10), etc.</span>
+              </div>
+            )}
           </div>
 
           {/* Top 3 Podium Cards */}

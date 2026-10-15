@@ -103,7 +103,14 @@ export async function fetchSheetLeaderboard(targetDateStr?: string): Promise<She
       const parsed = Papa.parse<any>(csvText, {
         header: true,
         skipEmptyLines: true,
-        transformHeader: (h) => h.trim(),
+        transformHeader: (h) => {
+          const clean = h.trim().toLowerCase()
+          if (clean.startsWith('date')) return 'date'
+          if (clean === 'customer name' || clean === 'name') return 'customer_name'
+          if (clean.includes('number') || clean.includes('phone')) return 'customer_number'
+          if (clean.includes('whatsapp') || clean.includes('follow up') || clean.includes('followup')) return 'whatsapp_followup'
+          return clean
+        },
       })
 
       let lastDate = ''
@@ -111,19 +118,19 @@ export async function fetchSheetLeaderboard(targetDateStr?: string): Promise<She
       let followupsSent = 0
 
       for (const row of parsed.data) {
-        const rawDate = (row.Date || row.Dates || '').trim()
+        const rawDate = (row.date || '').trim()
         if (rawDate && !['Start', 'Mid', 'End', 'cc', 'no cc', '..'].includes(rawDate)) {
           lastDate = rawDate
         }
 
-        const name = (row['Customer Name'] || row['Name'] || '').trim()
-        const phone = (row['Customer Number'] || row['Phone'] || '').trim()
+        const name = (row.customer_name || '').trim()
+        const phone = (row.customer_number || '').trim()
         if (!name && !phone) continue
 
         const rowDateKey = parseSheetDateKey(lastDate)
         if (rowDateKey === dateKey) {
           attended++
-          const followupVal = (row['Whatsapp followup done'] || '').trim().toLowerCase()
+          const followupVal = (row.whatsapp_followup || '').trim().toLowerCase()
           if (['yes', 'done', 'true', 'y', 'sent'].includes(followupVal)) {
             followupsSent++
           }
