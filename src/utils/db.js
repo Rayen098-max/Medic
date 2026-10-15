@@ -231,3 +231,149 @@ export const getFollowupsReport = async () => {
     patientName: f.patients?.name || f.patient_name_fallback || 'Unknown (Unlinked)'
   }));
 };
+
+export const getLeaderboardReport = async (targetDateStr = null) => {
+  if (!supabase) throw new Error("Supabase is not configured.");
+
+  // If targetDateStr is not provided, calculate Yesterday in local date
+  let targetDate;
+  if (targetDateStr) {
+    const [year, month, day] = targetDateStr.split('-').map(Number);
+    targetDate = new Date(year, month - 1, day);
+  } else {
+    targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() - 1);
+  }
+
+  const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0);
+  const endOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59, 999);
+
+  const startISO = startOfDay.toISOString();
+  const endISO = endOfDay.toISOString();
+
+  // 1. Fetch all registered physios from profiles
+  const { data: physios, error: physiosError } = await supabase
+    .from('profiles')
+    .select('id, full_name, role')
+    .eq('role', 'physio');
+
+  if (physiosError) throw physiosError;
+
+  // 2. Fetch sessions created within this date range
+  const { data: sessions, error: sessionsError } = await supabase
+    .from('patient_sessions')
+    .select(`
+      id,
+      duration_seconds,
+      created_at,
+      patient_id,
+      patients!patient_id (
+        id,
+        name,
+        physio_id,
+        profiles!physio_id (id, full_name)
+      )
+    `)
+    .gte('created_at', startISO)
+    .lte('created_at', endISO);
+
+  if (sessionsError) throw sessionsError;
+
+  // 3. Map & Aggregate stats per physio
+  const physioMap = new Map();
+  (physios || []).forEach(p => {
+    physioMap.set(p.id, {
+      id: p.id,
+      name: p.full_name || 'Unnamed Physio',
+      designation: 'Physiotherapist',
+      qualifiedClicks: 0,
+      totalSessions: 0,
+      totalTime: 0,
+      patientsCount: new Set(),
+      rawQualifiedClicks: 0,
+    });
+  });
+
+  // Aggregate sessions
+  (sessions || []).forEach(s => {
+    const patient = s.patients;
+    if (!patient) return;
+    const physioId = patient.physio_id || 'unknown';
+    const physioName = patient.profiles?.full_name || 'Dr. Unknown';
+
+    if (!physioMap.has(physioId)) {
+      physioMap.set(physioId, {
+        id: physioId,
+        name: physioName,
+        designation: 'Physiotherapist',
+        qualifiedClicks: 0,
+        totalSessions: 0,
+        totalTime: 0,
+        patientsCount: new Set(),
+        rawQualifiedClicks: 0,
+      });
+    }
+
+    const entry = physioMap.get(physioId);
+    const duration = s.duration_seconds || 0;
+    // Formula: min(t_i / 30, 1)
+    const sessionQualified = Math.min(duration / 30, 1);
+
+    entry.rawQualifiedClicks += sessionQualified;
+    entry.totalSessions += 1;
+    entry.totalTime += duration;
+    if (patient.id) {
+      entry.patientsCount.add(patient.id);
+    }
+  });
+
+  const leaderboard = Array.from(physioMap.values()).map(p => {
+    const roundedClicks = Math.round(p.rawQualifiedClicks * 10) / 10;
+    return {
+      id: p.id,
+      name: p.name,
+      designation: p.designation,
+      rawScore: p.rawQualifiedClicks,
+      qualifiedClicks: roundedClicks,
+      totalSessions: p.totalSessions,
+      totalTime: p.totalTime,
+      uniquePatients: p.patientsCount.size,
+    };
+  });
+
+  // Sort descending: by rawScore, then totalTime, then alphabetical by name
+  leaderboard.sort((a, b) => {
+    if (b.rawScore !== a.rawScore) return b.rawScore - a.rawScore;
+    if (b.totalTime !== a.totalTime) return b.totalTime - a.totalTime;
+    return a.name.localeCompare(b.name);
+  });
+
+  const rankedLeaderboard = leaderboard.map((item, index) => ({
+    ...item,
+    rank: index + 1
+  }));
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const formattedDate = `${targetDate.getFullYear()}-${pad(targetDate.getMonth() + 1)}-${pad(targetDate.getDate())}`;
+
+  return {
+    targetDate: formattedDate,
+    displayDate: startOfDay.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    }),
+    isYesterday: (function() {
+      const y = new Date();
+      y.setDate(y.getDate() - 1);
+      return y.toDateString() === startOfDay.toDateString();
+    })(),
+    leaderboard: rankedLeaderboard,
+    totalTeamSessions: sessions?.length || 0,
+    totalTeamQualifiedClicks: Math.round(
+      rankedLeaderboard.reduce((acc, curr) => acc + curr.rawScore, 0) * 10
+    ) / 10,
+  };
+};
+

@@ -21,10 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Clock, MousePointerClick, CalendarDays, User, MessageCircle } from 'lucide-react'
+import { Clock, MousePointerClick, CalendarDays, User, MessageCircle, Trophy } from 'lucide-react'
+import { useAuth } from '@/context/AuthContext'
+import { TeamLeaderboard } from './components/team-leaderboard'
 
 export function UsageReport() {
-  const [viewMode, setViewMode] = useState('opens') // 'opens' or 'followups'
+  const { profile } = useAuth()
+  const isAdmin = profile?.role === 'admin'
+  const [viewMode, setViewMode] = useState('opens') // 'opens', 'followups', or 'leaderboard'
   const [data, setData] = useState([])
   const [followupsData, setFollowupsData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -108,17 +112,30 @@ export function UsageReport() {
             <p className='text-muted-foreground'>
               {viewMode === 'opens' 
                 ? 'Track how often and how long customers view their personalized 3D recovery links.'
-                : 'Monitor WhatsApp follow-ups sent by physiotherapists to patients.'}
+                : viewMode === 'followups'
+                ? 'Monitor WhatsApp follow-ups sent by physiotherapists to patients.'
+                : 'Team performance leaderboard ranked by qualified clicks (30s+ sessions) for the previous day.'}
             </p>
           </div>
-          <div className='w-48'>
-            <Select value={viewMode} onValueChange={setViewMode}>
+          <div className='w-56'>
+            <Select value={viewMode} onValueChange={(val) => {
+              if (val === 'leaderboard' && !isAdmin) return;
+              setViewMode(val);
+            }}>
               <SelectTrigger>
                 <SelectValue placeholder="Select view" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="opens">Link Opens Tracking</SelectItem>
                 <SelectItem value="followups">Followups Track</SelectItem>
+                {isAdmin && (
+                  <SelectItem value="leaderboard">
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <Trophy className="h-3.5 w-3.5 text-amber-500" />
+                      Team Leaderboard
+                    </span>
+                  </SelectItem>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -156,7 +173,9 @@ export function UsageReport() {
           </div>
         )}
 
-        {loading ? (
+        {viewMode === 'leaderboard' && isAdmin ? (
+          <TeamLeaderboard />
+        ) : loading ? (
           <div className="flex h-40 items-center justify-center">
             <p className="text-muted-foreground animate-pulse">Gathering tracking data...</p>
           </div>
