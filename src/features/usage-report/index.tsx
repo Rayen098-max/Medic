@@ -114,7 +114,7 @@ export function UsageReport() {
                 ? 'Track how often and how long customers view their personalized 3D recovery links.'
                 : viewMode === 'followups'
                 ? 'Monitor WhatsApp follow-ups sent by physiotherapists to patients.'
-                : 'Team performance leaderboard ranked by qualified clicks (30s+ sessions) for the previous day.'}
+                : 'Team performance leaderboard tracking customers attended vs follow-ups sent for the day.'}
             </p>
           </div>
           <div className='w-56'>

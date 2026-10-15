@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
-import { getLeaderboardReport } from '@/utils/db'
+import {
+  fetchSheetLeaderboard,
+  SheetLeaderboardResult,
+} from '@/utils/sheetLeaderboard'
 import html2canvas from 'html2canvas'
 import {
   Trophy,
@@ -11,30 +14,13 @@ import {
   ChevronRight,
   Share2,
   Check,
+  Users,
+  Send,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-
-interface PhysioRank {
-  id: string
-  name: string
-  designation: string
-  rawScore: number
-  qualifiedClicks: number
-  totalSessions: number
-  totalTime: number
-  uniquePatients: number
-  rank: number
-}
-
-interface LeaderboardData {
-  targetDate: string
-  displayDate: string
-  isYesterday: boolean
-  leaderboard: PhysioRank[]
-  totalTeamSessions: number
-  totalTeamQualifiedClicks: number
-}
 
 export function TeamLeaderboard() {
   // Default to Yesterday in YYYY-MM-DD
@@ -46,7 +32,7 @@ export function TeamLeaderboard() {
   }
 
   const [selectedDate, setSelectedDate] = useState<string>(getYesterdayString())
-  const [data, setData] = useState<LeaderboardData | null>(null)
+  const [data, setData] = useState<SheetLeaderboardResult | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [capturing, setCapturing] = useState<boolean>(false)
@@ -58,10 +44,10 @@ export function TeamLeaderboard() {
     setLoading(true)
     setError(null)
     try {
-      const res = await getLeaderboardReport(dateStr)
+      const res = await fetchSheetLeaderboard(dateStr)
       setData(res)
     } catch (err: any) {
-      console.error('Error fetching leaderboard data:', err)
+      console.error('Error fetching sheet leaderboard data:', err)
       setError(err.message || 'Failed to load leaderboard data')
     } finally {
       setLoading(false)
@@ -71,19 +57,6 @@ export function TeamLeaderboard() {
   useEffect(() => {
     loadData(selectedDate)
   }, [selectedDate])
-
-  const formatTime = (totalSeconds: number) => {
-    if (!totalSeconds || totalSeconds < 60) return `${totalSeconds || 0}s`
-    const mins = Math.floor(totalSeconds / 60)
-    const secs = totalSeconds % 60
-    return `${mins}m ${secs}s`
-  }
-
-  const formatScore = (score: number) => {
-    if (score === undefined || score === null) return '0'
-    // 1 decimal place if fractional, integer if whole
-    return Number.isInteger(score) ? score.toString() : score.toFixed(1)
-  }
 
   const handlePrevDay = () => {
     const [y, m, d] = selectedDate.split('-').map(Number)
@@ -119,7 +92,7 @@ export function TeamLeaderboard() {
       const image = canvas.toDataURL('image/png')
       const link = document.createElement('a')
       link.href = image
-      link.download = `medic_team_leaderboard_${selectedDate}.png`
+      link.download = `medic_followup_leaderboard_${selectedDate}.png`
       link.click()
     } catch (err) {
       console.error('Failed to capture screenshot:', err)
@@ -141,7 +114,7 @@ export function TeamLeaderboard() {
       canvas.toBlob(async (blob) => {
         if (blob && navigator.clipboard && window.ClipboardItem) {
           await navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': blob })
+            new ClipboardItem({ 'image/png': blob }),
           ])
           setCopied(true)
           setTimeout(() => setCopied(false), 2500)
@@ -157,12 +130,10 @@ export function TeamLeaderboard() {
   const top3 = data?.leaderboard.slice(0, 3) || []
   const restOfTeam = data?.leaderboard.slice(3) || []
 
-  // Assign podium spots: Center = Rank 1, Left = Rank 2, Right = Rank 3
-  const rank1 = top3.find(p => p.rank === 1) || top3[0]
-  const rank2 = top3.find(p => p.rank === 2) || top3[1]
-  const rank3 = top3.find(p => p.rank === 3) || top3[2]
+  const rank1 = top3.find((p) => p.rank === 1) || top3[0]
+  const rank2 = top3.find((p) => p.rank === 2) || top3[1]
+  const rank3 = top3.find((p) => p.rank === 3) || top3[2]
 
-  // Avatar helper with initials and consistent color
   const getInitials = (name: string) => {
     const cleaned = name.replace(/^Dr\.\s*/i, '').trim()
     const parts = cleaned.split(' ')
@@ -230,8 +201,22 @@ export function TeamLeaderboard() {
             Yesterday (Default)
           </Button>
 
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => loadData(selectedDate)}
+            className="text-xs h-9 gap-1 text-muted-foreground hover:text-foreground"
+            title="Refresh sheet data"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Refresh
+          </Button>
+
           {data?.isYesterday && (
-            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 text-xs py-1">
+            <Badge
+              variant="outline"
+              className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 text-xs py-1"
+            >
               Showing Yesterday's Activity
             </Badge>
           )}
@@ -276,7 +261,9 @@ export function TeamLeaderboard() {
         <div className="flex h-72 items-center justify-center border rounded-2xl bg-card">
           <div className="flex flex-col items-center gap-3 text-muted-foreground animate-pulse">
             <Trophy className="h-8 w-8 text-amber-500/50" />
-            <p className="text-sm font-medium">Calculating team qualified clicks for {selectedDate}...</p>
+            <p className="text-sm font-medium">
+              Syncing daily customer follow-up data from Google Sheet for {selectedDate}...
+            </p>
           </div>
         </div>
       ) : error ? (
@@ -302,12 +289,23 @@ export function TeamLeaderboard() {
             <h1 className="text-3xl sm:text-5xl font-black text-white uppercase tracking-wider drop-shadow-md">
               TEAM LEADERBOARD
             </h1>
-            <div className="flex items-center gap-2 mt-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white/95 text-xs sm:text-sm font-medium shadow-inner">
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white/95 text-xs sm:text-sm font-medium shadow-inner">
               <Calendar className="w-3.5 h-3.5" />
               <span>{data?.displayDate}</span>
               <span className="text-white/60">•</span>
-              <span className="text-pink-200 font-semibold">
-                {data?.totalTeamQualifiedClicks || 0} Total Qualified Clicks
+              <span className="text-white font-semibold flex items-center gap-1">
+                <Users className="w-3.5 h-3.5" />
+                {data?.totalTeamAttended || 0} Attended
+              </span>
+              <span className="text-white/60">•</span>
+              <span className="text-emerald-200 font-semibold flex items-center gap-1">
+                <Send className="w-3.5 h-3.5" />
+                {data?.totalTeamSent || 0} Follow-ups Sent ({data?.overallRate || 0}%)
+              </span>
+              <span className="text-white/60">•</span>
+              <span className="text-amber-200 font-semibold flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" />
+                {data?.totalTeamPending || 0} Left Without Follow-up
               </span>
             </div>
           </div>
@@ -324,36 +322,46 @@ export function TeamLeaderboard() {
                   </div>
 
                   {/* Avatar */}
-                  <div className={`w-20 h-20 rounded-full bg-gradient-to-tr ${getAvatarGradient(2)} flex items-center justify-center font-bold text-xl shadow-lg border-2 border-white/40 my-3`}>
+                  <div
+                    className={`w-20 h-20 rounded-full bg-gradient-to-tr ${getAvatarGradient(2)} flex items-center justify-center font-bold text-xl shadow-lg border-2 border-white/40 my-3`}
+                  >
                     {getInitials(rank2.name)}
                   </div>
 
                   {/* Physio Info */}
-                  <h3 className="text-lg font-bold text-white tracking-wide truncate max-w-[200px]" title={rank2.name}>
+                  <h3
+                    className="text-lg font-bold text-white tracking-wide truncate max-w-[200px]"
+                    title={rank2.name}
+                  >
                     {rank2.name}
                   </h3>
                   <p className="text-xs text-white/70 font-medium mb-3">
                     {rank2.designation}
                   </p>
 
-                  {/* Score */}
+                  {/* Primary Score: Followups Sent */}
                   <div className="text-3xl font-black text-white tracking-tight drop-shadow-xs mb-1">
-                    {formatScore(rank2.qualifiedClicks)}
+                    {rank2.followupsSent}{' '}
+                    <span className="text-lg font-semibold text-white/80">Sent</span>
                   </div>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-pink-200">
-                    Qualified Clicks
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-white/20 text-[11px] font-bold uppercase tracking-wider text-emerald-200">
+                    {rank2.ratePercentage}% Follow-up Rate
                   </span>
 
                   {/* Details */}
                   <div className="mt-4 pt-3 border-t border-white/15 w-full flex items-center justify-around text-xs text-white/80">
                     <div>
-                      <span className="block font-bold text-white">{rank2.totalSessions}</span>
-                      <span className="text-[10px] text-white/60">Sessions</span>
+                      <span className="block font-bold text-white">
+                        {rank2.attended}
+                      </span>
+                      <span className="text-[10px] text-white/60">Attended</span>
                     </div>
                     <div className="w-px h-5 bg-white/15" />
                     <div>
-                      <span className="block font-bold text-white">{formatTime(rank2.totalTime)}</span>
-                      <span className="text-[10px] text-white/60">Time</span>
+                      <span className="block font-bold text-amber-200">
+                        {rank2.pendingFollowups}
+                      </span>
+                      <span className="text-[10px] text-white/60">Left / Pending</span>
                     </div>
                   </div>
                 </div>
@@ -374,36 +382,46 @@ export function TeamLeaderboard() {
                   </div>
 
                   {/* Avatar */}
-                  <div className={`w-24 h-24 rounded-full bg-gradient-to-tr ${getAvatarGradient(1)} flex items-center justify-center font-black text-2xl shadow-xl border-4 border-amber-300/70 my-3`}>
+                  <div
+                    className={`w-24 h-24 rounded-full bg-gradient-to-tr ${getAvatarGradient(1)} flex items-center justify-center font-black text-2xl shadow-xl border-4 border-amber-300/70 my-3`}
+                  >
                     {getInitials(rank1.name)}
                   </div>
 
                   {/* Physio Info */}
-                  <h3 className="text-xl font-black text-white tracking-wide truncate max-w-[220px]" title={rank1.name}>
+                  <h3
+                    className="text-xl font-black text-white tracking-wide truncate max-w-[220px]"
+                    title={rank1.name}
+                  >
                     {rank1.name}
                   </h3>
                   <p className="text-xs text-amber-200 font-semibold mb-3">
                     {rank1.designation}
                   </p>
 
-                  {/* Score */}
+                  {/* Primary Score: Followups Sent */}
                   <div className="text-4xl sm:text-5xl font-black text-white tracking-tight drop-shadow-md mb-1">
-                    {formatScore(rank1.qualifiedClicks)}
+                    {rank1.followupsSent}{' '}
+                    <span className="text-2xl font-bold text-white/80">Sent</span>
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-amber-300">
-                    Qualified Clicks
+                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-400/30 text-xs font-bold uppercase tracking-wider text-amber-200 border border-amber-300/40">
+                    {rank1.ratePercentage}% Follow-up Rate
                   </span>
 
                   {/* Details */}
                   <div className="mt-4 pt-3 border-t border-white/20 w-full flex items-center justify-around text-xs text-white/90">
                     <div>
-                      <span className="block font-bold text-white text-sm">{rank1.totalSessions}</span>
-                      <span className="text-[10px] text-white/70">Sessions</span>
+                      <span className="block font-bold text-white text-base">
+                        {rank1.attended}
+                      </span>
+                      <span className="text-[10px] text-white/70">Customers Attended</span>
                     </div>
                     <div className="w-px h-5 bg-white/20" />
                     <div>
-                      <span className="block font-bold text-white text-sm">{formatTime(rank1.totalTime)}</span>
-                      <span className="text-[10px] text-white/70">Time</span>
+                      <span className="block font-bold text-amber-300 text-base">
+                        {rank1.pendingFollowups}
+                      </span>
+                      <span className="text-[10px] text-white/70">Left / Pending</span>
                     </div>
                   </div>
                 </div>
@@ -424,36 +442,46 @@ export function TeamLeaderboard() {
                   </div>
 
                   {/* Avatar */}
-                  <div className={`w-20 h-20 rounded-full bg-gradient-to-tr ${getAvatarGradient(3)} flex items-center justify-center font-bold text-xl shadow-lg border-2 border-white/40 my-3`}>
+                  <div
+                    className={`w-20 h-20 rounded-full bg-gradient-to-tr ${getAvatarGradient(3)} flex items-center justify-center font-bold text-xl shadow-lg border-2 border-white/40 my-3`}
+                  >
                     {getInitials(rank3.name)}
                   </div>
 
                   {/* Physio Info */}
-                  <h3 className="text-lg font-bold text-white tracking-wide truncate max-w-[200px]" title={rank3.name}>
+                  <h3
+                    className="text-lg font-bold text-white tracking-wide truncate max-w-[200px]"
+                    title={rank3.name}
+                  >
                     {rank3.name}
                   </h3>
                   <p className="text-xs text-white/70 font-medium mb-3">
                     {rank3.designation}
                   </p>
 
-                  {/* Score */}
+                  {/* Primary Score: Followups Sent */}
                   <div className="text-3xl font-black text-white tracking-tight drop-shadow-xs mb-1">
-                    {formatScore(rank3.qualifiedClicks)}
+                    {rank3.followupsSent}{' '}
+                    <span className="text-lg font-semibold text-white/80">Sent</span>
                   </div>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-pink-200">
-                    Qualified Clicks
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-white/20 text-[11px] font-bold uppercase tracking-wider text-emerald-200">
+                    {rank3.ratePercentage}% Follow-up Rate
                   </span>
 
                   {/* Details */}
                   <div className="mt-4 pt-3 border-t border-white/15 w-full flex items-center justify-around text-xs text-white/80">
                     <div>
-                      <span className="block font-bold text-white">{rank3.totalSessions}</span>
-                      <span className="text-[10px] text-white/60">Sessions</span>
+                      <span className="block font-bold text-white">
+                        {rank3.attended}
+                      </span>
+                      <span className="text-[10px] text-white/60">Attended</span>
                     </div>
                     <div className="w-px h-5 bg-white/15" />
                     <div>
-                      <span className="block font-bold text-white">{formatTime(rank3.totalTime)}</span>
-                      <span className="text-[10px] text-white/60">Time</span>
+                      <span className="block font-bold text-amber-200">
+                        {rank3.pendingFollowups}
+                      </span>
+                      <span className="text-[10px] text-white/60">Left / Pending</span>
                     </div>
                   </div>
                 </div>
@@ -473,9 +501,10 @@ export function TeamLeaderboard() {
                 <div className="grid grid-cols-12 px-6 py-2 text-xs font-semibold uppercase tracking-wider text-white/70">
                   <div className="col-span-1 text-center">Rank</div>
                   <div className="col-span-5 sm:col-span-4">Physiotherapist</div>
-                  <div className="col-span-3 sm:col-span-3 text-center">Qualified Clicks</div>
-                  <div className="hidden sm:block sm:col-span-2 text-center">Sessions</div>
-                  <div className="col-span-3 sm:col-span-2 text-right">Time Spent</div>
+                  <div className="col-span-3 sm:col-span-2 text-center">Follow-ups Sent</div>
+                  <div className="col-span-3 sm:col-span-2 text-center">Customers Attended</div>
+                  <div className="hidden sm:block sm:col-span-2 text-center">Left Without Followup</div>
+                  <div className="hidden sm:block sm:col-span-1 text-right">Rate %</div>
                 </div>
 
                 {/* Rows */}
@@ -493,47 +522,56 @@ export function TeamLeaderboard() {
 
                     {/* Avatar & Name */}
                     <div className="col-span-5 sm:col-span-4 flex items-center gap-3 min-w-0 pr-2">
-                      <div className={`w-9 h-9 shrink-0 rounded-full bg-gradient-to-tr ${getAvatarGradient(physio.rank)} flex items-center justify-center text-xs font-bold border border-white/30 shadow-xs`}>
+                      <div
+                        className={`w-9 h-9 shrink-0 rounded-full bg-gradient-to-tr ${getAvatarGradient(physio.rank)} flex items-center justify-center text-xs font-bold border border-white/30 shadow-xs`}
+                      >
                         {getInitials(physio.name)}
                       </div>
                       <div className="truncate">
                         <div className="font-bold text-sm truncate">{physio.name}</div>
-                        <div className="text-[11px] text-white/60 font-medium truncate">{physio.designation}</div>
+                        <div className="text-[11px] text-white/60 font-medium truncate">
+                          {physio.designation}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Qualified Clicks */}
-                    <div className="col-span-3 sm:col-span-3 text-center">
+                    {/* Follow-ups Sent */}
+                    <div className="col-span-3 sm:col-span-2 text-center">
                       <span className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 font-black text-sm text-white shadow-xs">
-                        {formatScore(physio.qualifiedClicks)}
+                        {physio.followupsSent} Sent
                       </span>
                     </div>
 
-                    {/* Sessions */}
-                    <div className="hidden sm:block sm:col-span-2 text-center text-sm font-medium text-white/80">
-                      {physio.totalSessions} {physio.totalSessions === 1 ? 'session' : 'sessions'}
+                    {/* Customers Attended */}
+                    <div className="col-span-3 sm:col-span-2 text-center font-bold text-sm text-white/90">
+                      {physio.attended}
                     </div>
 
-                    {/* Time Spent */}
-                    <div className="col-span-3 sm:col-span-2 text-right font-mono text-xs sm:text-sm text-white/90 font-medium">
-                      {formatTime(physio.totalTime)}
+                    {/* Left Without Follow-up */}
+                    <div className="hidden sm:block sm:col-span-2 text-center text-sm font-semibold text-amber-200">
+                      {physio.pendingFollowups} left
+                    </div>
+
+                    {/* Rate % */}
+                    <div className="hidden sm:block sm:col-span-1 text-right font-mono text-sm text-emerald-200 font-bold">
+                      {physio.ratePercentage}%
                     </div>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Empty state when 0 sessions across all physios */}
-            {data?.totalTeamSessions === 0 && (
+            {/* Empty state when 0 customers attended across all physios */}
+            {data?.totalTeamAttended === 0 && (
               <div className="mt-4 p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-center text-white/80 text-xs sm:text-sm">
-                No customer portal sessions were recorded on {data?.displayDate}. The leaderboard above lists all team physiotherapists with 0 qualified clicks.
+                No customer consultations were recorded in the daily trackers for {data?.displayDate}. Use the date picker above to view previous days.
               </div>
             )}
           </div>
 
           {/* Footer Note */}
           <div className="relative z-10 text-center mt-8 pt-4 border-t border-white/15 text-[11px] text-white/60">
-            Formula: Qualified Clicks = &sum; min(duration / 30s, 1.0) &bull; Maximum 1.0 credit per session &bull; Medic Clinical Platform
+            Source: Google Sheet Daily Trackers &bull; Follow-ups sent verified via &quot;Whatsapp followup done&quot; &bull; Medic Clinical Platform
           </div>
         </div>
       )}
