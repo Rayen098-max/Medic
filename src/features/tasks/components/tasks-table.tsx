@@ -17,22 +17,27 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MessageCircle, Eye, Trash2 } from 'lucide-react'
 import CaptureForm from '@/components/CaptureForm'
-import { getPatients, recordFollowup } from '@/utils/db'
+import { getPatients, recordFollowup, softDeleteTrackerTask, markTaskWhatsAppSent } from '@/utils/db'
 import { useAuth } from '@/context/AuthContext'
 
+import { ConfirmDialog } from '@/components/confirm-dialog'
+
 interface TrackerRow {
+  id?: string;
   Date: string;
   "Physio Name": string;
   "Customer Name": string;
   "Customer Number": string;
   "Physio session Done": string;
+  patient_id?: string | null;
+  whatsapp_sent_at?: string | null;
 }
 
 interface TasksTableProps {
   data: TrackerRow[]
 }
 
-const getTaskId = (row: TrackerRow) => `${row.Date || ''}-${row["Customer Name"] || ''}-${row["Customer Number"] || ''}`
+const getTaskId = (row: TrackerRow) => row.id || `${row.Date || ''}-${row["Customer Name"] || ''}-${row["Customer Number"] || ''}`
 
 export function TasksTable({ data }: TasksTableProps) {
   const { profile } = useAuth()
@@ -40,6 +45,7 @@ export function TasksTable({ data }: TasksTableProps) {
   const [filledForms, setFilledForms] = useState<Set<string>>(new Set())
   const [filledPatientIds, setFilledPatientIds] = useState<Record<string, string>>({})
   const [dbPatients, setDbPatients] = useState<any[]>([])
+  const [taskToDelete, setTaskToDelete] = useState<{ id: string; name: string } | null>(null)
   
   // Track deleted tasks in localStorage
   const [deletedTasks, setDeletedTasks] = useState<Set<string>>(() => {
@@ -60,17 +66,19 @@ export function TasksTable({ data }: TasksTableProps) {
       .catch(err => console.error("Error fetching db patients:", err))
   }, [])
 
-  const handleDelete = (id: string) => {
-    if (window.confirm("Are you sure you want to remove this task?")) {
-      setDeletedTasks(prev => {
-        const next = new Set(prev)
-        next.add(id)
-        localStorage.setItem('deleted_tasks', JSON.stringify(Array.from(next)))
-        return next
-      })
-      if (expandedRowIdx === id) setExpandedRowIdx(null)
-    }
-  }
+  const handleConfirmDelete = async () => {
+    if (!taskToDelete) return;
+    const { id } = taskToDelete;
+    await softDeleteTrackerTask(id);
+    setDeletedTasks(prev => {
+      const next = new Set(prev)
+      next.add(id)
+      localStorage.setItem('deleted_tasks', JSON.stringify(Array.from(next)))
+      return next
+    });
+    if (expandedRowIdx === id) setExpandedRowIdx(null);
+    setTaskToDelete(null);
+  };
 
   const handleFillFormClick = (id: string) => {
     if (expandedRowIdx === id) {
@@ -89,11 +97,14 @@ export function TasksTable({ data }: TasksTableProps) {
   }
 
   const getMatchedPatientId = useCallback((row: TrackerRow, id: string) => {
-    // 0. Strong link via database (works across devices)
+    // 0. Direct link from Supabase tracker_tasks
+    if (row.patient_id) return row.patient_id;
+
+    // 1. Strong link via database patients table tracker_id (works across devices)
     const dbLinked = dbPatients.find(p => p.tracker_id === id);
     if (dbLinked) return dbLinked.id;
 
-    // 1. Check explicitly linked patient IDs (from local storage / manual linking)
+    // 2. Check explicitly linked patient IDs (from local session)
     if (filledPatientIds[id]) return filledPatientIds[id];
     const cleanPhone = String(row["Customer Number"] || "").replace(/\D/g, '');
     const cleanName = String(row["Customer Name"] || "").trim().toLowerCase();
@@ -156,6 +167,7 @@ export function TasksTable({ data }: TasksTableProps) {
     if (profile?.id) {
       recordFollowup(patientId, profile.id, customerName);
     }
+    markTaskWhatsAppSent(id);
 
     window.open(url, '_blank');
   }
@@ -303,7 +315,7 @@ export function TasksTable({ data }: TasksTableProps) {
                             <Button
                               variant="outline"
                               className="border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 hover:border-red-300 px-2.5"
-                              onClick={() => handleDelete(id)}
+                              onClick={() => setTaskToDelete({ id, name: row["Customer Name"] || "this customer" })}
                               title="Remove Task"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -353,7 +365,7 @@ export function TasksTable({ data }: TasksTableProps) {
   if (data.length === 0) {
     return (
       <div className="rounded-md border bg-card flex items-center justify-center h-32 text-muted-foreground">
-        No tasks available for this date.
+        No attended consultations available for this date.
       </div>
     )
   }
@@ -363,14 +375,27 @@ export function TasksTable({ data }: TasksTableProps) {
       {renderTable(
         "Pending Follow-ups", 
         pendingTasks, 
-        "All caught up! No pending follow-ups."
+        "All caught up! No pending follow-ups for this date."
       )}
       
       {renderTable(
         "Completed Follow-ups", 
         completedTasks, 
-        "No completed follow-ups yet."
+        "No completed follow-ups yet for this date."
       )}
+
+      {/* Confirmation Modal for Permanent Deletion */}
+      <ConfirmDialog
+        open={Boolean(taskToDelete)}
+        onOpenChange={(open) => {
+          if (!open) setTaskToDelete(null);
+        }}
+        handleConfirm={handleConfirmDelete}
+        title="Remove Customer from Tasks?"
+        desc={`Are you sure you want to remove ${taskToDelete?.name || 'this customer'}? This entry will be permanently deleted from your follow-up queue in Supabase and will not reappear after refreshes or syncs.`}
+        confirmText="Yes, Permanently Remove"
+        destructive
+      />
     </div>
   )
 }

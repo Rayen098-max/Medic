@@ -32,6 +32,85 @@ export const addPatient = async (patient) => {
   return data.id;
 };
 
+export const upsertPatient = async (patient, existingId = null) => {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  if (existingId) {
+    const { data, error } = await supabase
+      .from('patients')
+      .update(patient)
+      .eq('id', existingId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data.id;
+  }
+  return await addPatient(patient);
+};
+
+export const getTrackerTasks = async (physioProfile) => {
+  if (!supabase) throw new Error("Supabase is not configured.");
+  
+  let query = supabase
+    .from('tracker_tasks')
+    .select('*')
+    .eq('is_deleted', false)
+    .order('created_at', { ascending: false });
+
+  // If physio, filter for their tasks
+  if (physioProfile && physioProfile.role === 'physio') {
+    const nameMatch = physioProfile.full_name?.replace(/^Dr\.?\s+/i, '').trim().split(' ')[0] || '';
+    if (physioProfile.id) {
+      query = query.or(`physio_id.eq.${physioProfile.id},physio_name.ilike.%${nameMatch}%`);
+    } else if (nameMatch) {
+      query = query.ilike('physio_name', `%${nameMatch}%`);
+    }
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    // Graceful fallback if table is newly created or empty
+    console.warn("Could not query tracker_tasks from Supabase:", error.message);
+    return null;
+  }
+  return data;
+};
+
+export const linkTaskToPatient = async (taskId, patientId) => {
+  if (!supabase || !taskId) return;
+  try {
+    await supabase
+      .from('tracker_tasks')
+      .update({ patient_id: patientId, updated_at: new Date().toISOString() })
+      .eq('id', taskId);
+  } catch (err) {
+    console.warn("Error linking task to patient in Supabase:", err);
+  }
+};
+
+export const softDeleteTrackerTask = async (taskId) => {
+  if (!supabase || !taskId) return;
+  try {
+    await supabase
+      .from('tracker_tasks')
+      .update({ is_deleted: true, updated_at: new Date().toISOString() })
+      .eq('id', taskId);
+  } catch (err) {
+    console.warn("Error deleting task in Supabase:", err);
+  }
+};
+
+export const markTaskWhatsAppSent = async (taskId) => {
+  if (!supabase || !taskId) return;
+  try {
+    await supabase
+      .from('tracker_tasks')
+      .update({ whatsapp_sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .eq('id', taskId);
+  } catch (err) {
+    console.warn("Error updating task whatsapp status:", err);
+  }
+};
+
 export const getPatientById = async (id) => {
   if (!supabase) throw new Error("Supabase is not configured.");
   const { data, error } = await supabase

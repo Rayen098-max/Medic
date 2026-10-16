@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Camera, ArrowLeft, Loader2 } from 'lucide-react';
 import { z } from 'zod';
-import { addPatient, getExercises } from '../utils/db';
+import { addPatient, upsertPatient, linkTaskToPatient, getExercises } from '../utils/db';
 import { useAuth } from '../context/AuthContext';
 import painPointsData from '../data/painPoints.json';
 
@@ -149,7 +149,14 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
     };
 
     try {
-      const id = await addPatient(newPatient);
+      const patientIdToUpdate = initialData?.id || null;
+      const id = await upsertPatient(newPatient, patientIdToUpdate);
+      
+      // If linked to a task in tracker_tasks, update the task in Supabase
+      if (initialData?.tracker_id) {
+        await linkTaskToPatient(initialData.tracker_id, id);
+      }
+
       setIsSubmitting(false);
       alert(`Card processed successfully! Portal generated at /r/${id}`);
       
