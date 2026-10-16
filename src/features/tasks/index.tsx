@@ -29,8 +29,8 @@ interface TrackerRow {
 
 const KNOWN_PHYSIOS = ['Aishwarya', 'Gursheen', 'Dipti', 'Rutuja', 'Pooja', 'Hritika', 'Kritika', 'Gaurav'];
 
-const CACHE_KEY = 'medic_tasks_cache_v3';
-const CACHE_TIME_KEY = 'medic_tasks_cache_time_v3';
+const CACHE_KEY = 'medic_tasks_cache_v4';
+const CACHE_TIME_KEY = 'medic_tasks_cache_time_v4';
 
 export interface DateMeta {
   isoDate: string;       // "2026-10-15"
@@ -40,7 +40,7 @@ export interface DateMeta {
   timestamp: number;     // for numeric sorting
 }
 
-export function parseDateMetadata(raw: string): DateMeta {
+export function parseDateMetadata(raw: string, physioName?: string): DateMeta {
   if (!raw) {
     return { isoDate: '', displayDate: 'No Date', monthKey: 'nodate', monthName: 'Other', timestamp: 0 };
   }
@@ -52,6 +52,12 @@ export function parseDateMetadata(raw: string): DateMeta {
     const year = parseInt(isoMatch[1], 10);
     const month = parseInt(isoMatch[2], 10);
     const day = parseInt(isoMatch[3], 10);
+
+    // Reject future dates (November/December 2026 or year > 2026)
+    if (year > 2026 || (year === 2026 && month > 10)) {
+      return { isoDate: '', displayDate: '', monthKey: 'future', monthName: 'Future', timestamp: 0 };
+    }
+
     const dt = new Date(year, month - 1, day);
     const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const monthKey = `${year}-${String(month).padStart(2, '0')}`;
@@ -60,17 +66,29 @@ export function parseDateMetadata(raw: string): DateMeta {
     return { isoDate, displayDate, monthKey, monthName, timestamp: dt.getTime() };
   }
 
-  // 2. Check Indian DD/MM or DD/MM/YYYY or DD-MM-YYYY
+  // 2. Check DD/MM or MM/DD
   const slashParts = str.split(/[\/\-]/);
   if (slashParts.length >= 2) {
-    const d = parseInt(slashParts[0], 10);
-    const m = parseInt(slashParts[1], 10);
-    const y = slashParts.length >= 3 ? parseInt(slashParts[2], 10) : 2026;
-    const year = y < 100 ? 2000 + y : y;
-    if (!isNaN(d) && !isNaN(m) && d >= 1 && d <= 31 && m >= 1 && m <= 12) {
-      const dt = new Date(year, m - 1, d);
-      const isoDate = `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      const monthKey = `${year}-${String(m).padStart(2, '0')}`;
+    const p1 = parseInt(slashParts[0], 10);
+    const p2 = parseInt(slashParts[1], 10);
+    const p3 = slashParts.length >= 3 ? parseInt(slashParts[2], 10) : 2026;
+    const year = p3 < 100 ? 2000 + p3 : p3;
+
+    // Dr. Kritika writes Month / Day / Year (MM/DD/YYYY)
+    // All other physios write Day / Month (DD/MM)
+    const isKritika = String(physioName).toLowerCase().includes('kritika');
+    const month = isKritika ? p1 : p2;
+    const day = isKritika ? p2 : p1;
+
+    // Reject future dates (November/December 2026 or year > 2026)
+    if (year > 2026 || (year === 2026 && month > 10)) {
+      return { isoDate: '', displayDate: '', monthKey: 'future', monthName: 'Future', timestamp: 0 };
+    }
+
+    if (!isNaN(day) && !isNaN(month) && day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+      const dt = new Date(year, month - 1, day);
+      const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const monthKey = `${year}-${String(month).padStart(2, '0')}`;
       const monthName = dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
       const displayDate = dt.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
       return { isoDate, displayDate, monthKey, monthName, timestamp: dt.getTime() };
@@ -83,6 +101,12 @@ export function parseDateMetadata(raw: string): DateMeta {
     const year = dt.getFullYear();
     const month = dt.getMonth() + 1;
     const day = dt.getDate();
+
+    // Reject future dates (November/December 2026 or year > 2026)
+    if (year > 2026 || (year === 2026 && month > 10)) {
+      return { isoDate: '', displayDate: '', monthKey: 'future', monthName: 'Future', timestamp: 0 };
+    }
+
     const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const monthKey = `${year}-${String(month).padStart(2, '0')}`;
     const monthName = dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
@@ -237,10 +261,12 @@ export function Tasks() {
 
   // Attach pre-calculated date metadata to each attended task
   const enhancedTasks = useMemo(() => {
-    return data.map(row => ({
-      ...row,
-      _meta: parseDateMetadata(row.Date)
-    }));
+    return data
+      .map(row => ({
+        ...row,
+        _meta: parseDateMetadata(row.Date, row['Physio Name'])
+      }))
+      .filter(t => t._meta.monthKey && t._meta.monthKey !== 'nodate' && t._meta.monthKey !== 'future' && t._meta.monthKey !== 'Other');
   }, [data]);
 
   // Level 1: Month Summaries (Sorted descending: October first, September second, etc.)

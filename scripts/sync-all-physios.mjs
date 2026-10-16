@@ -41,21 +41,33 @@ const TAB_PHYSIO_MAPPING = {
   }
 };
 
-function parseStandardDate(raw) {
+function parseStandardDate(raw, physioName = '') {
   if (!raw) return { isoDate: '', displayDate: 'No Date', monthKey: '', monthName: '', timestamp: 0 };
   const str = String(raw).trim();
   
-  // Format 1: DD/MM or DD/MM/YYYY or DD-MM-YYYY
+  // Format 1: DD/MM or MM/DD
   const slashParts = str.split(/[\/\-]/);
   if (slashParts.length >= 2) {
-    const d = parseInt(slashParts[0], 10);
-    const m = parseInt(slashParts[1], 10);
-    const y = slashParts.length >= 3 ? parseInt(slashParts[2], 10) : 2026;
-    const year = y < 100 ? 2000 + y : y;
-    if (!isNaN(d) && !isNaN(m) && d >= 1 && d <= 31 && m >= 1 && m <= 12) {
-      const dt = new Date(year, m - 1, d);
-      const isoDate = `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      const monthKey = `${year}-${String(m).padStart(2, '0')}`;
+    const p1 = parseInt(slashParts[0], 10);
+    const p2 = parseInt(slashParts[1], 10);
+    const p3 = slashParts.length >= 3 ? parseInt(slashParts[2], 10) : 2026;
+    const year = p3 < 100 ? 2000 + p3 : p3;
+
+    // Dr. Kritika writes Month / Day / Year (MM/DD/YYYY)
+    // All other physios (Gursheen, Dipti, Rutuja, Pooja, Hritika, Aishwarya) write Day / Month (DD/MM)
+    const isKritika = String(physioName).toLowerCase().includes('kritika');
+    const month = isKritika ? p1 : p2;
+    const day = isKritika ? p2 : p1;
+
+    // Reject future dates (November/December 2026 or year > 2026)
+    if (year > 2026 || (year === 2026 && month > 10)) {
+      return { isoDate: '', displayDate: '', monthKey: '', monthName: '', timestamp: 0 };
+    }
+
+    if (!isNaN(day) && !isNaN(month) && day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+      const dt = new Date(year, month - 1, day);
+      const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const monthKey = `${year}-${String(month).padStart(2, '0')}`;
       const monthName = dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
       const displayDate = dt.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
       return { isoDate, displayDate, monthKey, monthName, timestamp: dt.getTime() };
@@ -105,6 +117,17 @@ async function sendBatchToSupabase(records) {
 
 async function main() {
   console.log("=== STARTING FULL CLEAN SYNC WITH STANDARDIZED DATES ===");
+  
+  // Clean wipe old records first
+  console.log("Cleaning old records in Supabase...");
+  await fetch(`${SUPABASE_URL}/rest/v1/tracker_tasks?id=neq.dummy`, {
+    method: "DELETE",
+    headers: {
+      "apikey": SUPABASE_SERVICE_KEY,
+      "Authorization": "Bearer " + SUPABASE_SERVICE_KEY
+    }
+  });
+
   const allTasks = [];
 
   for (const [tabName, config] of Object.entries(TAB_PHYSIO_MAPPING)) {
@@ -129,7 +152,7 @@ async function main() {
         if (!custName && !custPhone) continue;
 
         const sessionDone = String(row['Physio session Done'] || row['Session Done'] || '').trim();
-        const parsed = parseStandardDate(lastDate);
+        const parsed = parseStandardDate(lastDate, config.physio_name);
 
         // Standardized composite ID
         const identifier = custPhone || custName.toLowerCase().replace(/\s+/g, '_');

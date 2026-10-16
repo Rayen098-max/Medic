@@ -84,14 +84,26 @@ function syncAllPhysioTabs() {
 
       if (!custName && !custPhone) continue;
 
-      // Standardize Indian DD/MM format into YYYY-MM-DD
+      // Standardize format into YYYY-MM-DD
       let isoDate = lastSeenDate;
       const slashParts = lastSeenDate.split(/[\/\-]/);
       if (slashParts.length >= 2) {
-        const d = parseInt(slashParts[0], 10);
-        const m = parseInt(slashParts[1], 10);
-        const y = slashParts.length >= 3 ? parseInt(slashParts[2], 10) : 2026;
-        const year = y < 100 ? 2000 + y : y;
+        const p1 = parseInt(slashParts[0], 10);
+        const p2 = parseInt(slashParts[1], 10);
+        const p3 = slashParts.length >= 3 ? parseInt(slashParts[2], 10) : 2026;
+        const year = p3 < 100 ? 2000 + p3 : p3;
+
+        // Dr. Kritika writes Month / Day / Year (MM/DD/YYYY)
+        // All others write Day / Month (DD/MM)
+        const isKritika = String(config.physio_name).toLowerCase().includes("kritika");
+        const m = isKritika ? p1 : p2;
+        const d = isKritika ? p2 : p1;
+
+        // Reject future dates (November/December 2026 or year > 2026)
+        if (year > 2026 || (year === 2026 && m > 10)) {
+          continue;
+        }
+
         if (!isNaN(d) && !isNaN(m) && d >= 1 && d <= 31 && m >= 1 && m <= 12) {
           isoDate = year + "-" + (m < 10 ? "0" + m : m) + "-" + (d < 10 ? "0" + d : d);
         }

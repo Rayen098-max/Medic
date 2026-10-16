@@ -50,30 +50,53 @@ export const upsertPatient = async (patient, existingId = null) => {
 export const getTrackerTasks = async (physioProfile) => {
   if (!supabase) throw new Error("Supabase is not configured.");
   
-  let query = supabase
-    .from('tracker_tasks')
-    .select('*')
-    .eq('is_deleted', false)
-    .limit(50000)
-    .order('consult_date', { ascending: false });
+  const allRows = [];
+  const pageSize = 1000;
+  let from = 0;
+  let hasMore = true;
 
-  // If physio, filter for their tasks
-  if (physioProfile && physioProfile.role === 'physio') {
-    const nameMatch = physioProfile.full_name?.replace(/^Dr\.?\s+/i, '').trim().split(' ')[0] || '';
-    if (physioProfile.id) {
-      query = query.or(`physio_id.eq.${physioProfile.id},physio_name.ilike.%${nameMatch}%`);
-    } else if (nameMatch) {
-      query = query.ilike('physio_name', `%${nameMatch}%`);
+  while (hasMore) {
+    let query = supabase
+      .from('tracker_tasks')
+      .select('*')
+      .eq('is_deleted', false)
+      .order('consult_date', { ascending: false })
+      .range(from, from + pageSize - 1);
+
+    // If physio, filter for their tasks
+    if (physioProfile && physioProfile.role === 'physio') {
+      const nameMatch = physioProfile.full_name?.replace(/^Dr\.?\s+/i, '').trim().split(' ')[0] || '';
+      if (physioProfile.id) {
+        query = query.or(`physio_id.eq.${physioProfile.id},physio_name.ilike.%${nameMatch}%`);
+      } else if (nameMatch) {
+        query = query.ilike('physio_name', `%${nameMatch}%`);
+      }
+    }
+
+    const { data, error } = await query;
+    if (error) {
+      console.warn("Could not query tracker_tasks from Supabase:", error.message);
+      break;
+    }
+
+    if (Array.isArray(data) && data.length > 0) {
+      allRows.push(...data);
+      if (data.length < pageSize) {
+        hasMore = false;
+      } else {
+        from += pageSize;
+      }
+    } else {
+      hasMore = false;
+    }
+
+    // Safety ceiling
+    if (allRows.length >= 20000) {
+      break;
     }
   }
 
-  const { data, error } = await query;
-  if (error) {
-    // Graceful fallback if table is newly created or empty
-    console.warn("Could not query tracker_tasks from Supabase:", error.message);
-    return null;
-  }
-  return data;
+  return allRows;
 };
 
 export const linkTaskToPatient = async (taskId, patientId) => {
