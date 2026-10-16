@@ -109,9 +109,9 @@ function syncAllPhysioTabs() {
         }
       }
 
-      // Unique identifier includes sheet row index to prevent intra-batch duplicate collisions
-      const identifier = custPhone || custName.toLowerCase().replace(/\s+/g, "_");
-      const taskId = `${config.physio_name}_${identifier}_r${r}_${isoDate || "nodate"}`;
+      // Deterministic unique identifier (NO row number, so shifting rows never causes duplicates)
+      const identifier = custPhone || custName.toLowerCase().replace(/[^a-z0-9]/g, "_");
+      const taskId = `${config.physio_name}_${identifier}_${isoDate || "nodate"}`;
 
       taskMap[taskId] = {
         id: taskId,

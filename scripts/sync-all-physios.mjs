@@ -120,7 +120,7 @@ async function main() {
   
   // Clean wipe old records first
   console.log("Cleaning old records in Supabase...");
-  await fetch(`${SUPABASE_URL}/rest/v1/tracker_tasks?id=neq.dummy`, {
+  await fetch(`${SUPABASE_URL}/rest/v1/tracker_tasks?id=not.is.null`, {
     method: "DELETE",
     headers: {
       "apikey": SUPABASE_SERVICE_KEY,
@@ -128,7 +128,7 @@ async function main() {
     }
   });
 
-  const allTasks = [];
+  const taskMap = new Map();
 
   for (const [tabName, config] of Object.entries(TAB_PHYSIO_MAPPING)) {
     console.log(`\nFetching ${tabName} for ${config.full_name}...`);
@@ -154,11 +154,11 @@ async function main() {
         const sessionDone = String(row['Physio session Done'] || row['Session Done'] || '').trim();
         const parsed = parseStandardDate(lastDate, config.physio_name);
 
-        // Standardized composite ID
-        const identifier = custPhone || custName.toLowerCase().replace(/\s+/g, '_');
-        const taskId = `${config.physio_name}_${identifier}_r${r}_${parsed.isoDate || 'nodate'}`;
+        // Deterministic composite ID (NO row number!)
+        const identifier = custPhone || custName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        const taskId = `${config.physio_name}_${identifier}_${parsed.isoDate || 'nodate'}`;
 
-        allTasks.push({
+        taskMap.set(taskId, {
           id: taskId,
           physio_name: config.physio_name,
           physio_id: config.physio_id,
@@ -184,7 +184,8 @@ async function main() {
     }
   }
 
-  console.log(`\nTotal tasks ready to upload: ${allTasks.length}`);
+  const allTasks = Array.from(taskMap.values());
+  console.log(`\nTotal unique tasks ready to upload: ${allTasks.length}`);
 
   // Upload in chunks of 200
   const CHUNK_SIZE = 200;

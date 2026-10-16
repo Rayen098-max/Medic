@@ -29,8 +29,8 @@ interface TrackerRow {
 
 const KNOWN_PHYSIOS = ['Aishwarya', 'Gursheen', 'Dipti', 'Rutuja', 'Pooja', 'Hritika', 'Kritika', 'Gaurav'];
 
-const CACHE_KEY = 'medic_tasks_cache_v4';
-const CACHE_TIME_KEY = 'medic_tasks_cache_time_v4';
+const CACHE_KEY = 'medic_tasks_cache_v5';
+const CACHE_TIME_KEY = 'medic_tasks_cache_time_v5';
 
 export interface DateMeta {
   isoDate: string;       // "2026-10-15"
@@ -142,16 +142,26 @@ export function Tasks() {
           return done === 'yes';
         });
 
-        const mapped: TrackerRow[] = attendedOnly.map(t => ({
-          id: t.id,
-          Date: t.consult_date || '',
-          "Physio Name": t.physio_name || '',
-          "Customer Name": t.customer_name || '',
-          "Customer Number": t.customer_phone || '',
-          "Physio session Done": t.session_done || '',
-          patient_id: t.patient_id,
-          whatsapp_sent_at: t.whatsapp_sent_at
-        }));
+        // Client-side de-duplication: ensure identical customers on same date are never duplicated
+        const dedupeMap = new Map<string, TrackerRow>();
+        for (const t of attendedOnly) {
+          const phone = String(t.customer_phone || '').replace(/\D/g, '');
+          const name = String(t.customer_name || '').trim().toLowerCase();
+          const key = `${t.physio_name}_${phone || name}_${t.consult_date}`;
+          if (!dedupeMap.has(key)) {
+            dedupeMap.set(key, {
+              id: t.id,
+              Date: t.consult_date || '',
+              "Physio Name": t.physio_name || '',
+              "Customer Name": t.customer_name || '',
+              "Customer Number": t.customer_phone || '',
+              "Physio session Done": t.session_done || '',
+              patient_id: t.patient_id,
+              whatsapp_sent_at: t.whatsapp_sent_at
+            });
+          }
+        }
+        const mapped = Array.from(dedupeMap.values());
 
         setData(mapped);
         const userCacheKey = `${CACHE_KEY}_${profile?.id || 'guest'}`;
@@ -215,6 +225,7 @@ export function Tasks() {
 
         let lastDate = '';
         const filledData: TrackerRow[] = [];
+        const seenFallbackKeys = new Set<string>();
 
         for (const row of json) {
           const val = row.Date || row.Dates;
@@ -229,10 +240,16 @@ export function Tasks() {
           const isAttended = String(row['Physio session Done'] || '').trim().toLowerCase() === 'yes';
 
           if (hasCustomer && isAttended) {
-            filledData.push({
-              ...row,
-              Date: lastDate
-            });
+            const phone = String(numVal || '').replace(/\D/g, '');
+            const name = String(nameVal || '').trim().toLowerCase();
+            const dedupeKey = `${phone || name}_${lastDate}`;
+            if (!seenFallbackKeys.has(dedupeKey)) {
+              seenFallbackKeys.add(dedupeKey);
+              filledData.push({
+                ...row,
+                Date: lastDate
+              });
+            }
           }
         }
 
