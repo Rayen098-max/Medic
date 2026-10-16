@@ -170,8 +170,10 @@ export default function EditBodyPanel() {
     return { ...initialZoneCoordinates };
   });
 
-  const [activeZone, setActiveZone] = useState(null);
-  const [copied, setCopied] = useState(false);
+  const [activeZone, setActiveZone] = useState(() => {
+    const zones = getUniqueZones();
+    return zones.length > 0 ? zones[0] : 'neck';
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [showAuditModal, setShowAuditModal] = useState(false);
   const [auditLogs, setAuditLogs] = useState([]);
@@ -210,14 +212,14 @@ export default function EditBodyPanel() {
 
   const handleSaveToSupabase = async () => {
     if (!activeZone || !coordinates[activeZone]) {
-      toast.error("Please select a body part and place a marker first.");
+      toast.error("Please select a body part and click on the 3D model to place a marker first.");
       return;
     }
 
     setIsSaving(true);
     try {
       await saveBodyZoneCoordinate(activeZone, coordinates[activeZone], profile);
-      toast.success(`✓ "${activeZone.toUpperCase()}" saved and published to Supabase! All physios will now see this update.`);
+      toast.success(`✓ "${activeZone.toUpperCase()}" published to Supabase! All physios and customer 3D links are updated.`);
       if (isAdmin) loadAuditHistory();
     } catch (err) {
       console.error("Save error:", err);
@@ -225,13 +227,6 @@ export default function EditBodyPanel() {
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const handleCopy = () => {
-    const jsonStr = JSON.stringify(coordinates, null, 2);
-    navigator.clipboard.writeText(jsonStr);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   const formatDate = (isoStr) => {
@@ -393,8 +388,8 @@ export default function EditBodyPanel() {
           </div>
         </div>
 
-        {/* Footer actions: Save to Supabase & Copy JSON */}
-        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
+        {/* Footer actions: Save to Supabase */}
+        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '10px', flexShrink: 0 }}>
           <button 
             onClick={handleSaveToSupabase}
             disabled={isSaving || !activeZone}
@@ -404,26 +399,26 @@ export default function EditBodyPanel() {
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
-              gap: '8px', 
-              padding: '12px',
-              background: activeZone ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+              gap: '10px', 
+              padding: '14px',
+              background: activeZone ? 'linear-gradient(135deg, #00d2ff 0%, #00f2fe 100%)' : 'rgba(255,255,255,0.05)',
               color: activeZone ? '#000' : 'rgba(255,255,255,0.3)',
-              fontWeight: 'bold',
-              cursor: activeZone ? 'pointer' : 'not-allowed'
+              fontWeight: '700',
+              fontSize: '0.95rem',
+              borderRadius: '8px',
+              border: activeZone ? 'none' : '1px solid rgba(255,255,255,0.1)',
+              boxShadow: activeZone ? '0 4px 20px rgba(0, 210, 255, 0.4)' : 'none',
+              cursor: activeZone ? 'pointer' : 'not-allowed',
+              transition: 'all 0.2s ease'
             }}
           >
-            <Save size={18} />
-            {isSaving ? 'Saving to Supabase...' : activeZone ? `Save "${activeZone.toUpperCase()}" to Supabase` : 'Select a part to save'}
+            <CloudUpload size={20} />
+            {isSaving ? 'Publishing to Cloud...' : activeZone ? `Save "${activeZone.toUpperCase()}" to Supabase` : 'Select a part to save'}
           </button>
 
-          <button 
-            onClick={handleCopy}
-            className="clinical-btn"
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', fontSize: '0.8rem', background: 'transparent', borderColor: 'var(--border-color)' }}
-          >
-            {copied ? <CheckCircle size={16} /> : <Copy size={16} />}
-            {copied ? 'Copied JSON!' : 'Copy JSON Config'}
-          </button>
+          <p style={{ margin: 0, fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4 }}>
+            Clicking Save publishes this body part's 3D glow position live to Supabase for all physiotherapists and patient 3D links.
+          </p>
         </div>
       </div>
 

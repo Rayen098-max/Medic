@@ -29,8 +29,8 @@ interface TrackerRow {
 
 const KNOWN_PHYSIOS = ['Aishwarya', 'Gursheen', 'Dipti', 'Rutuja', 'Pooja', 'Hritika', 'Kritika', 'Gaurav'];
 
-const CACHE_KEY = 'medic_tasks_cache_v5';
-const CACHE_TIME_KEY = 'medic_tasks_cache_time_v5';
+const CACHE_KEY = 'medic_tasks_cache_v7';
+const CACHE_TIME_KEY = 'medic_tasks_cache_time_v7';
 
 export interface DateMeta {
   isoDate: string;       // "2026-10-15"
@@ -38,6 +38,66 @@ export interface DateMeta {
   monthKey: string;      // "2026-10"
   monthName: string;     // "October 2026"
   timestamp: number;     // for numeric sorting
+}
+
+export function deduplicateTasks(tasks: TrackerRow[]): TrackerRow[] {
+  const mapByName = new Map<string, TrackerRow>();
+  const mapByPhone = new Map<string, TrackerRow>();
+  const result: TrackerRow[] = [];
+
+  for (const t of tasks) {
+    const rawName = String(t["Customer Name"] || '').trim().toLowerCase();
+    const rawPhone = String(t["Customer Number"] || '').replace(/\D/g, '');
+    const cleanPhone = rawPhone.length >= 7 ? rawPhone.slice(-10) : '';
+    const dateStr = String(t.Date || '').trim();
+    const physioStr = String(t["Physio Name"] || '').trim().toLowerCase();
+
+    // Deduplicate by Name + Date + Physio (if name is valid)
+    const nameKey = (rawName && rawName !== 'unknown' && rawName !== 'n/a')
+      ? `${physioStr}_${rawName}_${dateStr}`
+      : '';
+
+    // Deduplicate by 10-digit Phone + Date + Physio (if phone is valid)
+    const phoneKey = cleanPhone
+      ? `${physioStr}_${cleanPhone}_${dateStr}`
+      : '';
+
+    let existing: TrackerRow | undefined;
+    if (nameKey && mapByName.has(nameKey)) {
+      existing = mapByName.get(nameKey);
+    } else if (phoneKey && mapByPhone.has(phoneKey)) {
+      existing = mapByPhone.get(phoneKey);
+    }
+
+    if (existing) {
+      // Merge records - keep whichever has valid phone number or sent status
+      const existingPhone = String(existing["Customer Number"] || '').replace(/\D/g, '');
+      const incomingPhone = String(t["Customer Number"] || '').replace(/\D/g, '');
+      if (existingPhone.length < 7 && incomingPhone.length >= 7) {
+        existing["Customer Number"] = t["Customer Number"];
+      }
+
+      const existingName = String(existing["Customer Name"] || '').trim().toLowerCase();
+      const incomingName = String(t["Customer Name"] || '').trim().toLowerCase();
+      if ((!existingName || existingName === 'unknown' || existingName === 'n/a') && incomingName && incomingName !== 'unknown' && incomingName !== 'n/a') {
+        existing["Customer Name"] = t["Customer Name"];
+      }
+
+      if (!existing.patient_id && t.patient_id) existing.patient_id = t.patient_id;
+      if (!existing.whatsapp_sent_at && t.whatsapp_sent_at) existing.whatsapp_sent_at = t.whatsapp_sent_at;
+
+      // Update secondary lookup maps
+      if (phoneKey && !mapByPhone.has(phoneKey)) mapByPhone.set(phoneKey, existing);
+      if (nameKey && !mapByName.has(nameKey)) mapByName.set(nameKey, existing);
+    } else {
+      const cloned = { ...t };
+      result.push(cloned);
+      if (nameKey) mapByName.set(nameKey, cloned);
+      if (phoneKey) mapByPhone.set(phoneKey, cloned);
+    }
+  }
+
+  return result;
 }
 
 export function parseDateMetadata(raw: string, physioName?: string): DateMeta {
@@ -143,25 +203,18 @@ export function Tasks() {
         });
 
         // Client-side de-duplication: ensure identical customers on same date are never duplicated
-        const dedupeMap = new Map<string, TrackerRow>();
-        for (const t of attendedOnly) {
-          const phone = String(t.customer_phone || '').replace(/\D/g, '');
-          const name = String(t.customer_name || '').trim().toLowerCase();
-          const key = `${t.physio_name}_${phone || name}_${t.consult_date}`;
-          if (!dedupeMap.has(key)) {
-            dedupeMap.set(key, {
-              id: t.id,
-              Date: t.consult_date || '',
-              "Physio Name": t.physio_name || '',
-              "Customer Name": t.customer_name || '',
-              "Customer Number": t.customer_phone || '',
-              "Physio session Done": t.session_done || '',
-              patient_id: t.patient_id,
-              whatsapp_sent_at: t.whatsapp_sent_at
-            });
-          }
-        }
-        const mapped = Array.from(dedupeMap.values());
+        const rawRows: TrackerRow[] = attendedOnly.map(t => ({
+          id: t.id,
+          Date: t.consult_date || '',
+          "Physio Name": t.physio_name || '',
+          "Customer Name": t.customer_name || '',
+          "Customer Number": t.customer_phone || '',
+          "Physio session Done": t.session_done || '',
+          patient_id: t.patient_id,
+          whatsapp_sent_at: t.whatsapp_sent_at
+        }));
+
+        const mapped = deduplicateTasks(rawRows);
 
         setData(mapped);
         const userCacheKey = `${CACHE_KEY}_${profile?.id || 'guest'}`;
@@ -278,7 +331,7 @@ export function Tasks() {
 
   // Attach pre-calculated date metadata to each attended task
   const enhancedTasks = useMemo(() => {
-    return data
+    return deduplicateTasks(data)
       .map(row => ({
         ...row,
         _meta: parseDateMetadata(row.Date, row['Physio Name'])
@@ -411,7 +464,8 @@ export function Tasks() {
   // Level 3: Tasks for the selected date
   const selectedDateTasks = useMemo(() => {
     if (!selectedDate) return [];
-    return enhancedTasks.filter(t => t._meta.isoDate === selectedDate || t.Date === selectedDate);
+    const dateFiltered = enhancedTasks.filter(t => t._meta.isoDate === selectedDate || t.Date === selectedDate);
+    return deduplicateTasks(dateFiltered);
   }, [enhancedTasks, selectedDate]);
 
   // Active Month Meta info
