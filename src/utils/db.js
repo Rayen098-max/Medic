@@ -54,7 +54,8 @@ export const getTrackerTasks = async (physioProfile) => {
     .from('tracker_tasks')
     .select('*')
     .eq('is_deleted', false)
-    .order('created_at', { ascending: false });
+    .limit(50000)
+    .order('consult_date', { ascending: false });
 
   // If physio, filter for their tasks
   if (physioProfile && physioProfile.role === 'physio') {

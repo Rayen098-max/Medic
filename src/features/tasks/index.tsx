@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Calendar, ArrowLeft, ChevronRight, Layers, Users, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
@@ -10,7 +10,10 @@ import { ThemeSwitch } from '@/components/theme-switch'
 import { TasksTable } from './components/tasks-table'
 import { useAuth } from '@/context/AuthContext'
 import { getTrackerTasks } from '@/utils/db'
+import { MonthCardsHeader, type MonthSummary } from './components/month-cards-header'
+import { DateCardsHeader, type DateSummary } from './components/date-cards-header'
 import Papa from 'papaparse'
+import { toast } from 'sonner'
 
 interface TrackerRow {
   id?: string;
@@ -26,81 +29,80 @@ interface TrackerRow {
 
 const KNOWN_PHYSIOS = ['Aishwarya', 'Gursheen', 'Dipti', 'Rutuja', 'Pooja', 'Hritika', 'Kritika', 'Gaurav'];
 
-const CACHE_KEY = 'medic_tasks_cache_v2';
-const CACHE_TIME_KEY = 'medic_tasks_cache_time_v2';
+const CACHE_KEY = 'medic_tasks_cache_v3';
+const CACHE_TIME_KEY = 'medic_tasks_cache_time_v3';
 
-function shouldAutoFetch() {
-  const lastFetchStr = localStorage.getItem(CACHE_TIME_KEY);
-  if (!lastFetchStr) return true;
-  
-  const lastTime = new Date(parseInt(lastFetchStr, 10));
-  const now = new Date();
-  
-  if (now.toDateString() !== lastTime.toDateString()) {
-    return true; // different day
-  }
-  
-  // same day, check slots: 12:00, 17:00, 20:00
-  const slots = [12, 17, 20];
-  const currentHour = now.getHours();
-  const lastHour = lastTime.getHours();
-  
-  for (const slot of slots) {
-    if (currentHour >= slot && lastHour < slot) {
-      return true; // We crossed a schedule slot since last fetch
-    }
-  }
-  return false;
+export interface DateMeta {
+  isoDate: string;       // "2026-10-15"
+  displayDate: string;   // "15 Oct"
+  monthKey: string;      // "2026-10"
+  monthName: string;     // "October 2026"
+  timestamp: number;     // for numeric sorting
 }
 
-import { DateCardsHeader, type DateSummary } from './components/date-cards-header'
-
-function formatDisplayDate(raw: string): string {
-  if (!raw) return 'Unknown Date';
-  const d = new Date(raw);
-  if (!isNaN(d.getTime())) {
-    return d.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+export function parseDateMetadata(raw: string): DateMeta {
+  if (!raw) {
+    return { isoDate: '', displayDate: 'No Date', monthKey: 'nodate', monthName: 'Other', timestamp: 0 };
   }
-  const parts = raw.split(/[\/\\]/);
-  if (parts.length >= 2) {
-    const day = parseInt(parts[0], 10);
-    const month = parseInt(parts[1], 10) - 1;
-    const year = parts.length >= 3 ? parseInt(parts[2], 10) : 2026;
-    const parsed = new Date(year, month, day);
-    if (!isNaN(parsed.getTime())) {
-      return parsed.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+  const str = String(raw).trim();
+
+  // 1. Check ISO YYYY-MM-DD
+  const isoMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (isoMatch) {
+    const year = parseInt(isoMatch[1], 10);
+    const month = parseInt(isoMatch[2], 10);
+    const day = parseInt(isoMatch[3], 10);
+    const dt = new Date(year, month - 1, day);
+    const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+    const monthName = dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const displayDate = dt.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    return { isoDate, displayDate, monthKey, monthName, timestamp: dt.getTime() };
+  }
+
+  // 2. Check Indian DD/MM or DD/MM/YYYY or DD-MM-YYYY
+  const slashParts = str.split(/[\/\-]/);
+  if (slashParts.length >= 2) {
+    const d = parseInt(slashParts[0], 10);
+    const m = parseInt(slashParts[1], 10);
+    const y = slashParts.length >= 3 ? parseInt(slashParts[2], 10) : 2026;
+    const year = y < 100 ? 2000 + y : y;
+    if (!isNaN(d) && !isNaN(m) && d >= 1 && d <= 31 && m >= 1 && m <= 12) {
+      const dt = new Date(year, m - 1, d);
+      const isoDate = `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const monthKey = `${year}-${String(m).padStart(2, '0')}`;
+      const monthName = dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      const displayDate = dt.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+      return { isoDate, displayDate, monthKey, monthName, timestamp: dt.getTime() };
     }
   }
-  return raw;
-}
 
-function parseDateForSort(dStr: string): number {
-  if (!dStr) return 0;
-  const d = new Date(dStr);
-  if (!isNaN(d.getTime())) return d.getTime();
-
-  const parts = dStr.split(/[\/\\]/);
-  if (parts.length >= 2) {
-    const val1 = parseInt(parts[0], 10);
-    const val2 = parseInt(parts[1], 10);
-    const val3 = parts.length >= 3 ? parseInt(parts[2], 10) : 2026;
-    const year = val3 < 100 ? 2000 + val3 : val3;
-    if (val1 > 12) {
-      return new Date(year, val2 - 1, val1).getTime();
-    }
-    if (val2 > 12) {
-      return new Date(year, val1 - 1, val2).getTime();
-    }
-    return new Date(year, val2 - 1, val1).getTime();
+  // 3. Fallback for JS Date string
+  const dt = new Date(str);
+  if (!isNaN(dt.getTime())) {
+    const year = dt.getFullYear();
+    const month = dt.getMonth() + 1;
+    const day = dt.getDate();
+    const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+    const monthName = dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const displayDate = dt.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    return { isoDate, displayDate, monthKey, monthName, timestamp: dt.getTime() };
   }
-  return 0;
+
+  return { isoDate: str, displayDate: str, monthKey: 'Other', monthName: 'Other', timestamp: 0 };
 }
 
 export function Tasks() {
   const [data, setData] = useState<TrackerRow[]>([])
   const [loading, setLoading] = useState(true)
   const [isFetching, setIsFetching] = useState(false)
+  
+  // 3-Level Navigation state
+  const [viewMode, setViewMode] = useState<'months' | 'dates' | 'list'>('months')
+  const [selectedMonth, setSelectedMonth] = useState<string>('')
   const [selectedDate, setSelectedDate] = useState<string>('')
+  
   const { profile } = useAuth()
 
   const fetchTasks = useCallback(async (force = false) => {
@@ -126,16 +128,23 @@ export function Tasks() {
           patient_id: t.patient_id,
           whatsapp_sent_at: t.whatsapp_sent_at
         }));
+
         setData(mapped);
+        const userCacheKey = `${CACHE_KEY}_${profile?.id || 'guest'}`;
+        localStorage.setItem(userCacheKey, JSON.stringify(mapped));
+        localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
         setLoading(false);
         setIsFetching(false);
+        if (force) {
+          toast.success("Tasks refreshed successfully from Supabase!");
+        }
         return;
       }
     } catch (err) {
       console.warn("Supabase tasks fetch error, checking Google Sheet:", err);
     }
 
-    // 2. Fallback to direct Google Sheet fetching if Supabase table has no rows yet
+    // 2. Fallback to direct Google Sheet fetching if Supabase table has no rows
     let tabName = 'Master Data';
     if (profile?.role === 'physio' && profile?.full_name) {
       const clean = profile.full_name.toLowerCase();
@@ -146,7 +155,7 @@ export function Tasks() {
     }
 
     const userCacheKey = `${CACHE_KEY}_${profile?.id || 'guest'}`;
-    if (!force && !shouldAutoFetch()) {
+    if (!force) {
       const cached = localStorage.getItem(userCacheKey);
       if (cached) {
         try {
@@ -180,7 +189,6 @@ export function Tasks() {
         });
         const json = result.data as TrackerRow[];
 
-        // Forward-fill the Date field because Google Sheet date headers only appear once per group
         let lastDate = '';
         const filledData: TrackerRow[] = [];
 
@@ -194,7 +202,9 @@ export function Tasks() {
           const numVal = row['Customer Number'];
           const hasCustomer = (nameVal && String(nameVal).trim() !== '') || 
                               (numVal && String(numVal).trim() !== '');
-          if (hasCustomer) {
+          const isAttended = String(row['Physio session Done'] || '').trim().toLowerCase() === 'yes';
+
+          if (hasCustomer && isAttended) {
             filledData.push({
               ...row,
               Date: lastDate
@@ -207,11 +217,15 @@ export function Tasks() {
         localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
         setLoading(false);
         setIsFetching(false);
+        if (force) {
+          toast.success("Tasks refreshed from Google Sheet!");
+        }
       })
       .catch(err => {
         console.error("Error fetching data from sheet:", err);
         setLoading(false);
         setIsFetching(false);
+        toast.error("Failed to refresh tasks.");
       });
   }, [profile])
 
@@ -221,73 +235,170 @@ export function Tasks() {
     }
   }, [profile, fetchTasks])
 
-  // Group attended tasks by consultation date into clean summary cards
-  const dateSummaries = useMemo<DateSummary[]>(() => {
-    if (!Array.isArray(data) || data.length === 0) return [];
+  // Attach pre-calculated date metadata to each attended task
+  const enhancedTasks = useMemo(() => {
+    return data.map(row => ({
+      ...row,
+      _meta: parseDateMetadata(row.Date)
+    }));
+  }, [data]);
 
-    const map = new Map<string, { totalAttended: number; sentCount: number; displayDate: string; timestamp: number }>();
+  // Level 1: Month Summaries (Sorted descending: October first, September second, etc.)
+  const monthSummaries = useMemo<MonthSummary[]>(() => {
+    if (enhancedTasks.length === 0) return [];
 
-    data.forEach(row => {
-      const rawDate = String(row.Date || 'No Date').trim();
-      if (!rawDate) return;
+    const monthMap = new Map<string, {
+      monthKey: string;
+      monthName: string;
+      totalAttended: number;
+      sentCount: number;
+      timestamp: number;
+      datesSet: Set<string>;
+    }>();
 
-      if (!map.has(rawDate)) {
-        map.set(rawDate, {
+    enhancedTasks.forEach(task => {
+      const { monthKey, monthName, isoDate, timestamp } = task._meta;
+      if (!monthKey || monthKey === 'nodate') return;
+
+      if (!monthMap.has(monthKey)) {
+        monthMap.set(monthKey, {
+          monthKey,
+          monthName,
           totalAttended: 0,
           sentCount: 0,
-          displayDate: formatDisplayDate(rawDate),
-          timestamp: parseDateForSort(rawDate),
+          timestamp,
+          datesSet: new Set<string>()
         });
       }
 
-      const entry = map.get(rawDate)!;
+      const entry = monthMap.get(monthKey)!;
       entry.totalAttended += 1;
+      if (isoDate) entry.datesSet.add(isoDate);
 
-      // Completed/Sent if whatsapp was clicked or consult patient_id is linked
-      const isSent = Boolean(row.whatsapp_sent_at || row.patient_id);
+      const isSent = Boolean(task.whatsapp_sent_at || task.patient_id);
       if (isSent) {
         entry.sentCount += 1;
       }
     });
 
-    const list: DateSummary[] = Array.from(map.entries()).map(([dateKey, stats]) => {
-      const pendingCount = Math.max(0, stats.totalAttended - stats.sentCount);
-      const percentage = stats.totalAttended > 0
-        ? Math.round((stats.sentCount / stats.totalAttended) * 100)
+    const list: MonthSummary[] = Array.from(monthMap.values()).map(m => {
+      const pendingCount = Math.max(0, m.totalAttended - m.sentCount);
+      const percentage = m.totalAttended > 0
+        ? Math.round((m.sentCount / m.totalAttended) * 100)
         : 0;
 
       return {
-        dateKey,
-        displayDate: stats.displayDate,
-        totalAttended: stats.totalAttended,
-        sentCount: stats.sentCount,
+        monthKey: m.monthKey,
+        monthName: m.monthName,
+        totalAttended: m.totalAttended,
+        sentCount: m.sentCount,
         pendingCount,
         percentage,
+        timestamp: m.timestamp,
+        dateCount: m.datesSet.size,
       };
     });
 
-    // Sort newest date first
-    list.sort((a, b) => {
-      const timeA = map.get(a.dateKey)?.timestamp || 0;
-      const timeB = map.get(b.dateKey)?.timestamp || 0;
-      return timeB - timeA;
-    });
+    // Sort descending by timestamp (Newest month first!)
+    list.sort((a, b) => b.timestamp - a.timestamp);
 
     return list;
-  }, [data]);
+  }, [enhancedTasks]);
 
-  // Automatically select the latest date by default
-  useEffect(() => {
-    if (dateSummaries.length > 0 && (!selectedDate || !dateSummaries.some(d => d.dateKey === selectedDate))) {
-      setSelectedDate(dateSummaries[0].dateKey);
-    }
+  // Level 2: Date Summaries for the selected month (Sorted descending: newest date first!)
+  const dateSummaries = useMemo<DateSummary[]>(() => {
+    if (!selectedMonth || enhancedTasks.length === 0) return [];
+
+    const dateMap = new Map<string, {
+      dateKey: string;
+      displayDate: string;
+      totalAttended: number;
+      sentCount: number;
+      timestamp: number;
+    }>();
+
+    enhancedTasks
+      .filter(t => t._meta.monthKey === selectedMonth)
+      .forEach(task => {
+        const { isoDate, displayDate, timestamp } = task._meta;
+        const key = isoDate || 'nodate';
+
+        if (!dateMap.has(key)) {
+          dateMap.set(key, {
+            dateKey: key,
+            displayDate,
+            totalAttended: 0,
+            sentCount: 0,
+            timestamp
+          });
+        }
+
+        const entry = dateMap.get(key)!;
+        entry.totalAttended += 1;
+
+        const isSent = Boolean(task.whatsapp_sent_at || task.patient_id);
+        if (isSent) {
+          entry.sentCount += 1;
+        }
+      });
+
+    const list: DateSummary[] = Array.from(dateMap.values()).map(d => {
+      const pendingCount = Math.max(0, d.totalAttended - d.sentCount);
+      const percentage = d.totalAttended > 0
+        ? Math.round((d.sentCount / d.totalAttended) * 100)
+        : 0;
+
+      return {
+        dateKey: d.dateKey,
+        displayDate: d.displayDate,
+        totalAttended: d.totalAttended,
+        sentCount: d.sentCount,
+        pendingCount,
+        percentage,
+        timestamp: d.timestamp,
+      };
+    });
+
+    // Sort descending by timestamp (Newest date first!)
+    list.sort((a, b) => b.timestamp - a.timestamp);
+
+    return list;
+  }, [enhancedTasks, selectedMonth]);
+
+  // Level 3: Tasks for the selected date
+  const selectedDateTasks = useMemo(() => {
+    if (!selectedDate) return [];
+    return enhancedTasks.filter(t => t._meta.isoDate === selectedDate || t.Date === selectedDate);
+  }, [enhancedTasks, selectedDate]);
+
+  // Active Month Meta info
+  const activeMonthMeta = useMemo(() => {
+    return monthSummaries.find(m => m.monthKey === selectedMonth);
+  }, [monthSummaries, selectedMonth]);
+
+  // Active Date Meta info
+  const activeDateMeta = useMemo(() => {
+    return dateSummaries.find(d => d.dateKey === selectedDate);
   }, [dateSummaries, selectedDate]);
 
-  // Filter tasks to ONLY show customers for the selected date
-  const selectedDateTasks = useMemo(() => {
-    if (!selectedDate) return data;
-    return data.filter(row => String(row.Date || '').trim() === selectedDate);
-  }, [data, selectedDate]);
+  // Navigation Handlers
+  const handleSelectMonth = (monthKey: string) => {
+    setSelectedMonth(monthKey);
+    setViewMode('dates');
+  };
+
+  const handleSelectDate = (dateKey: string) => {
+    setSelectedDate(dateKey);
+    setViewMode('list');
+  };
+
+  const handleBackToMonths = () => {
+    setViewMode('months');
+  };
+
+  const handleBackToDates = () => {
+    setViewMode('dates');
+  };
 
   return (
     <>
@@ -299,7 +410,7 @@ export function Tasks() {
           className='scale-95 rounded-full' 
           onClick={() => fetchTasks(true)} 
           disabled={isFetching}
-          title="Fetch data from sheet"
+          title="Fetch fresh data from Supabase"
         >
           <RefreshCw size={18} className={isFetching ? "animate-spin" : ""} />
         </Button>
@@ -309,30 +420,128 @@ export function Tasks() {
       </Header>
 
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
-        <div className='flex flex-wrap items-end justify-between gap-2'>
+        {/* Dynamic Breadcrumbs & Page Header */}
+        <div className='flex flex-wrap items-center justify-between gap-3'>
           <div>
-            <h2 className='text-2xl font-bold tracking-tight'>Physio Consultation Tasks</h2>
-            <p className='text-muted-foreground'>
-              Attended customer consultations grouped by date. Click a date card below to view its follow-up list.
+            {/* Breadcrumb path */}
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1.5 font-medium">
+              <button 
+                onClick={handleBackToMonths}
+                className={`hover:text-primary transition-colors cursor-pointer ${viewMode === 'months' ? 'text-primary font-semibold' : ''}`}
+              >
+                All Months
+              </button>
+
+              {selectedMonth && activeMonthMeta && (
+                <>
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />
+                  <button 
+                    onClick={handleBackToDates}
+                    className={`hover:text-primary transition-colors cursor-pointer ${viewMode === 'dates' ? 'text-primary font-semibold' : ''}`}
+                  >
+                    {activeMonthMeta.monthName}
+                  </button>
+                </>
+              )}
+
+              {selectedDate && activeDateMeta && viewMode === 'list' && (
+                <>
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/60" />
+                  <span className="text-foreground font-semibold">
+                    {activeDateMeta.displayDate}
+                  </span>
+                </>
+              )}
+            </div>
+
+            <h2 className='text-2xl font-bold tracking-tight'>
+              {viewMode === 'months' && 'Physio Consultation Tasks'}
+              {viewMode === 'dates' && `${activeMonthMeta?.monthName || 'Month'} Consultation Dates`}
+              {viewMode === 'list' && `${activeDateMeta?.displayDate || 'Date'} Follow-up List`}
+            </h2>
+            <p className='text-muted-foreground text-sm'>
+              {viewMode === 'months' && 'Attended customer consultations grouped by month. Select a month to view its consultation dates.'}
+              {viewMode === 'dates' && 'Showing all attended consultation dates (newest first). Click a date card to open its follow-up list.'}
+              {viewMode === 'list' && 'Follow up with customers attended on this date via WhatsApp or consult submission.'}
             </p>
           </div>
         </div>
 
-        {/* Modern Soft-Card Date Header */}
-        {dateSummaries.length > 0 && (
-          <DateCardsHeader
-            dateSummaries={dateSummaries}
-            selectedDate={selectedDate}
-            onSelectDate={(key) => setSelectedDate(key)}
-          />
-        )}
-        
+        {/* Loading state */}
         {loading && data.length === 0 ? (
-          <div className="flex h-40 items-center justify-center">
-            <p className="text-muted-foreground animate-pulse">Loading attended consultations...</p>
+          <div className="flex h-48 items-center justify-center">
+            <p className="text-muted-foreground animate-pulse">Loading attended consultations from Supabase...</p>
           </div>
         ) : (
-          <TasksTable data={selectedDateTasks} />
+          <>
+            {/* LEVEL 1: MONTH CARDS */}
+            {viewMode === 'months' && (
+              <MonthCardsHeader
+                monthSummaries={monthSummaries}
+                onSelectMonth={handleSelectMonth}
+              />
+            )}
+
+            {/* LEVEL 2: DATE CARDS */}
+            {viewMode === 'dates' && (
+              <DateCardsHeader
+                monthName={activeMonthMeta?.monthName || 'Selected Month'}
+                dateSummaries={dateSummaries}
+                selectedDate={selectedDate}
+                onSelectDate={handleSelectDate}
+                onBackToMonths={handleBackToMonths}
+              />
+            )}
+
+            {/* LEVEL 3: TASKS TABLE (NO SCROLL DOWN REQUIRED) */}
+            {viewMode === 'list' && (
+              <div className="space-y-4">
+                {/* Back to Dates action bar */}
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-card/50 p-3 rounded-xl border border-border/60">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleBackToDates}
+                      className="gap-1.5 h-8 px-3 text-xs font-semibold hover:bg-muted/80 cursor-pointer"
+                    >
+                      <ArrowLeft className="h-3.5 w-3.5" />
+                      Back to {activeMonthMeta?.monthName || 'Dates'}
+                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-primary" />
+                      <span className="font-bold text-sm text-foreground">
+                        {activeDateMeta?.displayDate} Consultations
+                      </span>
+                    </div>
+                  </div>
+
+                  {activeDateMeta && (
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-muted-foreground flex items-center gap-1 font-medium">
+                        <Users className="h-3.5 w-3.5" /> {activeDateMeta.totalAttended} Attended
+                      </span>
+                      <span className="text-emerald-500 flex items-center gap-1 font-semibold">
+                        <Send className="h-3.5 w-3.5" /> {activeDateMeta.sentCount} Sent
+                      </span>
+                      {activeDateMeta.pendingCount > 0 ? (
+                        <span className="bg-amber-500/10 text-amber-500 border border-amber-500/20 px-2 py-0.5 rounded-full font-semibold text-[11px]">
+                          {activeDateMeta.pendingCount} Pending
+                        </span>
+                      ) : (
+                        <span className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-2 py-0.5 rounded-full font-semibold text-[11px]">
+                          All Completed
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Immediately visible customer table without any scroll past cards */}
+                <TasksTable data={selectedDateTasks} />
+              </div>
+            )}
+          </>
         )}
       </Main>
     </>

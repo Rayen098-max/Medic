@@ -51,7 +51,7 @@ function syncAllPhysioTabs() {
     const sheet = ss.getSheetByName(tabName);
     if (!sheet) continue;
 
-    const values = sheet.getDataRange().getValues();
+    const values = sheet.getDataRange().getDisplayValues();
     if (values.length < 2) continue;
 
     const headers = values[0].map(h => String(h || "").trim().toLowerCase());
@@ -84,9 +84,22 @@ function syncAllPhysioTabs() {
 
       if (!custName && !custPhone) continue;
 
+      // Standardize Indian DD/MM format into YYYY-MM-DD
+      let isoDate = lastSeenDate;
+      const slashParts = lastSeenDate.split(/[\/\-]/);
+      if (slashParts.length >= 2) {
+        const d = parseInt(slashParts[0], 10);
+        const m = parseInt(slashParts[1], 10);
+        const y = slashParts.length >= 3 ? parseInt(slashParts[2], 10) : 2026;
+        const year = y < 100 ? 2000 + y : y;
+        if (!isNaN(d) && !isNaN(m) && d >= 1 && d <= 31 && m >= 1 && m <= 12) {
+          isoDate = year + "-" + (m < 10 ? "0" + m : m) + "-" + (d < 10 ? "0" + d : d);
+        }
+      }
+
       // Unique identifier includes sheet row index to prevent intra-batch duplicate collisions
       const identifier = custPhone || custName.toLowerCase().replace(/\s+/g, "_");
-      const taskId = `${config.physio_name}_${identifier}_r${r}_${lastSeenDate || "nodate"}`;
+      const taskId = `${config.physio_name}_${identifier}_r${r}_${isoDate || "nodate"}`;
 
       taskMap[taskId] = {
         id: taskId,
@@ -94,7 +107,7 @@ function syncAllPhysioTabs() {
         physio_id: config.physio_id,
         customer_name: custName || "Unknown",
         customer_phone: custPhone,
-        consult_date: lastSeenDate,
+        consult_date: isoDate,
         pain_point: painIdx >= 0 ? String(row[painIdx] || "").trim() : "",
         primary_category: categoryIdx >= 0 ? String(row[categoryIdx] || "").trim() : "",
         physio_pitched: pitchedIdx >= 0 ? String(row[pitchedIdx] || "").trim() : "",
