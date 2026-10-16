@@ -1,44 +1,50 @@
-const SUPABASE_URL = "https://bkifvxbtisntaewelsng.supabase.co";
-const SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJraWZ2eGJ0aXNudGFld2Vsc25nIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTgzNDQ3NywiZXhwIjoyMTAxNDEwNDc3fQ.lPV0SuP5IkuZ_9StjqZ-gJR4hekQtd_-V3p6mTDVejY";
+import fs from 'fs';
 
-async function linkTasks() {
-  console.log("=== AUTO-LINKING EXISTING PATIENTS & FOLLOW-UPS TO TASKS ===");
+const envFile = fs.readFileSync('.env', 'utf8');
+const env = {};
+envFile.split('\n').forEach(line => {
+  const parts = line.trim().split('=');
+  if (parts.length >= 2) {
+    const k = parts[0].trim();
+    const v = parts.slice(1).join('=').trim().replace(/^['"]|['"]$/g, '');
+    env[k] = v;
+  }
+});
+
+const SUPABASE_URL = env.VITE_SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
+
+async function linkAllTasks() {
+  console.log("=== SYNCHRONIZING PATIENTS TO TRACKER_TASKS IN SUPABASE ===");
 
   // 1. Fetch all patients
-  const pRes = await fetch(`${SUPABASE_URL}/rest/v1/patients?select=id,name,phone,created_at&limit=5000`, {
+  const pRes = await fetch(`${SUPABASE_URL}/rest/v1/patients?select=id,name,phone,created_at,physio_id&limit=5000`, {
     headers: { "apikey": SUPABASE_SERVICE_KEY, "Authorization": "Bearer " + SUPABASE_SERVICE_KEY }
   });
   const patients = await pRes.json();
-  console.log(`Fetched ${patients.length} patients.`);
+  console.log(`Fetched ${patients.length} patients from Supabase.`);
 
-  // 2. Fetch all followups
-  const fRes = await fetch(`${SUPABASE_URL}/rest/v1/followups?select=id,patient_id,patient_name_fallback,created_at&limit=5000`, {
+  // 2. Fetch all patient_sessions
+  const sRes = await fetch(`${SUPABASE_URL}/rest/v1/patient_sessions?select=id,patient_id,created_at&limit=5000`, {
     headers: { "apikey": SUPABASE_SERVICE_KEY, "Authorization": "Bearer " + SUPABASE_SERVICE_KEY }
   });
-  const followups = await fRes.json();
-  console.log(`Fetched ${followups.length} followups.`);
+  const sessions = await sRes.json();
+  const sessionPatientIds = new Set(sessions.map(s => s.patient_id));
+  console.log(`Fetched ${sessions.length} sessions (${sessionPatientIds.size} unique active patients).`);
 
-  // Map of phone -> patient_id
+  // Map phone -> patient
   const phoneToPatient = new Map();
   const nameToPatient = new Map();
   for (const p of patients) {
     if (p.phone) {
       const cleanPhone = String(p.phone).replace(/\D/g, '').slice(-10);
-      if (cleanPhone.length === 10) {
-        phoneToPatient.set(cleanPhone, p.id);
+      if (cleanPhone.length >= 7) {
+        phoneToPatient.set(cleanPhone, p);
       }
     }
     if (p.name) {
-      nameToPatient.set(p.name.trim().toLowerCase(), p.id);
+      nameToPatient.set(String(p.name).trim().toLowerCase(), p);
     }
-  }
-
-  // Set of patient_ids that have follow-ups
-  const followupPatientIds = new Set();
-  const followupNames = new Set();
-  for (const f of followups) {
-    if (f.patient_id) followupPatientIds.add(f.patient_id);
-    if (f.patient_name_fallback) followupNames.add(f.patient_name_fallback.trim().toLowerCase());
   }
 
   // 3. Fetch all tracker_tasks with pagination
@@ -48,7 +54,7 @@ async function linkTasks() {
   let hasMore = true;
 
   while (hasMore) {
-    const tRes = await fetch(`${SUPABASE_URL}/rest/v1/tracker_tasks?select=id,customer_name,customer_phone,patient_id,whatsapp_sent_at`, {
+    const tRes = await fetch(`${SUPABASE_URL}/rest/v1/tracker_tasks?select=id,customer_name,customer_phone,patient_id,whatsapp_sent_at,consult_date,session_done`, {
       headers: {
         "apikey": SUPABASE_SERVICE_KEY,
         "Authorization": "Bearer " + SUPABASE_SERVICE_KEY,
@@ -65,23 +71,22 @@ async function linkTasks() {
       hasMore = false;
     }
   }
-  console.log(`Fetched ${allTasks.length} total tracker tasks across all pages.`);
+  console.log(`Fetched ${allTasks.length} tracker_tasks.`);
 
   let updatedCount = 0;
   for (const t of allTasks) {
     const cleanPhone = String(t.customer_phone || '').replace(/\D/g, '').slice(-10);
     const cleanName = String(t.customer_name || '').trim().toLowerCase();
 
-    const matchedPatientId = (cleanPhone && phoneToPatient.get(cleanPhone)) || nameToPatient.get(cleanName);
-    const hasFollowup = (matchedPatientId && followupPatientIds.has(matchedPatientId)) || followupNames.has(cleanName);
+    const matchedPatient = (cleanPhone && phoneToPatient.get(cleanPhone)) || nameToPatient.get(cleanName);
 
-    if (matchedPatientId || hasFollowup) {
+    if (matchedPatient) {
       const updates = {};
-      if (matchedPatientId && t.patient_id !== matchedPatientId) {
-        updates.patient_id = matchedPatientId;
+      if (t.patient_id !== matchedPatient.id) {
+        updates.patient_id = matchedPatient.id;
       }
-      if (hasFollowup && !t.whatsapp_sent_at) {
-        updates.whatsapp_sent_at = new Date().toISOString();
+      if (!t.whatsapp_sent_at) {
+        updates.whatsapp_sent_at = matchedPatient.created_at || new Date().toISOString();
       }
 
       if (Object.keys(updates).length > 0) {
@@ -99,7 +104,7 @@ async function linkTasks() {
     }
   }
 
-  console.log(`Successfully linked ${updatedCount} tasks to existing patients and follow-ups!`);
+  console.log(`Successfully synced ${updatedCount} tasks to existing patients and follow-ups!`);
 }
 
-linkTasks().catch(console.error);
+linkAllTasks().catch(console.error);
