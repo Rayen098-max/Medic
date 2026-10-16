@@ -5,7 +5,7 @@ import { Main } from '@/components/layout/main'
 import { ProfileDropdown } from '@/components/profile-dropdown'
 import { Search } from '@/components/search'
 import { ThemeSwitch } from '@/components/theme-switch'
-import { getUsageReport, getFollowupsReport } from '@/utils/db'
+import { getUsageReport, getFollowupsReport, getBodyEditAuditLogs } from '@/utils/db'
 import {
   Table,
   TableBody,
@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Clock, MousePointerClick, CalendarDays, User, MessageCircle, Trophy } from 'lucide-react'
+import { Clock, MousePointerClick, CalendarDays, User, MessageCircle, Trophy, Palette, ShieldCheck } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { TeamLeaderboard } from './components/team-leaderboard'
 
@@ -31,6 +31,7 @@ export function UsageReport() {
   const [viewMode, setViewMode] = useState('opens') // 'opens', 'followups', or 'leaderboard'
   const [data, setData] = useState([])
   const [followupsData, setFollowupsData] = useState([])
+  const [auditLogsData, setAuditLogsData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -40,10 +41,16 @@ export function UsageReport() {
 
   useEffect(() => {
     setLoading(true)
-    Promise.all([getUsageReport(), getFollowupsReport()])
-      .then(([usageRes, followupsRes]) => {
+    const promises = [getUsageReport(), getFollowupsReport()]
+    if (isAdmin) {
+      promises.push(getBodyEditAuditLogs())
+    }
+
+    Promise.all(promises)
+      .then(([usageRes, followupsRes, auditRes]) => {
         setData(usageRes || [])
         setFollowupsData(followupsRes || [])
+        if (auditRes) setAuditLogsData(auditRes)
         setLoading(false)
       })
       .catch(err => {
@@ -51,7 +58,7 @@ export function UsageReport() {
         setError(err.message || "Failed to load reports")
         setLoading(false)
       })
-  }, [])
+  }, [isAdmin])
 
   const formatTime = (totalSeconds) => {
     if (totalSeconds < 60) return `${totalSeconds}s`
@@ -114,12 +121,14 @@ export function UsageReport() {
                 ? 'Track how often and how long customers view their personalized 3D recovery links.'
                 : viewMode === 'followups'
                 ? 'Monitor WhatsApp follow-ups sent by physiotherapists to patients.'
-                : 'Team performance leaderboard tracking customers attended vs follow-ups sent for the day.'}
+                : viewMode === 'leaderboard'
+                ? 'Team performance leaderboard tracking customers attended vs follow-ups sent for the day.'
+                : 'Audit trail of 3D Body Model posture zone coordinates updated by physiotherapists.'}
             </p>
           </div>
           <div className='w-56'>
             <Select value={viewMode} onValueChange={(val) => {
-              if (val === 'leaderboard' && !isAdmin) return;
+              if ((val === 'leaderboard' || val === 'body_edits') && !isAdmin) return;
               setViewMode(val);
             }}>
               <SelectTrigger>
@@ -129,12 +138,20 @@ export function UsageReport() {
                 <SelectItem value="opens">Link Opens Tracking</SelectItem>
                 <SelectItem value="followups">Followups Track</SelectItem>
                 {isAdmin && (
-                  <SelectItem value="leaderboard">
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <Trophy className="h-3.5 w-3.5 text-amber-500" />
-                      Team Leaderboard
-                    </span>
-                  </SelectItem>
+                  <>
+                    <SelectItem value="leaderboard">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <Trophy className="h-3.5 w-3.5 text-amber-500" />
+                        Team Leaderboard
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="body_edits">
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <Palette className="h-3.5 w-3.5 text-indigo-400" />
+                        Body Model Edits
+                      </span>
+                    </SelectItem>
+                  </>
                 )}
               </SelectContent>
             </Select>
@@ -175,6 +192,73 @@ export function UsageReport() {
 
         {viewMode === 'leaderboard' && isAdmin ? (
           <TeamLeaderboard />
+        ) : viewMode === 'body_edits' && isAdmin ? (
+          loading ? (
+            <div className="flex h-40 items-center justify-center">
+              <p className="text-muted-foreground animate-pulse">Gathering audit logs...</p>
+            </div>
+          ) : auditLogsData.length === 0 ? (
+            <div className="flex h-48 flex-col items-center justify-center border rounded-lg bg-card text-muted-foreground gap-2">
+              <ShieldCheck className="w-8 h-8 text-muted-foreground/50" />
+              <p className="font-medium text-foreground">No 3D body model modifications recorded yet</p>
+              <p className="text-xs text-muted-foreground">Changes made to posture zone coordinates in "Edit Body" will be logged here with timestamps and physio identity.</p>
+            </div>
+          ) : (
+            <div className="rounded-md border bg-card animate-in fade-in slide-in-from-bottom-4 duration-300">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[180px]">
+                      <div className="flex items-center gap-1.5">
+                        <CalendarDays className="w-4 h-4" />
+                        Timestamp
+                      </div>
+                    </TableHead>
+                    <TableHead>Physiotherapist</TableHead>
+                    <TableHead>Target Zone</TableHead>
+                    <TableHead>New Coordinates (x, y, z)</TableHead>
+                    <TableHead>Previous Coordinates</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {auditLogsData.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="font-medium">
+                        {formatDate(log.created_at)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-foreground">{log.physio_name || 'Physiotherapist'}</span>
+                          {log.physio_email && (
+                            <span className="text-xs text-muted-foreground">{log.physio_email}</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 capitalize">
+                          {log.zone || log.zone_id}
+                        </span>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {log.new_coordinates?.position
+                          ? `[${Array.isArray(log.new_coordinates.position) ? log.new_coordinates.position.map(n => Number(n || 0).toFixed(2)).join(', ') : ''}]`
+                          : log.new_coordinates?.x !== undefined
+                          ? `[${Number(log.new_coordinates.x || 0).toFixed(2)}, ${Number(log.new_coordinates.y || 0).toFixed(2)}, ${Number(log.new_coordinates.z || 0).toFixed(2)}]`
+                          : 'N/A'}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">
+                        {log.previous_coordinates?.position
+                          ? `[${Array.isArray(log.previous_coordinates.position) ? log.previous_coordinates.position.map(n => Number(n || 0).toFixed(2)).join(', ') : ''}]`
+                          : log.previous_coordinates?.x !== undefined
+                          ? `[${Number(log.previous_coordinates.x || 0).toFixed(2)}, ${Number(log.previous_coordinates.y || 0).toFixed(2)}, ${Number(log.previous_coordinates.z || 0).toFixed(2)}]`
+                          : '—'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )
         ) : loading ? (
           <div className="flex h-40 items-center justify-center">
             <p className="text-muted-foreground animate-pulse">Gathering tracking data...</p>

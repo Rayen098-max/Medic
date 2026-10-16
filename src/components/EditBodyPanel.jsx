@@ -1,12 +1,15 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Canvas, useLoader } from '@react-three/fiber';
 import { OrbitControls, Center, Environment } from '@react-three/drei';
 import { Link } from 'react-router-dom';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
-import { ArrowLeft, Save, Copy, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, Copy, CheckCircle, Clock, CloudUpload, User, ShieldCheck, X } from 'lucide-react';
 import painPointsData from '../data/painPoints.json';
 import initialZoneCoordinates from '../data/zoneCoordinates.json';
+import { useAuth } from '../context/AuthContext';
+import { getBodyModelConfig, saveBodyZoneCoordinate, getBodyEditAuditLogs } from '../utils/db';
+import { toast } from 'sonner';
 
 const getUniqueZones = () => {
   const zones = new Set();
@@ -152,10 +155,13 @@ function EditBody3D({ coordinates, activeZone, onCoordinateUpdate }) {
 }
 
 export default function EditBodyPanel() {
+  const { profile } = useAuth();
+  const isAdmin = profile?.role === 'admin';
+
   const [uniqueZones, setUniqueZones] = useState(() => getUniqueZones());
   const [newZoneName, setNewZoneName] = useState('');
   
-  // Load initial coordinates from file, or empty if not present
+  // Load initial coordinates from Supabase if available, fallback to localStorage/initial
   const [coordinates, setCoordinates] = useState(() => {
     const saved = localStorage.getItem('medic_zone_coords_v3');
     if (saved) {
@@ -166,6 +172,35 @@ export default function EditBodyPanel() {
 
   const [activeZone, setActiveZone] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showAuditModal, setShowAuditModal] = useState(false);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  // Sync latest coordinates from Supabase on mount
+  useEffect(() => {
+    getBodyModelConfig().then(coords => {
+      if (coords && Object.keys(coords).length > 0) {
+        setCoordinates(prev => ({ ...prev, ...coords }));
+      }
+    }).catch(err => {
+      console.warn("Could not sync body model config from Supabase:", err);
+    });
+  }, []);
+
+  // Fetch audit logs if admin
+  const loadAuditHistory = async () => {
+    if (!isAdmin) return;
+    setLoadingLogs(true);
+    try {
+      const logs = await getBodyEditAuditLogs();
+      setAuditLogs(logs);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingLogs(false);
+    }
+  };
 
   const handleCoordinateUpdate = (zone, point) => {
     const newCoords = { ...coordinates, [zone]: point };
@@ -173,11 +208,42 @@ export default function EditBodyPanel() {
     localStorage.setItem('medic_zone_coords_v3', JSON.stringify(newCoords));
   };
 
+  const handleSaveToSupabase = async () => {
+    if (!activeZone || !coordinates[activeZone]) {
+      toast.error("Please select a body part and place a marker first.");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await saveBodyZoneCoordinate(activeZone, coordinates[activeZone], profile);
+      toast.success(`✓ "${activeZone.toUpperCase()}" saved and published to Supabase! All physios will now see this update.`);
+      if (isAdmin) loadAuditHistory();
+    } catch (err) {
+      console.error("Save error:", err);
+      toast.error("Failed to save to Supabase. Check database permissions.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleCopy = () => {
     const jsonStr = JSON.stringify(coordinates, null, 2);
     navigator.clipboard.writeText(jsonStr);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const formatDate = (isoStr) => {
+    if (!isoStr) return 'N/A';
+    const d = new Date(isoStr);
+    return d.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   return (
@@ -198,49 +264,80 @@ export default function EditBodyPanel() {
         </Canvas>
         
         {/* Instructions overlay */}
-        <div style={{ position: 'absolute', top: 20, left: 20, pointerEvents: 'none', background: 'rgba(0,0,0,0.5)', padding: '16px', borderRadius: '8px' }}>
-          <h2 style={{ margin: '0 0 8px 0', fontSize: '1.2rem', color: 'var(--accent)' }}>3D Coordinate Mapper</h2>
-          <p style={{ margin: 0, color: '#ccc', fontSize: '0.9rem' }}>
-            1. Select a body part from the right panel.<br/>
+        <div style={{ position: 'absolute', top: 20, left: 20, pointerEvents: 'none', background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border-color)', maxWidth: '320px' }}>
+          <h2 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CloudUpload size={18} /> 3D Body Synchronizer
+          </h2>
+          <p style={{ margin: 0, color: '#ccc', fontSize: '0.85rem', lineHeight: '1.4' }}>
+            1. Select a body part from the right.<br/>
             2. Click on the 3D model to place the glow marker.<br/>
-            3. Copy the JSON and paste it to the developer.
+            3. Click <b>"Save to Supabase"</b> to publish changes live to all physios.
           </p>
         </div>
       </div>
 
       {/* Control Panel */}
-      <div style={{ width: '350px', background: 'rgba(0,0,0,0.8)', borderLeft: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', maxHeight: '100vh', overflow: 'hidden' }}>
+      <div style={{ width: '380px', background: 'rgba(10, 15, 30, 0.95)', borderLeft: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', maxHeight: '100vh', overflow: 'hidden' }}>
         
         {/* Header */}
-        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
-          <Link to="/" style={{ color: 'var(--text-muted)' }}><ArrowLeft size={20} /></Link>
-          <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Map Body Parts</h2>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Link to="/tasks" style={{ color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }} title="Back to Tasks">
+              <ArrowLeft size={20} />
+            </Link>
+            <h2 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 'bold' }}>Map Body Parts</h2>
+          </div>
+
+          {isAdmin && (
+            <button
+              onClick={() => {
+                setShowAuditModal(true);
+                loadAuditHistory();
+              }}
+              className="clinical-btn"
+              style={{ fontSize: '0.75rem', padding: '6px 10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              title="View which physio edited what"
+            >
+              <Clock size={14} /> Audit Log
+            </button>
+          )}
         </div>
 
         {/* Zone List */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', minHeight: 0 }}>
-          <h3 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '16px', textTransform: 'uppercase' }}>Available Parts</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <h3 style={{ fontSize: '0.8rem', color: 'var(--text-muted)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Available Body Parts
+            </h3>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              {uniqueZones.length} parts
+            </span>
+          </div>
+
           {uniqueZones.map(zone => (
             <div 
               key={zone} 
               onClick={() => setActiveZone(zone)}
               style={{
-                padding: '12px 16px',
-                marginBottom: '8px',
-                background: activeZone === zone ? 'rgba(0, 210, 255, 0.15)' : 'rgba(255, 255, 255, 0.05)',
-                border: `1px solid ${activeZone === zone ? 'var(--accent)' : 'transparent'}`,
+                padding: '10px 14px',
+                marginBottom: '6px',
+                background: activeZone === zone ? 'rgba(0, 210, 255, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                border: `1px solid ${activeZone === zone ? 'var(--accent)' : 'rgba(255, 255, 255, 0.08)'}`,
                 borderRadius: '8px',
                 cursor: 'pointer',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'center'
+                alignItems: 'center',
+                transition: 'all 0.15s ease'
               }}
             >
-              <span style={{ textTransform: 'capitalize', fontWeight: activeZone === zone ? 'bold' : 'normal' }}>
+              <span style={{ textTransform: 'capitalize', fontWeight: activeZone === zone ? '600' : 'normal', fontSize: '0.9rem' }}>
                 {zone}
               </span>
               {coordinates[zone] && (
-                <span style={{ fontSize: '0.75rem', color: 'var(--accent)' }}>Mapped</span>
+                <span style={{ fontSize: '0.7rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '2px 6px', borderRadius: '4px' }}>
+                  Mapped
+                </span>
               )}
             </div>
           ))}
@@ -248,8 +345,11 @@ export default function EditBodyPanel() {
         
         {/* Scale Slider */}
         {activeZone && coordinates[activeZone] && !Array.isArray(coordinates[activeZone]) && (
-          <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.4)', flexShrink: 0 }}>
-            <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Adjust Glow Size</label>
+          <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.3)', flexShrink: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Marker Glow Size</label>
+              <span style={{ fontSize: '0.8rem', color: 'var(--accent)' }}>{coordinates[activeZone].scale || 1.0}x</span>
+            </div>
             <input 
               type="range" 
               min="0.2" 
@@ -266,44 +366,137 @@ export default function EditBodyPanel() {
         )}
 
         {/* Add Body Part */}
-        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.4)', flexShrink: 0 }}>
-          <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>Add New Body Part</label>
+        <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.3)', flexShrink: 0 }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Add New Body Part</label>
           <div style={{ display: 'flex', gap: '8px' }}>
             <input 
               type="text"
               value={newZoneName}
               onChange={(e) => setNewZoneName(e.target.value)}
-              placeholder="e.g. elbow"
-              style={{ flex: 1, padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', minWidth: 0 }}
+              placeholder="e.g. belly, elbow"
+              style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '0.85rem', minWidth: 0 }}
             />
             <button
               onClick={() => {
                 const zone = newZoneName.trim().toLowerCase();
                 if (zone && !uniqueZones.includes(zone)) {
                   setUniqueZones([...uniqueZones, zone]);
+                  setActiveZone(zone);
                   setNewZoneName('');
                 }
               }}
               className="clinical-btn"
-              style={{ padding: '8px 16px' }}
+              style={{ padding: '8px 14px', fontSize: '0.85rem' }}
             >
               Add
             </button>
           </div>
         </div>
 
-        {/* Footer actions */}
-        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-color)', flexShrink: 0 }}>
+        {/* Footer actions: Save to Supabase & Copy JSON */}
+        <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '8px', flexShrink: 0 }}>
+          <button 
+            onClick={handleSaveToSupabase}
+            disabled={isSaving || !activeZone}
+            className="clinical-btn"
+            style={{ 
+              width: '100%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              gap: '8px', 
+              padding: '12px',
+              background: activeZone ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
+              color: activeZone ? '#000' : 'rgba(255,255,255,0.3)',
+              fontWeight: 'bold',
+              cursor: activeZone ? 'pointer' : 'not-allowed'
+            }}
+          >
+            <Save size={18} />
+            {isSaving ? 'Saving to Supabase...' : activeZone ? `Save "${activeZone.toUpperCase()}" to Supabase` : 'Select a part to save'}
+          </button>
+
           <button 
             onClick={handleCopy}
             className="clinical-btn"
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px' }}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px', fontSize: '0.8rem', background: 'transparent', borderColor: 'var(--border-color)' }}
           >
-            {copied ? <CheckCircle size={18} /> : <Copy size={18} />}
-            {copied ? 'Copied to Clipboard!' : 'Copy JSON Configuration'}
+            {copied ? <CheckCircle size={16} /> : <Copy size={16} />}
+            {copied ? 'Copied JSON!' : 'Copy JSON Config'}
           </button>
         </div>
       </div>
+
+      {/* Admin Audit History Slide-over Modal */}
+      {showAuditModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', justifyContent: 'flex-end' }}>
+          <div style={{ width: '420px', height: '100%', background: '#090d16', borderLeft: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 24px rgba(0,0,0,0.5)' }}>
+            
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <ShieldCheck className="text-primary" size={20} />
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 'bold' }}>Body Edit Audit Trail</h3>
+              </div>
+              <button 
+                onClick={() => setShowAuditModal(false)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+              {loadingLogs ? (
+                <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '40px 0' }}>Loading audit logs...</p>
+              ) : auditLogs.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
+                  <Clock size={32} style={{ margin: '0 auto 12px auto', opacity: 0.5 }} />
+                  <p>No body edits recorded yet.</p>
+                  <p style={{ fontSize: '0.8rem' }}>When any physio saves a body part, their name and timestamp will appear here.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {auditLogs.map(log => (
+                    <div 
+                      key={log.id}
+                      style={{ 
+                        background: 'rgba(255, 255, 255, 0.03)', 
+                        border: '1px solid rgba(255, 255, 255, 0.08)', 
+                        borderRadius: '10px', 
+                        padding: '12px 14px' 
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
+                        <span style={{ fontWeight: 'bold', textTransform: 'capitalize', color: 'var(--accent)', fontSize: '0.95rem' }}>
+                          {log.zone}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          {formatDate(log.created_at)}
+                        </span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#e2e8f0', marginBottom: '8px' }}>
+                        <User size={14} style={{ opacity: 0.7 }} />
+                        <span>Edited by: <b>{log.physio_name}</b></span>
+                      </div>
+
+                      {log.new_coordinates && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.3)', padding: '6px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
+                          Pos: [{Array.isArray(log.new_coordinates.position) ? log.new_coordinates.position.join(', ') : ''}] • Scale: {log.new_coordinates.scale}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-color)', fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+              Only Administrators have access to this audit history.
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

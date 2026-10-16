@@ -4,6 +4,7 @@ import { Center } from '@react-three/drei';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import initialZoneCoordinates from '../data/zoneCoordinates.json';
+import { getBodyModelConfig } from '../utils/db';
 
 
 // Laser projectile shooting from the right side towards pain point
@@ -79,6 +80,13 @@ export default function BodyModel({
   const obj = useLoader(OBJLoader, '/model.obj');
   const [hovered, setHovered] = useState(false);
   const [lockedDots, setLockedDots] = useState({});
+  const [dbCoords, setDbCoords] = useState(null);
+
+  useEffect(() => {
+    getBodyModelConfig()
+      .then(coords => { if (coords) setDbCoords(coords); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     document.body.style.cursor = hovered ? 'pointer' : 'default';
@@ -121,7 +129,7 @@ export default function BodyModel({
       if (ls) savedCoords = JSON.parse(ls);
     } catch(e) {}
     
-    const coordsMap = savedCoords || initialZoneCoordinates;
+    const coordsMap = dbCoords || savedCoords || initialZoneCoordinates;
     const catKey = zoneCategory?.toLowerCase();
     
     if (catKey && coordsMap[catKey]) {

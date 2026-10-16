@@ -480,3 +480,98 @@ export const getLeaderboardReport = async (targetDateStr = null) => {
   };
 };
 
+export const getBodyModelConfig = async () => {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase
+      .from('body_model_config')
+      .select('*');
+    if (error) throw error;
+    if (Array.isArray(data) && data.length > 0) {
+      const configMap = {};
+      data.forEach(item => {
+        configMap[item.zone.toLowerCase()] = {
+          position: item.position,
+          rotation: item.rotation,
+          scale: parseFloat(item.scale) || 1.0,
+          updated_by_name: item.updated_by_name,
+          updated_at: item.updated_at
+        };
+      });
+      localStorage.setItem('medic_zone_coords_v3', JSON.stringify(configMap));
+      return configMap;
+    }
+  } catch (err) {
+    console.warn("Could not fetch body_model_config from Supabase:", err.message);
+  }
+  return null;
+};
+
+export const saveBodyZoneCoordinate = async (zone, coordData, physioProfile, previousCoord = null) => {
+  if (!supabase || !zone) return;
+  try {
+    const cleanZone = zone.trim().toLowerCase();
+    const position = Array.isArray(coordData) ? coordData : coordData.position;
+    const rotation = coordData.rotation || [0, 0, 0];
+    const scale = coordData.scale || 1.0;
+    const physioName = physioProfile?.full_name || 'Physio';
+    const physioId = physioProfile?.id || null;
+
+    // 1. Upsert into body_model_config
+    const { error: upsertErr } = await supabase
+      .from('body_model_config')
+      .upsert({
+        zone: cleanZone,
+        position,
+        rotation,
+        scale,
+        updated_by: physioId,
+        updated_by_name: physioName,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'zone' });
+
+    if (upsertErr) throw upsertErr;
+
+    // 2. Insert into body_edit_audit_logs
+    await supabase
+      .from('body_edit_audit_logs')
+      .insert({
+        zone: cleanZone,
+        previous_coordinates: previousCoord || null,
+        new_coordinates: { position, rotation, scale },
+        physio_id: physioId,
+        physio_name: physioName,
+        created_at: new Date().toISOString()
+      });
+
+    // Update local storage cache
+    const existing = localStorage.getItem('medic_zone_coords_v3');
+    const parsed = existing ? JSON.parse(existing) : {};
+    parsed[cleanZone] = { position, rotation, scale };
+    localStorage.setItem('medic_zone_coords_v3', JSON.stringify(parsed));
+
+    return true;
+  } catch (err) {
+    console.error("Error saving body zone coordinate:", err);
+    throw err;
+  }
+};
+
+export const getBodyEditAuditLogs = async () => {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('body_edit_audit_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    console.warn("Could not query body_edit_audit_logs:", err.message);
+    return [];
+  }
+};
+
+
