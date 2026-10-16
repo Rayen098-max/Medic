@@ -151,7 +151,7 @@ export default function BodyModel({
          zone: z.zone,
          ...getHotspotData(z.zone, z.id, z.position)
       }));
-  }, [zones, activeZones]);
+  }, [zones, activeZones, dbCoords]);
 
   const getMirroredTransform = (pos, rot) => {
     const euler = new THREE.Euler(rot[0], rot[1], rot[2]);
