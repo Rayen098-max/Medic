@@ -153,7 +153,7 @@ export default function App() {
             <Route path="/capture" element={<CaptureForm />} />
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/add-data" element={
-              <ProtectedRoute allowedRoles={['admin', 'manager']} redirectTo="/tasks">
+              <ProtectedRoute allowedRoles={['admin', 'manager', 'physio']} redirectTo="/tasks">
                 <AddDataPanel />
               </ProtectedRoute>
             } />
