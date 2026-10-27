@@ -16,13 +16,8 @@ import {
   AlertTriangle, 
   MessageCircle, 
   Flame, 
-  Clock, 
-  Play, 
-  Sparkles, 
-  Layers, 
   Volume2, 
   VolumeX, 
-  RotateCcw, 
   ChevronRight,
   ShieldCheck,
   Calendar,
@@ -879,7 +874,7 @@ export default function CustomerPortal() {
                             </div>
                           )}
 
-                          {/* Quick Timer CTA button */}
+                          {/* Exercise Guide CTA button */}
                           <button
                             onClick={() => {
                               setActiveExercise(ex);
@@ -889,7 +884,7 @@ export default function CustomerPortal() {
                               marginTop: '8px',
                               background: 'transparent',
                               border: 'none',
-                              color: '#2ecc71',
+                              color: '#00d2ff',
                               fontSize: '0.8rem',
                               fontWeight: 700,
                               cursor: 'pointer',
@@ -899,7 +894,7 @@ export default function CustomerPortal() {
                               padding: 0
                             }}
                           >
-                            <Play size={12} fill="#2ecc71" /> Open Hold Timer & Guide →
+                            <ChevronRight size={14} color="#00d2ff" /> View Exercise Guide →
                           </button>
                         </div>
                       );
@@ -1161,7 +1156,7 @@ export default function CustomerPortal() {
                               {ex.name || `Exercise ${i + 1}`}
                             </div>
                             <div style={{ fontSize: '0.75rem', color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '200px' }}>
-                              {ex.instructions || 'Tap to view instructions & timer'}
+                              {ex.instructions || 'Tap to view exercise guide'}
                             </div>
                           </div>
                           {isDone ? (
@@ -1205,7 +1200,7 @@ export default function CustomerPortal() {
           </div>
         )}
 
-        {/* Detailed Guided Exercise Timer & Instructions Modal */}
+        {/* Detailed Guided Exercise & Instructions Modal */}
         {activeExercise && (
           <ExerciseTimerModal 
             exercise={activeExercise}
