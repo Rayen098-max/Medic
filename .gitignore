@@ -28,3 +28,4 @@ api/_shell.mjs
 .env
 
 .credentials.txt
+scratch/
