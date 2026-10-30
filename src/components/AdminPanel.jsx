@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getPatients, deletePatient, supabase, updatePatientStatus, recordFollowup } from '../utils/db';
-import { Search, Download, Trash2, LogOut, ShieldAlert, Eye, MessageCircle, Check, Clock, X, FastForward } from 'lucide-react';
+import { Search, Download, Trash2, LogOut, ShieldAlert, Eye, MessageCircle, Check, Clock, X, FastForward, Users, Calendar, Activity } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Papa from 'papaparse';
 
@@ -224,59 +224,59 @@ export default function AdminPanel() {
   }).length;
 
   if (loading) {
-    return <div style={{ color: 'var(--text-main)', padding: '40px' }}>Loading dashboard...</div>;
+    return <div className="p-10 text-muted-foreground flex items-center justify-center min-h-[50vh]">Loading dashboard...</div>;
   }
 
   return (
-    <div style={{ padding: '40px', minHeight: '100vh', background: 'var(--primary-bg)', color: 'var(--text-main)' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+    <div className="p-6 md:p-10 min-h-screen bg-background text-foreground">
+      <div className="max-w-6xl mx-auto space-y-8">
+        <div className="flex flex-wrap justify-between items-center gap-4">
           <div>
-            <h1 style={{ color: 'var(--accent)', margin: 0, fontSize: '2.5rem' }}>
+            <h1 className="text-3xl font-bold tracking-tight text-primary">
               {profile?.role === 'physio' ? 'My Follow-ups' : 'Admin Dashboard'}
             </h1>
-            <p style={{ color: 'var(--text-muted)', margin: '8px 0 0 0' }}>Logged in as: {profile?.full_name} ({profile?.role})</p>
+            <p className="text-sm text-muted-foreground mt-1">Logged in as: <span className="font-medium text-foreground">{profile?.full_name}</span> ({profile?.role})</p>
           </div>
-          <div style={{ display: 'flex', gap: '16px' }}>
+          <div className="flex gap-3">
             {profile?.role === 'admin' && (
-              <Link to="/edit-body" className="clinical-btn" style={{ textDecoration: 'none' }}>
+              <Link to="/edit-body" className="clinical-btn no-underline">
                 Edit Body Model
               </Link>
             )}
-            <button onClick={signOut} className="clinical-btn" style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: '#ef4444', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button onClick={signOut} className="clinical-btn border-destructive text-destructive hover:bg-destructive/10">
               <LogOut size={16} /> Sign Out
             </button>
           </div>
         </div>
 
         {/* Stats Row */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '40px' }}>
-          <div className="glass-panel" style={{ padding: '24px' }}>
-            <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)' }}>Total Patients</h3>
-            <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent)' }}>{displayTotalPatients}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="glass-panel p-6 rounded-xl border border-border/80 bg-card shadow-xs">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Total Patients</h3>
+            <p className="text-3xl font-extrabold text-primary">{displayTotalPatients}</p>
           </div>
-          <div className="glass-panel" style={{ padding: '24px' }}>
-            <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)' }}>Consults This Month</h3>
-            <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent)' }}>{consultsThisMonth}</p>
+          <div className="glass-panel p-6 rounded-xl border border-border/80 bg-card shadow-xs">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Consults This Month</h3>
+            <p className="text-3xl font-extrabold text-primary">{consultsThisMonth}</p>
           </div>
           {(profile?.role === 'admin' || profile?.role === 'manager') && (
-            <div className="glass-panel" style={{ padding: '24px' }}>
-              <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-muted)' }}>Active Physios</h3>
-              <p style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: 'var(--accent)' }}>{physios.length || 1}</p>
+            <div className="glass-panel p-6 rounded-xl border border-border/80 bg-card shadow-xs">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Active Physios</h3>
+              <p className="text-3xl font-extrabold text-primary">{physios.length || 1}</p>
             </div>
           )}
         </div>
 
         {/* Controls Row */}
-        <div style={{ display: 'flex', gap: '20px', marginBottom: '24px', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: '250px', position: 'relative' }}>
-            <Search style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} size={20} />
+        <div className="flex gap-4 flex-wrap items-center">
+          <div className="flex-1 min-w-[260px] relative">
+            <Search className="absolute left-3.5 top-3 text-muted-foreground pointer-events-none" size={18} />
             <input 
               type="text" 
               placeholder="Search patients by name or phone..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
+              className="w-full pl-10 pr-3.5 py-2.5 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-muted-foreground"
             />
           </div>
           
@@ -284,85 +284,82 @@ export default function AdminPanel() {
             <select 
               value={physioFilter} 
               onChange={(e) => setPhysioFilter(e.target.value)}
-              style={{ padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
+              className="px-3.5 py-2.5 rounded-lg border border-input bg-card text-foreground text-sm font-medium shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none cursor-pointer"
             >
-              <option value="">All Physios</option>
+              <option value="" style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>All Physios</option>
               {physios.map(p => (
-                <option key={p.id} value={p.id}>{p.full_name}</option>
+                <option key={p.id} value={p.id} style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>{p.full_name}</option>
               ))}
             </select>
           )}
 
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={startBulkSend} className="clinical-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', borderColor: '#22c55e' }}>
+          <div className="flex gap-3">
+            <button onClick={startBulkSend} className="clinical-btn border-green-600 text-green-600 hover:bg-green-500/10">
               <FastForward size={16} /> Send All Due Today
             </button>
-            <button onClick={handleExport} className="clinical-btn" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button onClick={handleExport} className="clinical-btn">
               <Download size={16} /> Export CSV
             </button>
           </div>
         </div>
 
         {/* Data Table */}
-        <div className="glass-panel" style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <div className="glass-panel overflow-x-auto rounded-xl border border-border/80 bg-card shadow-xs">
+          <table className="w-full border-collapse text-left text-sm">
             <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                <th style={{ padding: '16px', color: 'var(--text-muted)' }}>Patient Name</th>
-                <th style={{ padding: '16px', color: 'var(--text-muted)' }}>Phone</th>
-                <th style={{ padding: '16px', color: 'var(--text-muted)' }}>Consult Date</th>
-                <th style={{ padding: '16px', color: 'var(--text-muted)' }}>Condition</th>
-                <th style={{ padding: '16px', color: 'var(--text-muted)' }}>Status</th>
+              <tr className="border-b border-border bg-muted/40 text-muted-foreground text-xs uppercase tracking-wider">
+                <th className="p-4 font-semibold">Patient Name</th>
+                <th className="p-4 font-semibold">Phone</th>
+                <th className="p-4 font-semibold">Consult Date</th>
+                <th className="p-4 font-semibold">Condition</th>
+                <th className="p-4 font-semibold">Status</th>
                 {(profile?.role === 'admin' || profile?.role === 'manager') && (
-                  <th style={{ padding: '16px', color: 'var(--text-muted)' }}>Physio ID</th>
+                  <th className="p-4 font-semibold">Physio</th>
                 )}
-                <th style={{ padding: '16px', color: 'var(--text-muted)' }}>Actions</th>
+                <th className="p-4 font-semibold">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-border/60">
               {filteredPatients.map(patient => {
                 const status = getFollowUpStatus(patient.consultDate);
                 const isSent = !!patient.followup_sent_at;
                 
                 return (
-                <tr key={patient.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ fontWeight: 'bold' }}>{patient.name}</div>
+                <tr key={patient.id} className="hover:bg-muted/30 transition-colors">
+                  <td className="p-4">
+                    <div className="font-semibold text-foreground">{patient.name}</div>
                   </td>
-                  <td style={{ padding: '16px' }}>{patient.phone}</td>
-                  <td style={{ padding: '16px' }}>{patient.consultDate}</td>
-                  <td style={{ padding: '16px', textTransform: 'capitalize' }}>{patient.painArea?.replace('_', ' ')}</td>
-                  <td style={{ padding: '16px' }}>
-                    <span style={{ 
-                      color: isSent ? '#22c55e' : status.color, 
-                      background: isSent ? 'rgba(34, 197, 94, 0.1)' : `${status.color}20`, 
-                      padding: '4px 12px', 
-                      borderRadius: '12px', 
-                      fontSize: '0.875rem',
-                      fontWeight: '600'
-                    }}>
+                  <td className="p-4 text-muted-foreground">{patient.phone}</td>
+                  <td className="p-4 text-muted-foreground">{patient.consultDate}</td>
+                  <td className="p-4 capitalize text-foreground">{patient.painArea?.replace('_', ' ')}</td>
+                  <td className="p-4">
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                      isSent ? 'text-emerald-500 bg-emerald-500/10 border border-emerald-500/20' :
+                      status.status === 'due' ? 'text-amber-500 bg-amber-500/10 border border-amber-500/20' :
+                      status.status === 'overdue' ? 'text-rose-500 bg-rose-500/10 border border-rose-500/20' :
+                      'text-muted-foreground bg-muted/50 border border-border'
+                    }`}>
                       {isSent ? 'Follow-up Sent' : status.text}
                     </span>
                   </td>
                   {(profile?.role === 'admin' || profile?.role === 'manager') && (
-                    <td style={{ padding: '16px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                    <td className="p-4 text-muted-foreground text-xs">
                       {physios.find(p => p.id === patient.physio_id)?.full_name || patient.physio_id}
                     </td>
                   )}
-                  <td style={{ padding: '16px' }}>
-                    <div style={{ display: 'flex', gap: '12px' }}>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2.5">
                       <Link 
                         to={`/r/${patient.id}`} 
                         target="_blank"
-                        className="clinical-btn"
-                        style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(0, 210, 255, 0.1)', color: 'var(--accent)', borderColor: 'var(--accent)' }}
+                        className="clinical-btn text-xs py-1.5 px-3 no-underline"
                       >
-                        <Eye size={18} /> Preview
+                        <Eye size={15} /> Preview
                       </Link>
 
                       {isSent ? (
-                        <div style={{ color: '#22c55e', display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px' }}>
-                          <Check size={18} /> Sent
+                        <div className="text-emerald-500 flex items-center gap-1.5 text-xs font-medium px-2 py-1">
+                          <Check size={16} /> Sent
                         </div>
                       ) : (
                         <a 
@@ -370,20 +367,18 @@ export default function AdminPanel() {
                           target="_blank" 
                           rel="noreferrer"
                           onClick={() => handleMarkSent(patient.id)}
-                          className="clinical-btn"
-                          style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', borderColor: '#22c55e' }}
+                          className="clinical-btn border-green-600 text-green-600 hover:bg-green-500/10 text-xs py-1.5 px-3 no-underline"
                         >
-                          <MessageCircle size={18} /> Send WhatsApp
+                          <MessageCircle size={15} /> Send WhatsApp
                         </a>
                       )}
 
                       <button 
                         onClick={() => handleDelete(patient.id)}
-                        className="clinical-btn"
+                        className="clinical-btn border-destructive text-destructive hover:bg-destructive/10 text-xs p-2"
                         title="Delete Record"
-                        style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderColor: '#ef4444', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       >
-                        <Trash2 size={18} />
+                        <Trash2 size={15} />
                       </button>
                     </div>
                   </td>
@@ -391,7 +386,7 @@ export default function AdminPanel() {
               )})}
               {filteredPatients.length === 0 && (
                 <tr>
-                  <td colSpan="6" style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={profile?.role === 'admin' || profile?.role === 'manager' ? 7 : 6} className="p-8 text-center text-muted-foreground">
                     No patients found.
                   </td>
                 </tr>
@@ -402,27 +397,26 @@ export default function AdminPanel() {
 
         {/* Admin Controls section for managing Physios */}
         {profile?.role === 'admin' && (
-          <div style={{ marginTop: '40px' }}>
-            <h2 style={{ color: 'var(--accent)', marginBottom: '20px' }}>Manage Physio Accounts</h2>
-            <div className="glass-panel" style={{ padding: '24px' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <div className="space-y-4 pt-6">
+            <h2 className="text-xl font-bold tracking-tight text-primary">Manage Physio Accounts</h2>
+            <div className="glass-panel overflow-x-auto rounded-xl border border-border/80 bg-card shadow-xs">
+              <table className="w-full border-collapse text-left text-sm">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <th style={{ padding: '16px', color: 'var(--text-muted)' }}>Name</th>
-                    <th style={{ padding: '16px', color: 'var(--text-muted)' }}>Role</th>
-                    <th style={{ padding: '16px', color: 'var(--text-muted)' }}>Actions</th>
+                  <tr className="border-b border-border bg-muted/40 text-muted-foreground text-xs uppercase tracking-wider">
+                    <th className="p-4 font-semibold">Name</th>
+                    <th className="p-4 font-semibold">Role</th>
+                    <th className="p-4 font-semibold">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border/60">
                   {physios.map(p => (
-                    <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ padding: '16px' }}>{p.full_name}</td>
-                      <td style={{ padding: '16px' }}>{p.role}</td>
-                      <td style={{ padding: '16px' }}>
+                    <tr key={p.id} className="hover:bg-muted/30 transition-colors">
+                      <td className="p-4 font-medium text-foreground">{p.full_name}</td>
+                      <td className="p-4 text-muted-foreground capitalize">{p.role}</td>
+                      <td className="p-4">
                         <button 
                           onClick={() => handleResetPassword(p.id)}
-                          className="clinical-btn" 
-                          style={{ padding: '6px 12px', fontSize: '0.85rem', background: 'rgba(234, 179, 8, 0.1)', borderColor: '#eab308', color: '#eab308', display: 'flex', alignItems: 'center', gap: '6px' }}
+                          className="clinical-btn border-amber-500 text-amber-500 hover:bg-amber-500/10 text-xs py-1.5 px-3"
                         >
                           <ShieldAlert size={14} /> Reset Password
                         </button>
@@ -437,32 +431,32 @@ export default function AdminPanel() {
 
         {/* Bulk Send Queue Modal */}
         {isQueueOpen && queueList.length > 0 && (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(3, 8, 20, 0.75)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(5px)' }}>
-            <div className="glass-panel" style={{ width: '100%', maxWidth: '500px', padding: '30px', position: 'relative', border: '1px solid rgba(0, 212, 255, 0.35)', boxShadow: '0 0 40px rgba(0, 212, 255, 0.15)' }}>
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="glass-panel w-full max-w-lg p-6 sm:p-8 rounded-2xl border border-primary/30 shadow-2xl relative bg-card text-foreground">
               <button 
                 onClick={() => setIsQueueOpen(false)} 
-                style={{ position: 'absolute', top: '20px', right: '20px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border-color)', color: 'var(--text-main)', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                className="absolute top-4 right-4 p-2 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
               >
                 <X size={18} />
               </button>
               
-              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-                <h2 style={{ color: '#00d2ff', margin: '0 0 8px 0', textTransform: 'uppercase', letterSpacing: '1px' }}>Sending Bulk Follow-ups</h2>
-                <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.9rem' }}>Patient {queueIndex + 1} of {queueList.length}</p>
+              <div className="text-center mb-6">
+                <h2 className="text-xl font-bold uppercase tracking-wider text-primary">Sending Bulk Follow-ups</h2>
+                <p className="text-sm text-muted-foreground mt-1">Patient {queueIndex + 1} of {queueList.length}</p>
               </div>
               
-              <div style={{ background: 'rgba(13, 17, 23, 0.8)', padding: '24px', borderRadius: '12px', marginBottom: '24px', border: '1px solid var(--border-color)' }}>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '1.2rem', color: 'var(--text-main)' }}>To: {queueList[queueIndex].name}</h3>
-                <div style={{ color: '#e2e8f0', fontSize: '0.95rem', whiteSpace: 'pre-wrap', fontFamily: 'monospace', background: 'rgba(0,0,0,0.4)', padding: '16px', borderRadius: '8px', lineHeight: 1.5, maxHeight: '250px', overflowY: 'auto' }}>
+              <div className="p-4 rounded-xl bg-muted/40 border border-border/80 mb-6">
+                <h3 className="font-semibold text-foreground text-base mb-2">To: {queueList[queueIndex].name}</h3>
+                <div className="text-foreground text-sm font-mono bg-background/80 p-3.5 rounded-lg border border-border/60 leading-relaxed max-h-[220px] overflow-y-auto whitespace-pre-wrap">
                   {decodeURIComponent(generateWhatsAppLink(queueList[queueIndex]).split('?text=')[1])}
                 </div>
               </div>
               
-              <div style={{ display: 'flex', gap: '16px' }}>
-                <button onClick={handleQueueSkip} className="clinical-btn" style={{ flex: 1, background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)' }}>
+              <div className="flex gap-3">
+                <button onClick={handleQueueSkip} className="clinical-btn flex-1">
                   Skip
                 </button>
-                <button onClick={handleQueueSend} className="clinical-btn" style={{ flex: 2, background: 'linear-gradient(180deg, #2ecc71, #27ae60)', color: 'var(--text-main)', borderColor: '#27ae60', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                <button onClick={handleQueueSend} className="clinical-btn flex-2 border-green-600 bg-green-600 text-white hover:bg-green-700 font-bold">
                   <MessageCircle size={18} /> Send WhatsApp
                 </button>
               </div>

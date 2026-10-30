@@ -294,7 +294,7 @@ export function TasksTable({ data }: TasksTableProps) {
                               <DropdownMenuTrigger asChild>
                                 <Button 
                                   variant="outline"
-                                  className="flex-1 gap-1.5 border-green-600 text-green-600 hover:bg-green-50 text-xs px-2"
+                                  className="flex-1 gap-1.5 border-emerald-600 text-emerald-600 hover:bg-emerald-500/10 text-xs px-2"
                                 >
                                   <MessageCircle className="h-3.5 w-3.5" />
                                   WhatsApp
@@ -314,7 +314,7 @@ export function TasksTable({ data }: TasksTableProps) {
                             </DropdownMenu>
                             <Button
                               variant="outline"
-                              className="border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 hover:border-red-300 px-2.5"
+                              className="border-destructive/30 text-destructive hover:bg-destructive/10 px-2.5"
                               onClick={() => setTaskToDelete({ id, name: row["Customer Name"] || "this customer" })}
                               title="Remove Task"
                             >

@@ -51,7 +51,7 @@ export default function SetupPassword() {
 
   return (
     <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--primary-bg)' }}>
-      <div style={{ maxWidth: 400, width: '100%', padding: '2rem', background: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
+      <div style={{ maxWidth: 400, width: '100%', padding: '2rem', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border-color)', boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
           <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--accent-alpha)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <KeyRound size={24} color="var(--accent)" />
@@ -83,8 +83,8 @@ export default function SetupPassword() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full text-black"
-              style={{ color: 'black' }}
+              className="w-full"
+              
             />
           </div>
           
@@ -98,8 +98,8 @@ export default function SetupPassword() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="w-full text-black"
-              style={{ color: 'black' }}
+              className="w-full"
+              
             />
           </div>
 

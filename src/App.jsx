@@ -104,11 +104,11 @@ function MapView() {
             New Consult
           </Link>
         )}
-        <Link to="/admin" className="clinical-btn" style={{ textDecoration: 'none', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', borderColor: 'var(--border-color)' }}>
+        <Link to="/admin" className="clinical-btn" style={{ textDecoration: 'none', background: 'var(--muted)', color: 'var(--text-main)', borderColor: 'var(--border-color)' }}>
           {profile?.role === 'physio' ? 'My Follow-ups' : 'Follow-up Admin'}
         </Link>
         {profile?.role === 'admin' && (
-          <Link to="/edit-body" className="clinical-btn" style={{ textDecoration: 'none', background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', borderColor: 'var(--border-color)' }}>
+          <Link to="/edit-body" className="clinical-btn" style={{ textDecoration: 'none', background: 'var(--muted)', color: 'var(--text-main)', borderColor: 'var(--border-color)' }}>
             Edit Body
           </Link>
         )}

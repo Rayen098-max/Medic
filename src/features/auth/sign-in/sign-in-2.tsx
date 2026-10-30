@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import { Logo } from '@/assets/logo'
 import { cn } from '@/lib/utils'
 import dashboardDark from './assets/dashboard-dark.png'
-import dashboardLight from './assets/dashboard-light.png'
 import { UserAuthForm } from './components/user-auth-form'
 
 export function SignIn2() {
@@ -58,15 +57,8 @@ export function SignIn2() {
         )}
       >
         <img
-          src={dashboardLight}
-          className='dark:hidden'
-          width={1024}
-          height={1151}
-          alt='Shadcn-Admin'
-        />
-        <img
           src={dashboardDark}
-          className='hidden dark:block'
+          className='block'
           width={1024}
           height={1138}
           alt='Shadcn-Admin'

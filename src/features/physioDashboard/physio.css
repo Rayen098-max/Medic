@@ -6,7 +6,7 @@
   font-family: 'Inter', sans-serif;
 }
 
-.glass-panel {
+.physio-dashboard .glass-panel {
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -256,3 +256,4 @@
   background: rgba(0,0,0,0.5);
   z-index: 999;
 }
+

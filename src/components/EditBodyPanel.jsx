@@ -263,7 +263,7 @@ export default function EditBodyPanel() {
           <h2 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <CloudUpload size={18} /> 3D Body Synchronizer
           </h2>
-          <p style={{ margin: 0, color: '#ccc', fontSize: '0.85rem', lineHeight: '1.4' }}>
+          <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: '1.4' }}>
             1. Select a body part from the right.<br/>
             2. Click on the 3D model to place the glow marker.<br/>
             3. Click <b>"Save to Supabase"</b> to publish changes live to all physios.
@@ -272,7 +272,7 @@ export default function EditBodyPanel() {
       </div>
 
       {/* Control Panel */}
-      <div style={{ width: '380px', background: 'rgba(10, 15, 30, 0.95)', borderLeft: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', maxHeight: '100vh', overflow: 'hidden' }}>
+      <div style={{ width: '380px', background: 'var(--card)', borderLeft: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', maxHeight: '100vh', overflow: 'hidden' }}>
         
         {/* Header */}
         <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
@@ -340,7 +340,7 @@ export default function EditBodyPanel() {
         
         {/* Scale Slider */}
         {activeZone && coordinates[activeZone] && !Array.isArray(coordinates[activeZone]) && (
-          <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.3)', flexShrink: 0 }}>
+          <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-color)', background: 'var(--muted)', flexShrink: 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
               <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Marker Glow Size</label>
               <span style={{ fontSize: '0.8rem', color: 'var(--accent)' }}>{coordinates[activeZone].scale || 1.0}x</span>
@@ -361,7 +361,7 @@ export default function EditBodyPanel() {
         )}
 
         {/* Add Body Part */}
-        <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.3)', flexShrink: 0 }}>
+        <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-color)', background: 'var(--muted)', flexShrink: 0 }}>
           <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Add New Body Part</label>
           <div style={{ display: 'flex', gap: '8px' }}>
             <input 
@@ -369,7 +369,7 @@ export default function EditBodyPanel() {
               value={newZoneName}
               onChange={(e) => setNewZoneName(e.target.value)}
               placeholder="e.g. belly, elbow"
-              style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', background: 'rgba(0,0,0,0.4)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '0.85rem', minWidth: 0 }}
+              style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', background: 'var(--card)', border: '1px solid var(--border-color)', color: 'var(--text-main)', fontSize: '0.85rem', minWidth: 0 }}
             />
             <button
               onClick={() => {
@@ -425,7 +425,7 @@ export default function EditBodyPanel() {
       {/* Admin Audit History Slide-over Modal */}
       {showAuditModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', justifyContent: 'flex-end' }}>
-          <div style={{ width: '420px', height: '100%', background: '#090d16', borderLeft: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 24px rgba(0,0,0,0.5)' }}>
+          <div style={{ width: '420px', height: '100%', background: 'var(--card)', borderLeft: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', boxShadow: '-8px 0 24px rgba(0,0,0,0.5)' }}>
             
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -455,8 +455,8 @@ export default function EditBodyPanel() {
                     <div 
                       key={log.id}
                       style={{ 
-                        background: 'rgba(255, 255, 255, 0.03)', 
-                        border: '1px solid rgba(255, 255, 255, 0.08)', 
+                        background: 'var(--muted)', 
+                        border: '1px solid var(--border-color)', 
                         borderRadius: '10px', 
                         padding: '12px 14px' 
                       }}
@@ -470,13 +470,13 @@ export default function EditBodyPanel() {
                         </span>
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: '#e2e8f0', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', color: 'var(--text-main)', marginBottom: '8px' }}>
                         <User size={14} style={{ opacity: 0.7 }} />
                         <span>Edited by: <b>{log.physio_name}</b></span>
                       </div>
 
                       {log.new_coordinates && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.3)', padding: '6px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', background: 'var(--muted)', padding: '6px 8px', borderRadius: '4px', fontFamily: 'monospace' }}>
                           Pos: [{Array.isArray(log.new_coordinates.position) ? log.new_coordinates.position.join(', ') : ''}] • Scale: {log.new_coordinates.scale}
                         </div>
                       )}

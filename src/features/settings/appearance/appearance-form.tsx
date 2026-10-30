@@ -20,7 +20,7 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
 const appearanceFormSchema = z.object({
-  theme: z.enum(['light', 'dark']),
+  theme: z.enum(['dark']),
   font: z.enum(fonts),
 })
 
@@ -32,7 +32,7 @@ export function AppearanceForm() {
 
   // This can come from your database or API.
   const defaultValues: Partial<AppearanceFormValues> = {
-    theme: theme as 'light' | 'dark',
+    theme: 'dark',
     font,
   }
 
@@ -63,12 +63,17 @@ export function AppearanceForm() {
                     className={cn(
                       buttonVariants({ variant: 'outline' }),
                       'w-50 appearance-none font-normal capitalize',
-                      'dark:bg-background dark:hover:bg-background'
+                      'bg-card text-foreground border-input'
                     )}
                     {...field}
                   >
                     {fonts.map((font) => (
-                      <option key={font} value={font}>
+                      <option
+                        key={font}
+                        value={font}
+                        className='bg-[#1e293b] text-[#f8fafc]'
+                        style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}
+                      >
                         {font}
                       </option>
                     ))}
@@ -90,46 +95,20 @@ export function AppearanceForm() {
             <FormItem>
               <FormLabel>Theme</FormLabel>
               <FormDescription>
-                Select the theme for the dashboard.
+                Unified dark theme is active and enforced across the platform.
               </FormDescription>
               <FormMessage />
               <RadioGroup
                 onValueChange={field.onChange}
                 defaultValue={field.value}
-                className='grid max-w-md grid-cols-2 gap-8 pt-2'
+                className='grid max-w-xs grid-cols-1 gap-8 pt-2'
               >
-                <FormItem>
-                  <FormLabel className='[&:has([data-state=checked])>div]:border-primary'>
-                    <FormControl>
-                      <RadioGroupItem value='light' className='sr-only' />
-                    </FormControl>
-                    <div className='items-center rounded-md border-2 border-muted p-1 hover:border-accent'>
-                      <div className='space-y-2 rounded-sm bg-[#ecedef] p-2'>
-                        <div className='space-y-2 rounded-md bg-white p-2 shadow-xs'>
-                          <div className='h-2 w-20 rounded-lg bg-[#ecedef]' />
-                          <div className='h-2 w-25 rounded-lg bg-[#ecedef]' />
-                        </div>
-                        <div className='flex items-center space-x-2 rounded-md bg-white p-2 shadow-xs'>
-                          <div className='h-4 w-4 rounded-full bg-[#ecedef]' />
-                          <div className='h-2 w-25 rounded-lg bg-[#ecedef]' />
-                        </div>
-                        <div className='flex items-center space-x-2 rounded-md bg-white p-2 shadow-xs'>
-                          <div className='h-4 w-4 rounded-full bg-[#ecedef]' />
-                          <div className='h-2 w-25 rounded-lg bg-[#ecedef]' />
-                        </div>
-                      </div>
-                    </div>
-                    <span className='block w-full p-2 text-center font-normal'>
-                      Light
-                    </span>
-                  </FormLabel>
-                </FormItem>
                 <FormItem>
                   <FormLabel className='[&:has([data-state=checked])>div]:border-primary'>
                     <FormControl>
                       <RadioGroupItem value='dark' className='sr-only' />
                     </FormControl>
-                    <div className='items-center rounded-md border-2 border-muted bg-popover p-1 hover:bg-accent hover:text-accent-foreground'>
+                    <div className='items-center rounded-md border-2 border-primary bg-popover p-1 hover:bg-accent hover:text-accent-foreground'>
                       <div className='space-y-2 rounded-sm bg-slate-950 p-2'>
                         <div className='space-y-2 rounded-md bg-slate-800 p-2 shadow-xs'>
                           <div className='h-2 w-20 rounded-lg bg-slate-400' />
@@ -146,7 +125,7 @@ export function AppearanceForm() {
                       </div>
                     </div>
                     <span className='block w-full p-2 text-center font-normal'>
-                      Dark
+                      Dark (Default)
                     </span>
                   </FormLabel>
                 </FormItem>

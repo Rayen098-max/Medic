@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Camera, ArrowLeft, Loader2 } from 'lucide-react';
+import { Camera, ArrowLeft, Loader2, Plus, X } from 'lucide-react';
 import { z } from 'zod';
 import { addPatient, upsertPatient, linkTaskToPatient, getExercises } from '../utils/db';
 import { useAuth } from '../context/AuthContext';
@@ -172,60 +172,75 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
   };
 
   const formContent = (
-    <form onSubmit={handleSubmit} className={isEmbedded ? "" : "glass-panel"} style={{ padding: isEmbedded ? '0px' : '32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <form onSubmit={handleSubmit} className={isEmbedded ? "space-y-6" : "glass-panel p-6 sm:p-8 space-y-6"}>
       
       <div>
-        <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Customer Name</label>
+        <label className="block text-sm font-medium text-muted-foreground mb-2">Customer Name</label>
         <input 
           required
           type="text" 
           value={formData.name}
           onChange={e => setFormData({...formData, name: e.target.value})}
-          style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} 
+          placeholder="e.g. John Doe"
+          className="w-full px-3.5 py-2.5 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-muted-foreground" 
         />
       </div>
 
       <div>
-        <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Phone Number (WhatsApp)</label>
+        <label className="block text-sm font-medium text-muted-foreground mb-2">Phone Number (WhatsApp)</label>
         <input 
           required
           type="tel" 
           value={formData.phone}
           onChange={e => setFormData({...formData, phone: e.target.value})}
-          style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }} 
+          placeholder="e.g. 9876543210"
+          className="w-full px-3.5 py-2.5 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-muted-foreground" 
         />
       </div>
 
       <div>
-        <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Consult Date</label>
+        <label className="block text-sm font-medium text-muted-foreground mb-2">Consult Date</label>
         <select
           required
           value={formData.consultDate}
           onChange={e => setFormData({...formData, consultDate: e.target.value})}
-          style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-main)', colorScheme: 'dark' }}
+          className="w-full px-3.5 py-2.5 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all cursor-pointer"
         >
           {formData.consultDate && !['Few Days ago', 'a week ago'].includes(formData.consultDate) && (
-            <option value={formData.consultDate}>{formData.consultDate}</option>
+            <option value={formData.consultDate} style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>{formData.consultDate}</option>
           )}
-          <option value="Few Days ago">Few Days ago</option>
-          <option value="a week ago">a week ago</option>
+          <option value="Few Days ago" style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>Few Days ago</option>
+          <option value="a week ago" style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>a week ago</option>
         </select>
       </div>
 
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-          <label style={{ display: 'block', color: 'var(--text-muted)', margin: 0 }}>Manual Condition Selection (Select up to 5)</label>
-          <button type="button" onClick={() => setCustomConditions([...customConditions, { zone: '', name: '', message: '', notes: '' }])} className="clinical-btn" style={{ fontSize: '0.85rem', padding: '4px 8px', whiteSpace: 'nowrap' }}>+ Add Custom Condition</button>
+        <div className="flex justify-between items-center mb-3">
+          <label className="block text-sm font-semibold text-foreground">Manual Condition Selection (Select up to 5)</label>
+          <button 
+            type="button" 
+            onClick={() => setCustomConditions([...customConditions, { zone: '', name: '', message: '', notes: '' }])} 
+            className="clinical-btn text-xs py-1.5 px-3"
+          >
+            + Add Custom Condition
+          </button>
         </div>
 
         {customConditions.length > 0 && (
-          <div style={{ marginBottom: '16px' }}>
+          <div className="space-y-3 mb-4">
             {customConditions.map((cond, i) => (
-              <div key={i} style={{ padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '12px', position: 'relative' }}>
-                <button type="button" onClick={() => setCustomConditions(customConditions.filter((_, idx) => idx !== i))} style={{ position: 'absolute', top: '8px', right: '8px', background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+              <div key={i} className="p-4 rounded-xl bg-card/60 dark:bg-card/40 border border-border/80 shadow-xs relative">
+                <button 
+                  type="button" 
+                  onClick={() => setCustomConditions(customConditions.filter((_, idx) => idx !== i))} 
+                  className="absolute top-3 right-3 text-destructive hover:text-destructive/80 transition-colors p-1"
+                  title="Remove condition"
+                >
+                  <X size={16} />
+                </button>
                 
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#ccc' }}>Body Part (For glowing effect)</label>
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Body Part (For glowing effect)</label>
                   <select 
                     value={cond.zone || ''}
                     onChange={(e) => {
@@ -234,17 +249,17 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                       setCustomConditions(newConds);
                     }}
                     required
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', colorScheme: 'dark' }}
+                    className="w-full px-3 py-2 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none cursor-pointer"
                   >
-                    <option value="">Select body part...</option>
+                    <option value="" style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>Select body part...</option>
                     {Object.keys(painPointsData.reduce((acc, point) => { if(point.zone) acc[point.zone] = true; return acc; }, {})).map(z => (
-                      <option key={z} value={z}>{z}</option>
+                      <option key={z} value={z} style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>{z}</option>
                     ))}
                   </select>
                 </div>
 
-                <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#ccc' }}>Condition Name</label>
+                <div className="mb-3">
+                  <label className="block text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Condition Name</label>
                   <input 
                     type="text"
                     value={cond.name || ''}
@@ -255,12 +270,12 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                     }}
                     required
                     placeholder="e.g., Unspecified Neck Pain"
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
+                    className="w-full px-3 py-2 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none placeholder:text-muted-foreground"
                   />
                 </div>
 
-                <div style={{ marginBottom: '12px' }}>
-                  <span style={{ fontSize: '0.8rem', color: '#ccc', display: 'block', marginBottom: '4px' }}>Personalized Message (Required)</span>
+                <div className="mb-3">
+                  <span className="block text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Personalized Message (Required)</span>
                   <textarea 
                     value={cond.notes || ''} 
                     onChange={(e) => {
@@ -271,12 +286,12 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                     rows={2}
                     required
                     placeholder="e.g., Hi John, it was great seeing you today! Let's get that back pain sorted."
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', resize: 'vertical' }}
+                    className="w-full px-3 py-2 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-y placeholder:text-muted-foreground"
                   />
                 </div>
                 
                 <div>
-                  <span style={{ fontSize: '0.8rem', color: '#ccc', display: 'block', marginBottom: '4px' }}>Condition Info (Optional)</span>
+                  <span className="block text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Condition Info (Optional)</span>
                   <textarea 
                     value={cond.message || ''} 
                     onChange={(e) => {
@@ -286,7 +301,7 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                     }}
                     rows={2}
                     placeholder="e.g., Information about this specific condition..."
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', resize: 'vertical' }}
+                    className="w-full px-3 py-2 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-y placeholder:text-muted-foreground"
                   />
                 </div>
               </div>
@@ -294,68 +309,70 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
           </div>
         )}
 
-        <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div className="max-h-[250px] overflow-y-auto rounded-xl border border-border/70 bg-card/40 p-3.5 space-y-4">
           {Object.entries(painPointsData.reduce((acc, point) => {
             if (!acc[point.zone]) acc[point.zone] = [];
             acc[point.zone].push(point);
             return acc;
           }, {})).map(([zoneName, points]) => (
             <div key={zoneName}>
-              <div style={{ color: 'var(--accent)', fontWeight: 'bold', marginBottom: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '4px' }}>{zoneName}</div>
-              {points.map(p => (
-                <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', marginBottom: '8px' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={formData.painPointIds.includes(p.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        // Check if another point in this zoneName is already selected
-                        const existingInZone = formData.painPointIds.find(id => points.find(pt => pt.id === id));
-                        
-                        let newIds = [...formData.painPointIds];
-                        if (existingInZone) {
-                          alert(`You can only select one condition for the ${zoneName}. Replacing previous selection.`);
-                          newIds = newIds.filter(id => id !== existingInZone);
+              <div className="text-xs font-bold text-primary uppercase tracking-wider pb-1 mb-2 border-b border-border/40">{zoneName}</div>
+              <div className="space-y-1.5">
+                {points.map(p => (
+                  <label key={p.id} className="flex items-center gap-3 cursor-pointer text-sm text-foreground hover:text-primary transition-colors py-0.5">
+                    <input 
+                      type="checkbox" 
+                      checked={formData.painPointIds.includes(p.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          // Check if another point in this zoneName is already selected
+                          const existingInZone = formData.painPointIds.find(id => points.find(pt => pt.id === id));
+                          
+                          let newIds = [...formData.painPointIds];
+                          if (existingInZone) {
+                            alert(`You can only select one condition for the ${zoneName}. Replacing previous selection.`);
+                            newIds = newIds.filter(id => id !== existingInZone);
+                          }
+                          setFormData({...formData, painPointIds: [...newIds, p.id]});
+                        } else {
+                          setFormData({...formData, painPointIds: formData.painPointIds.filter(id => id !== p.id)});
                         }
-                        setFormData({...formData, painPointIds: [...newIds, p.id]});
-                      } else {
-                        setFormData({...formData, painPointIds: formData.painPointIds.filter(id => id !== p.id)});
-                      }
-                    }}
-                    style={{ width: '20px', height: '20px', accentColor: '#00d2ff' }}
-                  />
-                  <span style={{ fontSize: '0.95rem' }}>{p.id} - {p.name}</span>
-                </label>
-              ))}
+                      }}
+                      className="size-4.5 rounded border-input text-primary accent-primary cursor-pointer"
+                    />
+                    <span className="font-medium">{p.id} - {p.name}</span>
+                  </label>
+                ))}
+              </div>
             </div>
           ))}
         </div>
       </div>
 
       {formData.painPointIds.length > 0 && (
-        <div>
-          <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Condition Notes</label>
+        <div className="space-y-3">
+          <label className="block text-sm font-semibold text-foreground">Condition Notes</label>
           {formData.painPointIds.map(id => {
             const point = painPointsData.find(p => p.id === id);
             if (!point) return null;
             return (
-              <div key={id} style={{ padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '12px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: 'var(--accent)', fontWeight: 'bold' }}>Notes for: {point.name}</label>
+              <div key={id} className="p-4 rounded-xl bg-card/60 dark:bg-card/40 border border-border/80 shadow-xs space-y-3">
+                <label className="block text-xs font-bold text-primary uppercase tracking-wider">Notes for: {point.name}</label>
                 
-                <div style={{ marginBottom: '12px' }}>
-                  <span style={{ fontSize: '0.8rem', color: '#ccc', display: 'block', marginBottom: '4px' }}>Paragraph 1: Personalized Message & Greetings (Editable)</span>
+                <div>
+                  <span className="block text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Paragraph 1: Personalized Message & Greetings (Editable)</span>
                   <textarea 
                     value={conditionNotes[id] || ''} 
                     onChange={(e) => setConditionNotes({...conditionNotes, [id]: e.target.value})}
                     rows={3}
                     placeholder="e.g., Hi John, it was great seeing you today! Let's get that back pain sorted."
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', resize: 'vertical' }}
+                    className="w-full px-3 py-2 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-y placeholder:text-muted-foreground"
                   />
                 </div>
                 
                 <div>
-                  <span style={{ fontSize: '0.8rem', color: '#ccc', display: 'block', marginBottom: '4px' }}>Paragraph 2: Predefined Condition Info (Auto-appended)</span>
-                  <div style={{ width: '100%', padding: '12px', borderRadius: '4px', background: 'rgba(0,0,0,0.5)', border: '1px dashed var(--border-color)', color: 'var(--text-muted)', fontSize: '0.85rem', fontStyle: 'italic' }}>
+                  <span className="block text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Paragraph 2: Predefined Condition Info (Auto-appended)</span>
+                  <div className="w-full p-3 rounded-lg bg-muted/40 border border-dashed border-border text-muted-foreground text-xs italic leading-relaxed">
                     The system will automatically append predefined information for this condition here, including up to 5 common issues and a reference to check the exercises section.
                   </div>
                 </div>
@@ -366,13 +383,20 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
       )}
 
       <div>
-        <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Recommended Exercises (Optional)</label>
+        <label className="block text-sm font-semibold text-foreground mb-3">Recommended Exercises (Optional)</label>
         {exercises.map((ex, i) => (
-          <div key={i} style={{ padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', marginBottom: '12px', position: 'relative' }}>
-            <button type="button" onClick={() => removeExercise(i)} style={{ position: 'absolute', top: '8px', right: '8px', background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+          <div key={i} className="p-4 rounded-xl bg-card/60 dark:bg-card/40 border border-border/80 shadow-xs mb-3 relative space-y-3">
+            <button 
+              type="button" 
+              onClick={() => removeExercise(i)} 
+              className="absolute top-3 right-3 text-destructive hover:text-destructive/80 transition-colors p-1"
+              title="Remove exercise"
+            >
+              <X size={16} />
+            </button>
             
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#ccc' }}>Exercise Name</label>
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Exercise Name</label>
               <input 
                 type="text"
                 value={ex.name || ''}
@@ -382,18 +406,23 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                   setExercises(newEx);
                 }}
                 placeholder="e.g., Neck Side Bends"
-                style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)' }}
+                className="w-full px-3 py-2 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none placeholder:text-muted-foreground"
               />
             </div>
 
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#ccc' }}>Exercise Image</label>
-              <input type="file" accept="image/*" onChange={(e) => handleImageUpload(i, e)} style={{ color: 'var(--text-main)', fontSize: '0.85rem', width: '100%' }} />
-              {ex.image && <img src={ex.image} alt="Preview" style={{ marginTop: '8px', width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-color)' }} />}
+            <div>
+              <label className="block text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Exercise Image</label>
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={(e) => handleImageUpload(i, e)} 
+                className="text-foreground text-sm w-full file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 cursor-pointer" 
+              />
+              {ex.image && <img src={ex.image} alt="Preview" className="mt-2 w-24 h-24 object-cover rounded-lg border border-border" />}
             </div>
             
             <div>
-              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '4px', color: '#ccc' }}>Instructions</label>
+              <label className="block text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">Instructions</label>
               <textarea 
                 value={ex.instructions} 
                 onChange={(e) => {
@@ -403,15 +432,15 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                 }}
                 rows={3}
                 placeholder="e.g., Hold for 30 seconds, repeat 3 times."
-                style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', resize: 'vertical' }}
+                className="w-full px-3 py-2 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-y placeholder:text-muted-foreground"
               />
             </div>
 
-            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-              <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '8px', color: 'var(--accent)', fontWeight: 'bold' }}>Plan for the exercise</label>
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '12px' }}>
-                <div style={{ flex: '1 1 100px' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px', color: '#ccc' }}>Duration (min)</label>
+            <div className="pt-3 border-t border-border/60">
+              <label className="block text-xs font-bold text-primary uppercase tracking-wider mb-2">Plan for the exercise</label>
+              <div className="flex gap-3 flex-wrap mb-3">
+                <div className="flex-1 min-w-[100px]">
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Duration (min)</label>
                   <select 
                     value={ex.duration || ''}
                     onChange={(e) => {
@@ -419,16 +448,16 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                       newEx[i].duration = e.target.value;
                       setExercises(newEx);
                     }}
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', colorScheme: 'dark' }}
+                    className="w-full px-3 py-2 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none cursor-pointer"
                   >
-                    <option value="">Select</option>
+                    <option value="" style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>Select</option>
                     {Array.from({length: 60}, (_, idx) => idx + 1).map(num => (
-                      <option key={num} value={num}>{num} min</option>
+                      <option key={num} value={num} style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>{num} min</option>
                     ))}
                   </select>
                 </div>
-                <div style={{ flex: '1 1 100px' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px', color: '#ccc' }}>Sets</label>
+                <div className="flex-1 min-w-[100px]">
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Sets</label>
                   <select 
                     value={ex.sets || ''}
                     onChange={(e) => {
@@ -436,16 +465,16 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                       newEx[i].sets = e.target.value;
                       setExercises(newEx);
                     }}
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', colorScheme: 'dark' }}
+                    className="w-full px-3 py-2 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none cursor-pointer"
                   >
-                    <option value="">Select</option>
+                    <option value="" style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>Select</option>
                     {Array.from({length: 60}, (_, idx) => idx + 1).map(num => (
-                      <option key={num} value={num}>{num}</option>
+                      <option key={num} value={num} style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>{num}</option>
                     ))}
                   </select>
                 </div>
-                <div style={{ flex: '1 1 120px' }}>
-                  <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px', color: '#ccc' }}>Week</label>
+                <div className="flex-1 min-w-[120px]">
+                  <label className="block text-xs font-medium text-muted-foreground mb-1">Week</label>
                   <select 
                     value={ex.week || '1'}
                     onChange={(e) => {
@@ -453,17 +482,17 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                       newEx[i].week = e.target.value;
                       setExercises(newEx);
                     }}
-                    style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', colorScheme: 'dark' }}
+                    className="w-full px-3 py-2 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none cursor-pointer"
                   >
-                    <option value="1">Week 1</option>
-                    <option value="2">Week 2</option>
-                    <option value="3">Week 3</option>
+                    <option value="1" style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>Week 1</option>
+                    <option value="2" style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>Week 2</option>
+                    <option value="3" style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>Week 3</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px', color: '#ccc' }}>Custom Plan (Optional)</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">Custom Plan (Optional)</label>
                 <textarea 
                   value={ex.customPlan || ''} 
                   onChange={(e) => {
@@ -473,13 +502,14 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                   }}
                   rows={2}
                   placeholder="e.g., Do these primarily in the morning before breakfast."
-                  style={{ width: '100%', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', resize: 'vertical' }}
+                  className="w-full px-3 py-2 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-y placeholder:text-muted-foreground"
                 />
               </div>
             </div>
           </div>
         ))}
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+
+        <div className="flex gap-3 items-center flex-wrap pt-2">
           <select
             onChange={(e) => {
               if (!e.target.value) return;
@@ -497,38 +527,44 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
                 e.target.value = ''; // reset after selection
               }
             }}
-            style={{ flex: '1', minWidth: '250px', padding: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-color)', color: 'var(--text-main)', colorScheme: 'dark' }}
+            className="flex-1 min-w-[240px] px-3.5 py-2.5 rounded-lg border border-input bg-card text-foreground text-sm font-medium shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none cursor-pointer"
           >
-            <option value="">Select from predefined exercises...</option>
+            <option value="" style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>Select from predefined exercises...</option>
             {availableExercises.map(a => (
-              <option key={a.id} value={a.id}>{a.name}</option>
+              <option key={a.id} value={a.id} style={{ backgroundColor: '#1e293b', color: '#f8fafc' }}>{a.name}</option>
             ))}
           </select>
-          <span style={{ color: 'var(--text-muted)' }}>OR</span>
-          <button type="button" onClick={addExercise} className="clinical-btn" style={{ fontSize: '0.85rem', padding: '8px 12px', whiteSpace: 'nowrap' }}>+ Add Custom Exercise</button>
+          <span className="text-xs font-semibold text-muted-foreground px-1">OR</span>
+          <button 
+            type="button" 
+            onClick={addExercise} 
+            className="clinical-btn text-xs py-2 px-3 whitespace-nowrap"
+          >
+            + Add Custom Exercise
+          </button>
         </div>
       </div>
 
       <div>
-        <label style={{ display: 'block', marginBottom: '8px', color: 'var(--text-muted)' }}>Personalized WhatsApp Message</label>
+        <label className="block text-sm font-medium text-muted-foreground mb-2">Personalized WhatsApp Message</label>
         <textarea 
           value={whatsappMessage} 
           onChange={(e) => setWhatsappMessage(e.target.value)}
           rows={4}
           placeholder="e.g., Hi John, it was great seeing you today! Hope your body is treating you better. Let me know if you have any questions."
-          style={{ width: '100%', padding: '12px', borderRadius: '8px', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', color: 'var(--text-main)', resize: 'vertical' }}
+          className="w-full p-3.5 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-y leading-relaxed placeholder:text-muted-foreground"
         />
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(0, 210, 255, 0.05)', padding: '16px', borderRadius: '8px' }}>
+      <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/10 border border-primary/20">
         <input 
           type="checkbox" 
           id="consent" 
           checked={formData.consent}
           onChange={e => setFormData({...formData, consent: e.target.checked})}
-          style={{ width: '20px', height: '20px' }}
+          className="size-5 rounded border-input text-primary accent-primary cursor-pointer"
         />
-        <label htmlFor="consent" style={{ fontSize: '0.9rem', color: 'var(--text-main)', cursor: 'pointer' }}>
+        <label htmlFor="consent" className="text-sm font-medium text-foreground cursor-pointer select-none">
           Customer agrees to receive their personalized report via link
         </label>
       </div>
@@ -536,20 +572,9 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
       <button 
         type="submit" 
         disabled={!formData.consent || isSubmitting}
-        className="clinical-btn"
-        style={{ 
-          marginTop: '16px', 
-          padding: '16px', 
-          width: '100%', 
-          fontSize: '1.1rem', 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          gap: '12px',
-          opacity: formData.consent ? 1 : 0.5
-        }}
+        className="w-full mt-4 py-3.5 px-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-base shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isSubmitting ? <Loader2 className="animate-spin" /> : 'Process & Generate Portal'}
+        {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : 'Process & Generate Portal'}
       </button>
     </form>
   );
@@ -559,13 +584,13 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
   }
 
   return (
-    <div style={{ padding: '40px', minHeight: '100vh', background: 'var(--primary-bg)', color: 'var(--text-main)' }}>
-      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '40px' }}>
-          <Link to="/" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>
-            <ArrowLeft size={24} />
+    <div className="p-6 md:p-10 min-h-screen bg-background text-foreground">
+      <div className="max-w-2xl mx-auto">
+        <div className="flex items-center gap-4 mb-8">
+          <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors p-1">
+            <ArrowLeft size={22} />
           </Link>
-          <h1 style={{ color: 'var(--accent)', margin: 0, fontSize: '2rem' }}>New Consult Capture</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-primary">New Consult Capture</h1>
         </div>
         {formContent}
       </div>
