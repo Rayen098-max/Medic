@@ -124,6 +124,7 @@ function MapView() {
 
 import { Tasks } from './features/tasks';
 import { UsageReport } from './features/usage-report';
+import { DailyReport } from './features/dailyReport';
 import { Analytics } from '@vercel/analytics/react';
 
 export default function App() {
@@ -149,6 +150,7 @@ export default function App() {
                 <Dashboard />
               </ProtectedRoute>
             } />
+            <Route path="/daily-report" element={<DailyReport />} />
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/capture" element={<CaptureForm />} />
             <Route path="/admin" element={<AdminPanel />} />

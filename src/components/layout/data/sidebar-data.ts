@@ -59,6 +59,11 @@ export const sidebarData: SidebarData = {
           icon: LayoutDashboard,
         },
         {
+          title: 'Daily Report',
+          url: '/daily-report',
+          icon: MessagesSquare,
+        },
+        {
           title: 'Tasks',
           url: '/tasks',
           icon: ListTodo,
