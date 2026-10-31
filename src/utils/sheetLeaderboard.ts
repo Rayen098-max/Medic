@@ -7,17 +7,18 @@ export interface PhysioTabConfig {
   name: string
   key: string
   tab: string
+  gid?: string
   role: string
 }
 
 export const PHYSIO_CONFIGS: PhysioTabConfig[] = [
-  { name: 'Dr. Hritika Chavan', key: 'hritika', tab: 'Daily Tracker - Hritika', role: 'Physiotherapist' },
-  { name: 'Dr. Dipti Mestry', key: 'dipti', tab: 'Daily Tracker - Dipti', role: 'Physiotherapist' },
-  { name: 'Dr. Rutuja Tulaskar', key: 'rutuja', tab: 'Daily Tracker - Rutuja', role: 'Physiotherapist' },
-  { name: 'Dr. Kritika Gawand', key: 'kritika', tab: 'Daily Tracker - Kritika', role: 'Physiotherapist' },
-  { name: 'Dr. Aishwarya Panchal', key: 'aishwarya', tab: 'Daily Tracker - Aishwarya', role: 'Physiotherapist' },
-  { name: 'Dr. Pooja Seema', key: 'pooja', tab: 'Daily Tracker - Pooja', role: 'Physiotherapist' },
-  { name: 'Dr. Gursheen Kaur', key: 'gursheen', tab: 'Daily Tracker - Gursheen', role: 'Physiotherapist' },
+  { name: 'Dr. Hritika Chavan', key: 'hritika', tab: 'Daily Tracker - Hritika', gid: '1486502114', role: 'Physiotherapist' },
+  { name: 'Dr. Dipti Mestry', key: 'dipti', tab: 'Daily Tracker - Dipti', gid: '1694551009', role: 'Physiotherapist' },
+  { name: 'Dr. Rutuja Tulaskar', key: 'rutuja', tab: 'Daily Tracker - Rutuja', gid: '139271502', role: 'Physiotherapist' },
+  { name: 'Dr. Kritika Gawand', key: 'kritika', tab: 'Daily Tracker - Kritika', gid: '1945751605', role: 'Physiotherapist' },
+  { name: 'Dr. Aishwarya Panchal', key: 'aishwarya', tab: 'Daily Tracker - Aishwarya', gid: '592000750', role: 'Physiotherapist' },
+  { name: 'Dr. Pooja Seema', key: 'pooja', tab: 'Daily Tracker - Pooja', gid: '785897241', role: 'Physiotherapist' },
+  { name: 'Dr. Gursheen Kaur', key: 'gursheen', tab: 'Daily Tracker - Gursheen', gid: '1015773157', role: 'Physiotherapist' },
   { name: 'Dr. Gaurav', key: 'gaurav', tab: 'Daily Tracker - Gaurav', role: 'Physiotherapist' },
 ]
 
@@ -87,7 +88,9 @@ async function fetchGoogleSheetFallback(dateKey: string) {
   const tasks: any[] = []
   const promises = PHYSIO_CONFIGS.map(async (physio) => {
     try {
-      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(physio.tab)}&_cb=${Date.now()}`
+      const url = physio.gid
+        ? `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${physio.gid}&_cb=${Date.now()}`
+        : `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(physio.tab)}&_cb=${Date.now()}`
       const res = await fetch(url, { cache: 'no-store' })
       if (!res.ok) return
 

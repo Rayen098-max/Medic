@@ -16,8 +16,6 @@ import {
   X, 
   AlertTriangle, 
   MessageCircle, 
-  Volume2, 
-  VolumeX, 
   ChevronRight,
   ShieldCheck,
   Calendar,
@@ -42,17 +40,42 @@ export default function CustomerPortal() {
   const [activeWeekTab, setActiveWeekTab] = useState('1'); // '1' | '2' | '3' | 'consult'
 
   // Upgrades state
-  const [soundEnabled, setSoundEnabled] = useState(true);
   const [completedExercises, setCompletedExercises] = useState({});
+  const ambienceAudioRef = useRef(null);
 
   // Cinematic Intro Animation state
   // stages: 'assembling' (0-1.6s) -> 'targeting' (1.6-3.0s) -> 'locked' (3.0-3.6s) -> 'ready' (3.6s+)
   const [introStage, setIntroStage] = useState('assembling');
   const [introProgress, setIntroProgress] = useState(0);
 
-  useEffect(() => {
-    sounds.setMuted(!soundEnabled);
-  }, [soundEnabled]);
+  const playAmbienceAudio = useCallback(() => {
+    try {
+      if (!ambienceAudioRef.current) {
+        ambienceAudioRef.current = new Audio('/audio/mixkit-futuristic-sci-fi-computer-ambience-2507.wav');
+        ambienceAudioRef.current.loop = false;
+      }
+      ambienceAudioRef.current.volume = 1.0;
+      ambienceAudioRef.current.currentTime = 0;
+      const promise = ambienceAudioRef.current.play();
+      if (promise !== undefined) {
+        promise.catch((err) => {
+          console.warn('Autoplay restricted by browser, will trigger on user interaction:', err);
+          const onUserGesture = () => {
+            if (ambienceAudioRef.current) {
+              ambienceAudioRef.current.volume = 1.0;
+              ambienceAudioRef.current.play().catch(() => {});
+            }
+            window.removeEventListener('click', onUserGesture);
+            window.removeEventListener('touchstart', onUserGesture);
+          };
+          window.addEventListener('click', onUserGesture, { once: true });
+          window.addEventListener('touchstart', onUserGesture, { once: true });
+        });
+      }
+    } catch (e) {
+      console.warn('Audio play error:', e);
+    }
+  }, []);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -221,16 +244,14 @@ export default function CustomerPortal() {
 
     // Phase 1 & 2: Assembling Particle Vortex & Energy Ribbons (0.0s - 4.0s)
     setIntroStage('assembling');
-    sounds.playAssemblyWhoosh();
+    playAmbienceAudio();
 
     const t1 = setTimeout(() => {
       setIntroStage('targeting');
-      sounds.playLaserShot();
     }, 4000);
 
     const t2 = setTimeout(() => {
       setIntroStage('locked');
-      sounds.playTargetLock();
     }, 5500);
 
     const t3 = setTimeout(() => {
@@ -243,19 +264,17 @@ export default function CustomerPortal() {
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [loading, zone, id]);
+  }, [loading, zone, id, playAmbienceAudio]);
 
   const replayIntro = () => {
     sessionStorage.removeItem(`medic_intro_seen_${id}`);
     setIntroStage('assembling');
-    sounds.playAssemblyWhoosh();
+    playAmbienceAudio();
     setTimeout(() => {
       setIntroStage('targeting');
-      sounds.playLaserShot();
     }, 4000);
     setTimeout(() => {
       setIntroStage('locked');
-      sounds.playTargetLock();
     }, 5500);
     setTimeout(() => {
       setIntroStage('ready');
@@ -333,8 +352,7 @@ export default function CustomerPortal() {
         maxDistance={10}
         minPolarAngle={Math.PI / 2}
         maxPolarAngle={Math.PI / 2}
-        autoRotate={introStage === 'ready' && !activePointId && !isAnyPopupOpen}
-        autoRotateSpeed={0.8}
+        autoRotate={false}
       />
     </>
   );
@@ -539,31 +557,6 @@ export default function CustomerPortal() {
         </div>
 
         {/* Top Center: Routine Progress Tracker HUD */}
-
-        {/* Audio Mute/Unmute Control during Intro */}
-        {introStage !== 'ready' && (
-          <div style={{ position: 'absolute', top: 'max(20px, env(safe-area-inset-top))', right: 'max(20px, env(safe-area-inset-right))', zIndex: 35 }}>
-            <button
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              style={{
-                background: 'rgba(15, 23, 42, 0.8)',
-                border: '1px solid rgba(0, 210, 255, 0.3)',
-                color: '#00d2ff',
-                borderRadius: '50%',
-                width: '36px',
-                height: '36px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer'
-              }}
-              title={soundEnabled ? 'Mute' : 'Unmute'}
-              aria-label={soundEnabled ? 'Mute audio' : 'Unmute audio'}
-            >
-              {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            </button>
-          </div>
-        )}
 
         {/* Intro Scan HUD Overlay Status */}
         {introStage !== 'ready' && (

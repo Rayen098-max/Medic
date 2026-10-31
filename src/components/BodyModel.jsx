@@ -407,9 +407,9 @@ export default function BodyModel({
       bodyMaterial.emissiveIntensity = 0.2;
       wireframeMaterial.opacity = 0.0;
 
-      // Slow ambient auto-rotate when in ready state without active popup
-      if (activeZones.length === 0 && !activePointId) {
-        group.current.rotation.y += 0.005;
+      // Slow ambient auto-rotate of the human mannequin when in ready state without active beacon popup
+      if (!activePointId) {
+        group.current.rotation.y += dt * 0.2;
       }
       return;
     }

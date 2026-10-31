@@ -186,15 +186,11 @@ function registerTier1Tests() {
       }
     });
 
-    test('T1-F3-05', 'Audio mute/unmute control remains accessible during intro without skip button proximity', () => {
+    test('T1-F3-05', 'Screen is kept clean with no sound toggle buttons or volume controls during start animation', () => {
       const portalSrc = readProjectFile('src/components/CustomerPortal.jsx');
-      expect(portalSrc).toMatch(
-        /setSoundEnabled/,
-        'Sound mute/unmute control must remain present and functional'
-      );
-      expect(portalSrc).toMatch(
+      expect(portalSrc).not.toMatch(
         /<Volume2|<VolumeX/,
-        'Audio volume icons must be present in portal'
+        'Screen must be kept clean without sound button options during start animation'
       );
     });
   });
@@ -231,19 +227,28 @@ function registerTier1Tests() {
       );
     });
 
-    test('T1-F4-04', 'Auto-rotation on 3D canvas engages cleanly at ready stage when no hotspot is selected', () => {
+    test('T1-F4-04', 'OrbitControls keeps room stationary while BodyModel rotates mannequin figure along Y-axis', () => {
       const portalSrc = readProjectFile('src/components/CustomerPortal.jsx');
+      const bodyModelSrc = readProjectFile('src/components/BodyModel.jsx');
       expect(portalSrc).toMatch(
-        /autoRotate=\{introStage === 'ready' && !activePointId && !isAnyPopupOpen\}/,
-        'OrbitControls autoRotate must engage when introStage === ready'
+        /autoRotate=\{false\}/,
+        'OrbitControls autoRotate must be false so the grid room does not spin'
+      );
+      expect(bodyModelSrc).toMatch(
+        /group\.current\.rotation\.y\s*\+=\s*dt\s*\*\s*0\.2/,
+        'BodyModel must rotate the human figure along Y-axis at calm reduced speed'
       );
     });
 
-    test('T1-F4-05', 'Audio cues trigger appropriately during stage transitions', () => {
+    test('T1-F4-05', 'Sci-fi ambience audio asset mixkit-futuristic-sci-fi-computer-ambience-2507 is configured at full volume', () => {
       const portalSrc = readProjectFile('src/components/CustomerPortal.jsx');
       expect(portalSrc).toMatch(
-        /sounds\.(?:playAssemblyWhoosh|playLaserShot|playTargetLock|setMuted)/,
-        'CustomerPortal must trigger audio effects during stage transitions'
+        /mixkit-futuristic-sci-fi-computer-ambience-2507/,
+        'CustomerPortal must configure mixkit sci-fi computer ambience audio'
+      );
+      expect(portalSrc).toMatch(
+        /volume\s*=\s*1\.0/,
+        'CustomerPortal must play audio at full volume (1.0) by default'
       );
     });
   });

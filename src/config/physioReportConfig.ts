@@ -10,6 +10,7 @@ export interface PhysioReportProfile {
   key: string;
   display: string;
   sheet: string;
+  gid?: string;
   aliases: string[];
   style: MessageStyleType;
   dateStyle: DateStyleType;
@@ -37,7 +38,8 @@ export const PHYSIO_REPORT_CONFIGS: PhysioReportProfile[] = [
   { 
     key: 'gursheen',  
     display: 'Dr Gursheen',          
-    sheet: 'Daily Tracker - Gursheen',  
+    sheet: 'Daily Tracker - Gursheen',
+    gid: '1015773157',
     aliases: ['gursheen', 'dr gursheen', 'dr. gursheen'],
     style: 'standard', 
     dateStyle: 'long'  
@@ -45,7 +47,8 @@ export const PHYSIO_REPORT_CONFIGS: PhysioReportProfile[] = [
   { 
     key: 'dipti',     
     display: 'Dr. Dipti Mestry',     
-    sheet: 'Daily Tracker - Dipti',     
+    sheet: 'Daily Tracker - Dipti',
+    gid: '1694551009',
     aliases: ['dipti', 'dr dipti', 'dr. dipti', 'dipti mestry', 'dr. dipti mestry'],
     style: 'standard', 
     dateStyle: 'long'  
@@ -53,7 +56,8 @@ export const PHYSIO_REPORT_CONFIGS: PhysioReportProfile[] = [
   { 
     key: 'aishwarya', 
     display: 'Dr Aishwarya',         
-    sheet: 'Daily Tracker - Aishwarya', 
+    sheet: 'Daily Tracker - Aishwarya',
+    gid: '592000750',
     aliases: ['aishwarya', 'dr aishwarya', 'dr. aishwarya', 'aishwarya panchal'],
     style: 'standard', 
     dateStyle: 'long'  
@@ -61,7 +65,8 @@ export const PHYSIO_REPORT_CONFIGS: PhysioReportProfile[] = [
   { 
     key: 'rutuja',    
     display: 'Dr Rutuja Tulaskar',   
-    sheet: 'Daily Tracker - Rutuja',    
+    sheet: 'Daily Tracker - Rutuja',
+    gid: '139271502',
     aliases: ['rutuja', 'dr rutuja', 'dr. rutuja', 'rutuja tulaskar', 'dr rutuja tulaskar'],
     style: 'rutuja',   
     dateStyle: 'long'  
@@ -69,7 +74,8 @@ export const PHYSIO_REPORT_CONFIGS: PhysioReportProfile[] = [
   { 
     key: 'pooja',     
     display: 'Dr Pooja',             
-    sheet: 'Daily Tracker - Pooja',     
+    sheet: 'Daily Tracker - Pooja',
+    gid: '785897241',
     aliases: ['pooja', 'dr pooja', 'dr. pooja', 'pooja seema'],
     style: 'standard', 
     dateStyle: 'long'  
@@ -77,7 +83,8 @@ export const PHYSIO_REPORT_CONFIGS: PhysioReportProfile[] = [
   { 
     key: 'kritika',   
     display: 'Dr Kritika',           
-    sheet: 'Daily Tracker - Kritika',   
+    sheet: 'Daily Tracker - Kritika',
+    gid: '1945751605',
     aliases: ['kritika', 'dr kritika', 'dr. kritika', 'kritika gawand'],
     style: 'standard', 
     dateStyle: 'long'  
@@ -85,7 +92,8 @@ export const PHYSIO_REPORT_CONFIGS: PhysioReportProfile[] = [
   { 
     key: 'hritika',   
     display: 'Dr Hritika (PT)',      
-    sheet: 'Daily Tracker - Hritika',   
+    sheet: 'Daily Tracker - Hritika',
+    gid: '1486502114',
     aliases: ['hritika', 'dr hritika', 'dr. hritika', 'hritika chavan', 'dr hritika (pt)'],
     style: 'hritika',  
     dateStyle: 'short' 

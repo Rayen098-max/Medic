@@ -83,7 +83,9 @@ export function DailyReport() {
     setErrorMessage(null);
 
     try {
-      const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(physio.sheet)}&_cb=${Date.now()}`;
+      const csvUrl = physio.gid
+        ? `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${physio.gid}&_cb=${Date.now()}`
+        : `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(physio.sheet)}&_cb=${Date.now()}`;
       const res = await fetch(csvUrl, { cache: 'no-store' });
       if (!res.ok) {
         throw new Error(`Failed to fetch sheet data for ${physio.display}`);
