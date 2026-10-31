@@ -158,16 +158,24 @@ export const updatePatientStatus = async (id, statusData) => {
   if (error) throw error;
 };
 
-export const updatePatientProgress = async (id, streak, completedExercises) => {
+export const updatePatientProgress = async (id, completedExercises, legacyCompleted) => {
   if (!supabase || !id) return;
   try {
-    await supabase
-      .from('patients')
-      .update({
-        daily_streak: streak,
-        completed_exercises: completedExercises
-      })
-      .eq('id', id);
+    const exercises = (completedExercises && typeof completedExercises === 'object')
+      ? completedExercises
+      : legacyCompleted;
+
+    const payload = {};
+    if (exercises !== undefined) {
+      payload.completed_exercises = exercises;
+    }
+
+    if (Object.keys(payload).length > 0) {
+      await supabase
+        .from('patients')
+        .update(payload)
+        .eq('id', id);
+    }
   } catch (err) {
     console.warn("Could not sync progress to Supabase:", err);
   }

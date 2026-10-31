@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, Html } from '@react-three/drei';
 import BodyModel from './BodyModel';
+import GridRoom from './GridRoom';
 import ExerciseTimerModal from './ExerciseTimerModal';
 import contentData from '../data/content.json';
 import painPointsData from '../data/painPoints.json';
@@ -15,7 +16,6 @@ import {
   X, 
   AlertTriangle, 
   MessageCircle, 
-  Flame, 
   Volume2, 
   VolumeX, 
   ChevronRight,
@@ -44,7 +44,6 @@ export default function CustomerPortal() {
   // Upgrades state
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [completedExercises, setCompletedExercises] = useState({});
-  const [streakDays, setStreakDays] = useState(1);
 
   // Cinematic Intro Animation state
   // stages: 'assembling' (0-1.6s) -> 'targeting' (1.6-3.0s) -> 'locked' (3.0-3.6s) -> 'ready' (3.6s+)
@@ -102,7 +101,7 @@ export default function CustomerPortal() {
     };
   }, [patient?.id, loading]);
 
-  // Load patient data & streak
+  // Load patient data
   useEffect(() => {
     async function loadData() {
       try {
@@ -143,7 +142,6 @@ export default function CustomerPortal() {
 
     function processData(data) {
       setPatient(data);
-      if (data.daily_streak) setStreakDays(data.daily_streak);
       if (data.completed_exercises && typeof data.completed_exercises === 'object') {
         setCompletedExercises(data.completed_exercises);
       }
@@ -186,18 +184,13 @@ export default function CustomerPortal() {
     loadData();
   }, [id]);
 
-  // Load and sync Daily Streak & Exercise completion from localStorage
+  // Load and sync Exercise completion from localStorage
   useEffect(() => {
     if (!patient?.id) return;
     const today = new Date().toISOString().slice(0, 10);
     const savedDone = localStorage.getItem(`medic_done_${patient.id}_${today}`);
     if (savedDone) {
       try { setCompletedExercises(JSON.parse(savedDone)); } catch(e) {}
-    }
-
-    const savedStreak = localStorage.getItem(`medic_streak_${patient.id}`);
-    if (savedStreak) {
-      setStreakDays(parseInt(savedStreak, 10) || 1);
     }
   }, [patient?.id]);
 
@@ -211,16 +204,8 @@ export default function CustomerPortal() {
     setCompletedExercises(updated);
     localStorage.setItem(`medic_done_${patient.id}_${today}`, JSON.stringify(updated));
 
-    // Update streak if completing first exercise today
-    const anyDone = Object.values(updated).some(Boolean);
-    const currentStreak = anyDone ? (streakDays || 1) : streakDays;
-    if (anyDone) {
-      setStreakDays(currentStreak);
-      localStorage.setItem(`medic_streak_${patient.id}`, currentStreak.toString());
-    }
-
     // Persist to Supabase if table columns exist
-    updatePatientProgress(patient.id, currentStreak, updated);
+    updatePatientProgress(patient.id, updated);
   };
 
   // Cinematic Intro Animation Orchestration
@@ -234,27 +219,24 @@ export default function CustomerPortal() {
       return;
     }
 
-    // Phase 1: Assembling 3D Body (0.0s - 1.6s)
+    // Phase 1 & 2: Assembling Particle Vortex & Energy Ribbons (0.0s - 4.0s)
     setIntroStage('assembling');
     sounds.playAssemblyWhoosh();
 
     const t1 = setTimeout(() => {
-      // Phase 2: Shooting Laser Projectile Dots (1.6s - 3.0s)
       setIntroStage('targeting');
       sounds.playLaserShot();
-    }, 1600);
+    }, 4000);
 
     const t2 = setTimeout(() => {
-      // Phase 3: Pain Points Lock & Beacon Chime (3.0s - 3.6s)
       setIntroStage('locked');
       sounds.playTargetLock();
-    }, 3000);
+    }, 5500);
 
     const t3 = setTimeout(() => {
-      // Phase 4: Settle into Ready & Reveal Interactive UI HUD (3.6s+)
       setIntroStage('ready');
       sessionStorage.setItem(`medic_intro_seen_${id}`, 'true');
-    }, 3700);
+    }, 7000);
 
     return () => {
       clearTimeout(t1);
@@ -263,11 +245,6 @@ export default function CustomerPortal() {
     };
   }, [loading, zone, id]);
 
-  const skipIntro = () => {
-    setIntroStage('ready');
-    sessionStorage.setItem(`medic_intro_seen_${id}`, 'true');
-  };
-
   const replayIntro = () => {
     sessionStorage.removeItem(`medic_intro_seen_${id}`);
     setIntroStage('assembling');
@@ -275,14 +252,14 @@ export default function CustomerPortal() {
     setTimeout(() => {
       setIntroStage('targeting');
       sounds.playLaserShot();
-    }, 1600);
+    }, 4000);
     setTimeout(() => {
       setIntroStage('locked');
       sounds.playTargetLock();
-    }, 3000);
+    }, 5500);
     setTimeout(() => {
       setIntroStage('ready');
-    }, 3700);
+    }, 7000);
   };
 
   // Close modals on Escape key
@@ -335,6 +312,7 @@ export default function CustomerPortal() {
       <directionalLight position={[-10, 10, -10]} intensity={2} />
       <directionalLight position={[0, -10, 0]} intensity={1} />
       <React.Suspense fallback={null}>
+        <GridRoom introStage={introStage} />
         <BodyModel 
           zones={[...painPointsData, ...(patient?.customConditions || [])]}
           activeZones={zone.activeZones}
@@ -462,10 +440,8 @@ export default function CustomerPortal() {
       inset: 0,
       width: '100vw',
       height: '100dvh',
-      backgroundImage: 'url(/grid_background.jpg)',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat',
+      backgroundColor: '#030814',
+      background: 'radial-gradient(ellipse at 50% 50%, #06152d 0%, #030814 85%)',
       overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
@@ -490,7 +466,7 @@ export default function CustomerPortal() {
       {/* 3D Canvas Area */}
       <div style={{ flex: 1, position: 'relative' }}>
         
-        {/* Futuristic Holographic Logo */}
+        {/* The Sleep Company Brand Header Logo */}
         <div 
           className="futuristic-logo-container overlay-logo" 
           style={{ 
@@ -498,69 +474,75 @@ export default function CustomerPortal() {
             top: 'max(14px, env(safe-area-inset-top))', 
             left: 'max(14px, env(safe-area-inset-left))', 
             zIndex: 25,
-            opacity: introStage === 'ready' ? 1 : 0.8,
+            opacity: introStage === 'ready' ? 1 : 0,
+            pointerEvents: introStage === 'ready' ? 'auto' : 'none',
             transition: 'opacity 0.8s ease'
           }}
         >
           <svg className="logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 150" role="img" aria-label="The Sleep Company">
             <defs>
-              <filter id="neonHologramGlow" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="1.5" result="coreBlur" />
-                <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="outerGlow" />
-                <feGaussianBlur in="SourceGraphic" stdDeviation="15" result="aura" />
-                <feMerge>
-                  <feMergeNode in="aura" />
-                  <feMergeNode in="outerGlow" />
-                  <feMergeNode in="coreBlur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
               <style>{`
-                .neon-wireframe {
-                  stroke: #5cf2ff;
+                .tsc-mark-outer {
+                  stroke: #00d2ff;
                   fill: none;
                   stroke-width: 2.5;
-                  filter: url(#neonHologramGlow);
+                  filter: drop-shadow(0 2px 6px rgba(0, 210, 255, 0.35));
                 }
-                .neon-text-wireframe {
-                  font-family: 'Arial Rounded MT Bold', 'Montserrat', sans-serif;
-                  font-weight: 900;
-                  letter-spacing: 4px;
+                .tsc-mark-inner {
+                  stroke: #5cf2ff;
                   fill: none;
-                  stroke: #66f7ff;
-                  stroke-width: 1.8;
-                  stroke-linejoin: round;
-                  filter: url(#neonHologramGlow);
+                  stroke-width: 1.5;
                 }
-                .inner-glow-fill {
-                  fill: #3bf0ff;
-                  fill-opacity: 0.15;
-                  filter: url(#neonHologramGlow);
+                .tsc-intersection {
+                  fill: rgba(0, 210, 255, 0.12);
+                }
+                .tsc-text {
+                  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+                  font-weight: 800;
+                  letter-spacing: 3px;
+                  fill: #ffffff;
+                  filter: drop-shadow(0 2px 8px rgba(0, 210, 255, 0.4));
                 }
               `}</style>
             </defs>
 
             <g transform="translate(20, 20)">
               <g>
-                <rect className="neon-wireframe" x="10" y="10" width="75" height="75" rx="2" />
-                <rect className="neon-wireframe" x="18" y="18" width="59" height="59" strokeWidth="1.5" />
+                <rect className="tsc-mark-outer" x="10" y="10" width="75" height="75" rx="3" />
+                <rect className="tsc-mark-inner" x="18" y="18" width="59" height="59" strokeWidth="1.5" />
               </g>
               <g>
-                <rect className="neon-wireframe" x="40" y="40" width="75" height="75" rx="2" />
-                <rect className="neon-wireframe" x="48" y="48" width="59" height="59" strokeWidth="1.5" />
+                <rect className="tsc-mark-outer" x="40" y="40" width="75" height="75" rx="3" />
+                <rect className="tsc-mark-inner" x="48" y="48" width="59" height="59" strokeWidth="1.5" />
               </g>
-              <rect className="inner-glow-fill" x="40" y="40" width="45" height="45" />
-              <text x="140" y="52" className="neon-text-wireframe" fontSize="34">THE SLEEP</text>
-              <text x="140" y="98" className="neon-text-wireframe" fontSize="34">COMPANY</text>
+              <rect className="tsc-intersection" x="40" y="40" width="45" height="45" rx="2" />
+              <text 
+                x="140" 
+                y="52" 
+                className="tsc-text" 
+                fontSize="34"
+                style={{ fill: '#ffffff', fontWeight: 800, letterSpacing: '3px' }}
+              >
+                THE SLEEP
+              </text>
+              <text 
+                x="140" 
+                y="98" 
+                className="tsc-text" 
+                fontSize="34"
+                style={{ fill: '#ffffff', fontWeight: 800, letterSpacing: '3px' }}
+              >
+                COMPANY
+              </text>
             </g>
           </svg>
         </div>
 
-        {/* Top Center: Daily Streak & Routine Progress Tracker HUD */}
+        {/* Top Center: Routine Progress Tracker HUD */}
 
-        {/* Cinematic Intro Banner & Controls during Intro */}
+        {/* Audio Mute/Unmute Control during Intro */}
         {introStage !== 'ready' && (
-          <div style={{ position: 'absolute', top: 'max(20px, env(safe-area-inset-top))', right: 'max(20px, env(safe-area-inset-right))', zIndex: 35, display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ position: 'absolute', top: 'max(20px, env(safe-area-inset-top))', right: 'max(20px, env(safe-area-inset-right))', zIndex: 35 }}>
             <button
               onClick={() => setSoundEnabled(!soundEnabled)}
               style={{
@@ -576,25 +558,9 @@ export default function CustomerPortal() {
                 cursor: 'pointer'
               }}
               title={soundEnabled ? 'Mute' : 'Unmute'}
+              aria-label={soundEnabled ? 'Mute audio' : 'Unmute audio'}
             >
               {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-            </button>
-            <button
-              onClick={skipIntro}
-              style={{
-                background: 'rgba(0, 210, 255, 0.15)',
-                border: '1px solid #00d2ff',
-                color: '#00d2ff',
-                borderRadius: '20px',
-                padding: '6px 14px',
-                fontSize: '0.78rem',
-                fontWeight: 800,
-                letterSpacing: '1px',
-                cursor: 'pointer',
-                backdropFilter: 'blur(8px)'
-              }}
-            >
-              SKIP INTRO ⏭
             </button>
           </div>
         )}
@@ -1072,7 +1038,7 @@ export default function CustomerPortal() {
             gap: '12px' 
           }}>
             
-            {/* Daily Streak & Routine Progress Tracker Badge placed above exercises */}
+            {/* Routine Progress Tracker Badge placed above exercises */}
             <div 
               style={{ 
                 display: 'flex',
@@ -1087,11 +1053,6 @@ export default function CustomerPortal() {
                 animation: 'slideUpFade 0.3s ease-out'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#ff9900', fontWeight: 800, fontSize: '0.82rem' }}>
-                <Flame size={15} fill="#ff9900" />
-                <span>{streakDays} DAY STREAK</span>
-              </div>
-              <span style={{ color: 'rgba(255,255,255,0.2)' }}>|</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#2ecc71', fontWeight: 700, fontSize: '0.78rem' }}>
                 <CheckCircle2 size={13} />
                 <span>{completedCount}/{exercises.length} TODAY</span>

@@ -29,3 +29,5 @@ api/_shell.mjs
 
 .credentials.txt
 scratch/
+.agents/teamwork/
+*.mp4

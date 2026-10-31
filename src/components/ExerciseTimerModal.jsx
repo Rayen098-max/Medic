@@ -126,20 +126,31 @@ export default function ExerciseTimerModal({ exercise, onClose, onMarkDone, isDo
           {/* Exercise Image / Diagram */}
           {exercise.image && (
             <div style={{ 
-              borderRadius: '14px', 
-              overflow: 'hidden', 
-              border: '1px solid rgba(0, 210, 255, 0.25)', 
-              maxHeight: '260px', 
-              background: '#040714',
+              width: '100%',
+              flexShrink: 0,
+              maxHeight: 'min(50vh, 360px)',
+              overflow: 'hidden',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              background: '#040714',
+              padding: '6px',
+              border: '1px solid rgba(0, 210, 255, 0.25)',
+              borderRadius: '14px',
               boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)'
             }}>
               <img 
                 src={exercise.image} 
                 alt={exercise.name || 'Exercise'} 
-                style={{ width: '100%', height: '100%', maxHeight: '260px', objectFit: 'contain' }} 
+                style={{ 
+                  maxWidth: '100%',
+                  maxHeight: 'calc(min(50vh, 360px) - 14px)',
+                  width: 'auto',
+                  height: 'auto',
+                  objectFit: 'contain',
+                  display: 'block',
+                  borderRadius: '10px'
+                }} 
               />
             </div>
           )}
