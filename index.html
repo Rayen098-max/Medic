@@ -22,7 +22,6 @@
 
     <!-- Preload sci-fi ambience audio for instant full-volume playback across mobile and desktop -->
     <link rel="preload" href="/audio/mixkit-futuristic-sci-fi-computer-ambience-2507.mp3" as="audio" type="audio/mpeg" />
-    <link rel="preload" href="/audio/mixkit-futuristic-sci-fi-computer-ambience-2507.wav" as="audio" type="audio/wav" />
 
     <link href="https://api.fontshare.com/v2/css?f[]=ranade@900,700,500,400&display=swap" rel="stylesheet">
     <title>Medic - 3D Posture Recovery</title>
@@ -37,7 +36,7 @@
     </script>
   </head>
   <body>
-    <audio id="medic-ambience-audio" preload="auto" playsinline>
+    <audio id="medic-ambience-audio" preload="auto" playsinline webkit-playsinline>
       <source src="/audio/mixkit-futuristic-sci-fi-computer-ambience-2507.mp3" type="audio/mpeg" />
       <source src="/audio/mixkit-futuristic-sci-fi-computer-ambience-2507.wav" type="audio/wav" />
     </audio>

@@ -8,10 +8,12 @@ class SoundManager {
   }
 
   init() {
-    if (!this.ctx && typeof window !== 'undefined') {
+    if ((!this.ctx || this.ctx.state === 'closed') && typeof window !== 'undefined') {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (AudioCtx) {
-        this.ctx = new AudioCtx();
+        try {
+          this.ctx = new AudioCtx();
+        } catch (_) {}
       }
     }
     if (this.ctx && this.ctx.state === 'suspended') {

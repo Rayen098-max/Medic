@@ -69,69 +69,95 @@ export default function CustomerPortal() {
   const [completedExercises, setCompletedExercises] = useState({});
   const ambienceAudioRef = useRef(null);
   const audioCtxRef = useRef(null);
-  const audioBufferRef = useRef(null);
-  const audioSourceNodeRef = useRef(null);
-  const gainNodeRef = useRef(null);
+  const introStageRef = useRef('assembling');
+  const isPlayingRef = useRef(false);
+  const isAutoplayBlockedRef = useRef(false);
+  const [isAudioPromptVisible, setIsAudioPromptVisible] = useState(false);
 
   // Cinematic Intro Animation state
   // stages: 'assembling' (0-1.6s) -> 'targeting' (1.6-3.0s) -> 'locked' (3.0-3.6s) -> 'ready' (3.6s+)
   const [introStage, setIntroStage] = useState('assembling');
 
-  // Eagerly prefetch and decode lightweight 470KB MP3 for instant mobile Web Audio playback
   useEffect(() => {
-    const AudioContextClass = typeof window !== 'undefined' ? (window.AudioContext || window.webkitAudioContext) : null;
-    if (AudioContextClass) {
-      try {
-        const ctx = new AudioContextClass();
-        audioCtxRef.current = ctx;
-        fetch('/audio/mixkit-futuristic-sci-fi-computer-ambience-2507.mp3')
-          .then((res) => res.arrayBuffer())
-          .then((arrayBuf) => ctx.decodeAudioData(arrayBuf))
-          .then((decoded) => {
-            audioBufferRef.current = decoded;
-          })
-          .catch(() => {});
-      } catch (_) {}
+    introStageRef.current = introStage;
+    if (introStage === 'ready') {
+      setIsAudioPromptVisible(false);
     }
-    return () => {
-      try {
-        if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
-          audioCtxRef.current.close();
+  }, [introStage]);
+
+  // Unlock and play sci-fi ambience at full volume (1.0) on user interaction
+  const startPlaybackAtFullVolume = useCallback(() => {
+    if (introStageRef.current === 'ready') return;
+
+    // Unlock Web Audio context for sound effects across mobile Safari & Chrome
+    if (typeof window !== 'undefined') {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        try {
+          if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
+            audioCtxRef.current = new AudioCtx();
+          }
+          if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+            audioCtxRef.current.resume().catch(() => {});
+          }
+        } catch (_) {}
+      }
+    }
+
+    const domAudio = typeof document !== 'undefined' ? document.getElementById('medic-ambience-audio') : null;
+    let audio = ambienceAudioRef.current || domAudio;
+    if (!audio) {
+      audio = new Audio('/audio/mixkit-futuristic-sci-fi-computer-ambience-2507.mp3');
+    }
+    ambienceAudioRef.current = audio;
+
+    try {
+      audio.muted = false;
+      audio.volume = 1.0;
+      if (audio.paused) {
+        const p = audio.play();
+        if (p && p.then) {
+          p.then(() => {
+            isPlayingRef.current = true;
+            isAutoplayBlockedRef.current = false;
+            setIsAudioPromptVisible(false);
+          }).catch((err) => {
+            console.warn('Playback gesture retry error:', err);
+          });
+        } else {
+          isPlayingRef.current = true;
+          isAutoplayBlockedRef.current = false;
+          setIsAudioPromptVisible(false);
         }
-      } catch (_) {}
-    };
+      } else {
+        isPlayingRef.current = true;
+        isAutoplayBlockedRef.current = false;
+        setIsAudioPromptVisible(false);
+      }
+    } catch (err) {
+      console.warn('Audio play error:', err);
+    }
   }, []);
 
   const fadeOutAmbienceAudio = useCallback(() => {
-    // 1. Fade HTML5 audio
+    setIsAudioPromptVisible(false);
     if (ambienceAudioRef.current) {
       const audio = ambienceAudioRef.current;
       let vol = audio.volume || 1.0;
       const fadeTimer = setInterval(() => {
         vol = Math.max(0, vol - 0.05);
-        audio.volume = Number(vol.toFixed(2));
+        try {
+          audio.volume = Number(vol.toFixed(2));
+        } catch (_) {}
         if (vol <= 0) {
           clearInterval(fadeTimer);
-          audio.pause();
+          try { audio.pause(); } catch (_) {}
         }
       }, 100);
-    }
-    // 2. Fade Web Audio gain node
-    if (gainNodeRef.current && audioCtxRef.current) {
-      try {
-        const gain = gainNodeRef.current;
-        const ctx = audioCtxRef.current;
-        gain.gain.setValueAtTime(gain.gain.value, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 2.0);
-        setTimeout(() => {
-          try {
-            if (audioSourceNodeRef.current) {
-              audioSourceNodeRef.current.stop();
-              audioSourceNodeRef.current = null;
-            }
-          } catch (_) {}
-        }, 2100);
-      } catch (_) {}
+      // Failsafe pause after 2.2s (vital for iOS Safari where audio.volume is immutable)
+      setTimeout(() => {
+        try { audio.pause(); } catch (_) {}
+      }, 2200);
     }
   }, []);
 
@@ -139,61 +165,65 @@ export default function CustomerPortal() {
 
   const playAmbienceAudio = useCallback(() => {
     try {
-      if (!ambienceAudioRef.current) {
-        const domAudio = typeof document !== 'undefined' ? document.getElementById('medic-ambience-audio') : null;
-        ambienceAudioRef.current = domAudio || new Audio('/audio/mixkit-futuristic-sci-fi-computer-ambience-2507.mp3');
-        ambienceAudioRef.current.loop = false;
+      isPlayingRef.current = false;
+      const domAudio = typeof document !== 'undefined' ? document.getElementById('medic-ambience-audio') : null;
+      let audio = ambienceAudioRef.current || domAudio;
+      if (!audio) {
+        audio = new Audio('/audio/mixkit-futuristic-sci-fi-computer-ambience-2507.mp3');
       }
-      const audio = ambienceAudioRef.current;
+      ambienceAudioRef.current = audio;
+      audio.loop = false;
+      audio.setAttribute('playsinline', 'true');
+      audio.setAttribute('webkit-playsinline', 'true');
       audio.volume = 1.0;
-      audio.currentTime = 0;
+      audio.muted = false;
+      if (audio.readyState > 0) {
+        try { audio.currentTime = 0; } catch (_) {}
+      }
 
-      const triggerPlayback = () => {
-        // Unlock Web Audio API context (vital for mobile iOS Safari & Android Chrome)
-        if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
-          audioCtxRef.current.resume().catch(() => {});
-        }
-        if (audioCtxRef.current && audioBufferRef.current && !audioSourceNodeRef.current) {
-          try {
-            const ctx = audioCtxRef.current;
-            const src = ctx.createBufferSource();
-            src.buffer = audioBufferRef.current;
-            const gain = ctx.createGain();
-            gain.gain.value = 1.0;
-            src.connect(gain);
-            gain.connect(ctx.destination);
-            src.start(0);
-            audioSourceNodeRef.current = src;
-            gainNodeRef.current = gain;
-          } catch (_) {}
-        }
-        if (audio) {
-          audio.volume = 1.0;
-          audio.play().catch(() => {});
-        }
-      };
+      // Initiate network buffering if not already active
+      if (audio.networkState === (typeof HTMLMediaElement !== 'undefined' ? HTMLMediaElement.NETWORK_EMPTY : 0)) {
+        try { audio.load(); } catch (_) {}
+      }
 
+      // 1. Attempt unmuted playback (succeeds on laptop/desktop and MEI-approved mobile)
       const promise = audio.play();
-      if (promise !== undefined) {
-        promise.catch((err) => {
-          console.warn('Autoplay restricted by mobile browser, registered high-priority gesture listeners:', err);
-          const onUserGesture = () => {
-            triggerPlayback();
-            ['pointerdown', 'touchstart', 'touchend', 'mousedown', 'click', 'keydown'].forEach((evt) => {
-              window.removeEventListener(evt, onUserGesture, true);
-              document.removeEventListener(evt, onUserGesture, true);
-            });
+      if (promise !== undefined && promise.then) {
+        promise.then(() => {
+          isPlayingRef.current = true;
+          isAutoplayBlockedRef.current = false;
+          setIsAudioPromptVisible(false);
+        }).catch((err) => {
+          console.warn('Autoplay restricted by mobile browser, awaiting user touch gesture:', err);
+          isAutoplayBlockedRef.current = true;
+          setIsAudioPromptVisible(true);
+
+          const handleMobileUnlock = () => {
+            startPlaybackAtFullVolume();
+
+            // Once playback verified active or intro is finished, detach listeners
+            if (isPlayingRef.current || (audio && !audio.paused && !audio.muted) || introStageRef.current === 'ready') {
+              ['touchstart', 'touchend', 'click', 'pointerup'].forEach((evt) => {
+                window.removeEventListener(evt, handleMobileUnlock, true);
+                document.removeEventListener(evt, handleMobileUnlock, true);
+              });
+            }
           };
-          ['pointerdown', 'touchstart', 'touchend', 'mousedown', 'click', 'keydown'].forEach((evt) => {
-            window.addEventListener(evt, onUserGesture, { once: true, capture: true });
-            document.addEventListener(evt, onUserGesture, { once: true, capture: true });
+
+          ['touchstart', 'touchend', 'click', 'pointerup'].forEach((evt) => {
+            window.addEventListener(evt, handleMobileUnlock, { capture: true, passive: true });
+            document.addEventListener(evt, handleMobileUnlock, { capture: true, passive: true });
           });
         });
+      } else {
+        isPlayingRef.current = true;
+        isAutoplayBlockedRef.current = false;
+        setIsAudioPromptVisible(false);
       }
     } catch (e) {
       console.warn('Audio play error:', e);
     }
-  }, []);
+  }, [startPlaybackAtFullVolume]);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -226,6 +256,7 @@ export default function CustomerPortal() {
   // Request fullscreen on first user touch/click gesture
   useEffect(() => {
     const requestFsOnFirstGesture = () => {
+      startPlaybackAtFullVolume();
       if (userManuallyExitedFullscreen.current) return;
       try {
         if (!document.fullscreenElement && !document.webkitFullscreenElement) {
@@ -251,7 +282,7 @@ export default function CustomerPortal() {
       window.removeEventListener('click', requestFsOnFirstGesture);
       window.removeEventListener('touchend', requestFsOnFirstGesture);
     };
-  }, []);
+  }, [startPlaybackAtFullVolume]);
 
   const toggleFullscreen = useCallback((e) => {
     if (e && e.stopPropagation) e.stopPropagation();
@@ -699,7 +730,24 @@ export default function CustomerPortal() {
       )}
 
       {/* 3D Canvas Area */}
-      <div style={{ flex: 1, position: 'relative' }}>
+      <div 
+        style={{ flex: 1, position: 'relative' }}
+        onClick={() => {
+          if (introStage !== 'ready') {
+            startPlaybackAtFullVolume();
+          }
+        }}
+        onTouchStart={() => {
+          if (introStage !== 'ready') {
+            startPlaybackAtFullVolume();
+          }
+        }}
+        onPointerDown={() => {
+          if (introStage !== 'ready') {
+            startPlaybackAtFullVolume();
+          }
+        }}
+      >
         
         {/* The Sleep Company Brand Header Logo */}
         <div 
@@ -803,6 +851,20 @@ export default function CustomerPortal() {
               {introStage === 'targeting' && 'SCANNING & ACQUIRING DIAGNOSED PAIN POINTS...'}
               {introStage === 'locked' && 'PAIN BEACONS SYNCHRONIZED • RECOVERY PLAN LOADED'}
             </div>
+            {isAudioPromptVisible && (
+              <div style={{
+                color: '#5cf2ff',
+                fontSize: 'clamp(0.62rem, 2vw, 0.72rem)',
+                letterSpacing: '1.5px',
+                textTransform: 'uppercase',
+                fontWeight: 600,
+                marginTop: '6px',
+                opacity: 0.85,
+                animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+              }}>
+                [ TAP ANYWHERE FOR SOUND ]
+              </div>
+            )}
           </div>
         )}
 
