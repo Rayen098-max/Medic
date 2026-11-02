@@ -641,7 +641,15 @@ async function main() {
   };
 
   const outputPath = path.join(__dirname, 'adversarial_logo_m2_results.json');
-  fs.writeFileSync(outputPath, JSON.stringify(summary, null, 2));
+  try {
+    fs.writeFileSync(outputPath, JSON.stringify(summary, null, 2));
+  } catch (err) {
+    try {
+      fs.writeFileSync(outputPath, JSON.stringify(summary, null, 2));
+    } catch (err2) {
+      console.warn('Could not export JSON results due to OneDrive lock:', err2.message);
+    }
+  }
 
   console.log('\n======================================================');
   console.log(` OVERALL VERDICT: ${summary.verdict} (${totalPassed}/${totalChecks} assertions passed)`);

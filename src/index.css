@@ -212,7 +212,8 @@ select {
 }
 .logo-svg {
   display: block;
-  width: clamp(200px, 38vw, 340px);
+  width: clamp(140px, 36vw, 320px);
+  max-width: calc(100vw - 84px);
   height: auto;
 }
 .circuit-lines {

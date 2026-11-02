@@ -414,8 +414,8 @@ export default function BodyModel({
       return;
     }
 
-    // Accumulate animation time during intro phases
-    introTimer.current += dt;
+    // Accumulate animation time during intro phases (accelerated 2.2x to complete snappily in ~3.2s)
+    introTimer.current += dt * 2.2;
     const t = introTimer.current;
     setAnimTime(t);
 

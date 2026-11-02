@@ -124,7 +124,7 @@ export function TasksTable({ data }: TasksTableProps) {
     if (patientId) {
       window.open(`/r/${patientId}`, '_blank');
     } else {
-      window.open(`/map`, '_blank');
+      window.open(`/r/demo`, '_blank');
     }
   }
 
@@ -142,7 +142,7 @@ export function TasksTable({ data }: TasksTableProps) {
     const cacheBuster = new Date().getTime();
     const link = patientId 
       ? `${window.location.origin}/r/${patientId}?v=${cacheBuster}` 
-      : `${window.location.origin}/map`;
+      : `${window.location.origin}/r/demo?v=${cacheBuster}`;
 
     const patient = dbPatients.find(p => p.id === patientId);
     const customMessage = patient?.conditionNotes?.whatsappMessage;

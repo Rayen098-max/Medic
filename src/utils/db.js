@@ -159,7 +159,7 @@ export const updatePatientStatus = async (id, statusData) => {
 };
 
 export const updatePatientProgress = async (id, completedExercises, legacyCompleted) => {
-  if (!supabase || !id) return;
+  if (!supabase || !id || id === 'demo') return;
   try {
     const exercises = (completedExercises && typeof completedExercises === 'object')
       ? completedExercises
@@ -200,7 +200,7 @@ export const deletePatient = async (id) => {
 // Analytics / Session Tracking Functions
 
 export const trackSessionStart = async (patientId) => {
-  if (!supabase || !patientId) return null;
+  if (!supabase || !patientId || patientId === 'demo') return null;
   try {
     const { data, error } = await supabase
       .from('patient_sessions')

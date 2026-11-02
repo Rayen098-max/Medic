@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, Html } from '@react-three/drei';
@@ -23,12 +23,36 @@ import {
 } from 'lucide-react';
 import { sounds } from '../utils/soundEffects';
 
+const defaultDummyPatient = { 
+  id: 'demo', 
+  name: 'Valued Customer', 
+  physioName: 'Kritika', 
+  phone: '919876543210' 
+};
+
+const getDefaultZone = () => {
+  const matched = painPointsData[0] || {};
+  return {
+    name: matched.name || 'Spinal Mobility',
+    description: matched.description || '',
+    dos: matched.dos || [],
+    donts: matched.donts || [],
+    products: [],
+    activeZones: [matched.id || 'neck'],
+    recommendedExercises: [
+      { name: 'Neck Retraction', duration: '', sets: '', week: '1', instructions: 'Sit tall, gently glide your chin straight back like making a double chin. Hold 5 sec.', customPlan: 'Perform in the morning before starting work at your desk.' },
+      { name: 'Thoracic Extension', duration: '10', sets: '3', week: '1', instructions: 'Gently arch backwards over a rolled towel placed at upper back.' }
+    ],
+    isBack: false
+  };
+};
+
 export default function CustomerPortal() {
   const { id } = useParams();
-  const [patient, setPatient] = useState(null);
-  const [zone, setZone] = useState(null);
+  const [patient, setPatient] = useState(defaultDummyPatient);
+  const [zone, setZone] = useState(getDefaultZone);
   const [activePointId, setActivePointId] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -95,7 +119,7 @@ export default function CustomerPortal() {
 
   // Usage Tracking Effect
   useEffect(() => {
-    if (!patient?.id || loading) return;
+    if (!patient?.id || patient.id === 'demo' || loading) return;
     let sessionId = null;
     let intervalId = null;
     let startTime = null;
@@ -127,6 +151,10 @@ export default function CustomerPortal() {
   // Load patient data
   useEffect(() => {
     async function loadData() {
+      if (!id || id === 'demo') {
+        loadDummyData();
+        return;
+      }
       try {
         const data = await getPatientById(id);
         if (data) {
@@ -137,8 +165,6 @@ export default function CustomerPortal() {
       } catch (err) {
         console.warn("DB Error, falling back to dummy data", err);
         loadDummyData();
-      } finally {
-        setLoading(false);
       }
     }
     
@@ -194,13 +220,23 @@ export default function CustomerPortal() {
           dos: combinedDos,
           donts: combinedDonts,
           activeZones: activeZoneIds,
-          recommendedExercises: data.recommendedExercises || [],
+          recommendedExercises: (data.recommendedExercises && data.recommendedExercises.length > 0) ? data.recommendedExercises : (getDefaultZone().recommendedExercises || []),
           conditionNotes: data.conditionNotes || {},
           isBack: isBackPain
         });
       } else {
         const matchedZone = contentData.zones.find(z => z.id === data.painArea);
-        setZone({ ...matchedZone, activeZones: matchedZone ? [matchedZone.id] : [] });
+        if (matchedZone) {
+          setZone({
+            ...matchedZone,
+            activeZones: [matchedZone.id],
+            recommendedExercises: (data.recommendedExercises && data.recommendedExercises.length > 0) ? data.recommendedExercises : (getDefaultZone().recommendedExercises || []),
+            conditionNotes: data.conditionNotes || {},
+            isBack: ['neck', 'shoulders', 'upper_back', 'lower_back'].includes(matchedZone.id)
+          });
+        } else {
+          loadDummyData();
+        }
       }
     }
 
@@ -231,54 +267,55 @@ export default function CustomerPortal() {
     updatePatientProgress(patient.id, updated);
   };
 
-  // Cinematic Intro Animation Orchestration
+  // Cinematic Intro Animation Orchestration (snappy 3.2s total flow)
   useEffect(() => {
-    if (loading || !zone) return;
+    const portalId = id || 'demo';
 
     // Check if user already saw intro in this tab session
-    const seen = sessionStorage.getItem(`medic_intro_seen_${id}`);
+    const seen = sessionStorage.getItem(`medic_intro_seen_${portalId}`);
     if (seen) {
       setIntroStage('ready');
       return;
     }
 
-    // Phase 1 & 2: Assembling Particle Vortex & Energy Ribbons (0.0s - 4.0s)
+    // Phase 1: Assembling Particle Vortex & Energy Ribbons (0.0s - 1.8s)
     setIntroStage('assembling');
     playAmbienceAudio();
 
     const t1 = setTimeout(() => {
       setIntroStage('targeting');
-    }, 4000);
+    }, 1800);
 
     const t2 = setTimeout(() => {
       setIntroStage('locked');
-    }, 5500);
+    }, 2500);
 
     const t3 = setTimeout(() => {
       setIntroStage('ready');
-      sessionStorage.setItem(`medic_intro_seen_${id}`, 'true');
-    }, 7000);
+      sessionStorage.setItem(`medic_intro_seen_${portalId}`, 'true');
+    }, 3200);
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
     };
-  }, [loading, zone, id, playAmbienceAudio]);
+  }, [id, playAmbienceAudio]);
 
   const replayIntro = () => {
-    sessionStorage.removeItem(`medic_intro_seen_${id}`);
+    const portalId = id || 'demo';
+    sessionStorage.removeItem(`medic_intro_seen_${portalId}`);
     setIntroStage('assembling');
     playAmbienceAudio();
     setTimeout(() => {
       setIntroStage('targeting');
-    }, 4000);
+    }, 1800);
     setTimeout(() => {
       setIntroStage('locked');
-    }, 5500);
+    }, 2500);
     setTimeout(() => {
       setIntroStage('ready');
-    }, 7000);
+    }, 3200);
   };
 
   // Close modals on Escape key
@@ -299,18 +336,6 @@ export default function CustomerPortal() {
     const person = patient.name ? `${patient.name}'s` : 'Your';
     document.title = `${person} Personalized Recovery Plan | The Sleep Company`;
   }, [patient]);
-
-  if (loading) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#030814', color: '#00d2ff', gap: '16px' }}>
-        <div style={{ width: '48px', height: '48px', borderRadius: '50%', border: '3px solid rgba(0, 210, 255, 0.2)', borderTopColor: '#00d2ff', animation: 'spin 1s linear infinite' }} />
-        <div style={{ letterSpacing: '2px', textTransform: 'uppercase', fontSize: '0.9rem', fontWeight: 700 }}>
-          Initializing Recovery Portal...
-        </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
-  }
 
   if (!patient || !zone) {
     return (
@@ -365,11 +390,11 @@ export default function CustomerPortal() {
     return (
       <div 
         style={{ 
-          position: 'absolute', 
-          bottom: '24px', 
+          position: 'fixed', 
+          bottom: 'max(18px, env(safe-area-inset-bottom))', 
           left: '50%', 
           transform: 'translateX(-50%)', 
-          width: 'calc(100% - 32px)', 
+          width: 'min(calc(100vw - 28px), 480px)', 
           maxWidth: '520px',
           background: 'rgba(9, 14, 28, 0.95)', 
           border: '1px solid #00d2ff', 
@@ -379,6 +404,7 @@ export default function CustomerPortal() {
           maxHeight: 'min(70vh, 480px)', 
           overflowY: 'auto', 
           backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
           boxShadow: '0 0 35px rgba(0, 210, 255, 0.25)',
           animation: 'slideUpFade 0.3s ease-out'
         }}
@@ -471,11 +497,12 @@ export default function CustomerPortal() {
         <div 
           onClick={closeAllPopups} 
           style={{ 
-            position: 'absolute', 
+            position: 'fixed', 
             inset: 0, 
-            zIndex: 30, 
-            background: 'rgba(0, 0, 0, 0.4)', 
-            backdropFilter: 'blur(3px)',
+            zIndex: 40, 
+            background: 'rgba(0, 0, 0, 0.55)', 
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
             transition: 'opacity 0.25s ease'
           }} 
         />
@@ -492,6 +519,7 @@ export default function CustomerPortal() {
             top: 'max(14px, env(safe-area-inset-top))', 
             left: 'max(14px, env(safe-area-inset-left))', 
             zIndex: 25,
+            maxWidth: 'calc(100vw - 80px)',
             opacity: introStage === 'ready' ? 1 : 0,
             pointerEvents: introStage === 'ready' ? 'auto' : 'none',
             transition: 'opacity 0.8s ease'
@@ -562,20 +590,24 @@ export default function CustomerPortal() {
         {introStage !== 'ready' && (
           <div style={{ 
             position: 'absolute', 
-            bottom: '40px', 
+            bottom: 'max(36px, env(safe-area-inset-bottom))', 
             left: '50%', 
             transform: 'translateX(-50%)', 
             zIndex: 25, 
+            width: 'min(92vw, 460px)',
             textAlign: 'center',
-            pointerEvents: 'none'
+            pointerEvents: 'none',
+            padding: '0 10px'
           }}>
             <div style={{ 
               color: '#00d2ff', 
-              fontSize: '0.85rem', 
-              letterSpacing: '3px', 
+              fontSize: 'clamp(0.72rem, 2.5vw, 0.85rem)', 
+              letterSpacing: 'clamp(1px, 0.4vw, 2.5px)', 
               textTransform: 'uppercase', 
               fontWeight: 800,
-              textShadow: '0 0 15px rgba(0, 210, 255, 0.8)'
+              textShadow: '0 0 15px rgba(0, 210, 255, 0.8)',
+              wordBreak: 'break-word',
+              lineHeight: 1.4
             }}>
               {introStage === 'assembling' && 'SYNTHESIZING 3D ANATOMICAL MODEL...'}
               {introStage === 'targeting' && 'SCANNING & ACQUIRING DIAGNOSED PAIN POINTS...'}
@@ -596,18 +628,13 @@ export default function CustomerPortal() {
         {/* Pain Point Hotspot Details Panel */}
         {renderHotspotOverlay()}
 
-        {/* Top Right: Medical Disclaimer Button & Properly Contrained Modal */}
+        {/* Top Right: Medical Disclaimer Button & Responsive Modal */}
         {introStage === 'ready' && (
-          <div style={{ 
-            position: 'absolute', 
-            top: 'max(20px, env(safe-area-inset-top))', 
-            right: 'max(20px, env(safe-area-inset-right))', 
-            zIndex: 35, 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'flex-end', 
-            gap: '12px' 
-          }}>
+          <div style={
+            showDisclaimerModal && isMobile
+              ? { position: 'fixed', top: 'max(68px, calc(env(safe-area-inset-top) + 54px))', left: '50%', transform: 'translateX(-50%)', zIndex: 45, width: 'min(calc(100vw - 28px), 420px)' }
+              : { position: 'absolute', top: 'max(14px, env(safe-area-inset-top))', right: 'max(14px, env(safe-area-inset-right))', zIndex: 35, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }
+          }>
             <button
               className="exercise-fab"
               onClick={() => {
@@ -617,7 +644,12 @@ export default function CustomerPortal() {
               }}
               aria-label="View Medical Disclaimer"
               title="Medical Disclaimer"
-              style={{ width: 'clamp(44px, 11vw, 54px)', height: 'clamp(44px, 11vw, 54px)', animationDelay: '0.2s' }}
+              style={{ 
+                width: 'clamp(42px, 10vw, 50px)', 
+                height: 'clamp(42px, 10vw, 50px)', 
+                animationDelay: '0.2s',
+                display: (isMobile && showDisclaimerModal) ? 'none' : 'flex'
+              }}
             >
               <img 
                 src="/warning-logo-new.png" 
@@ -635,14 +667,14 @@ export default function CustomerPortal() {
             {showDisclaimerModal && (
               <div 
                 className="keep-menu-container" 
-                style={{ transformOrigin: 'top right', zIndex: 40 }}
+                style={{ transformOrigin: 'top right', zIndex: 45, width: '100%' }}
                 onClick={(e) => e.stopPropagation()}
               >
                 <div 
                   className="keep-menu-card" 
                   style={{ 
-                    width: 'min(92vw, 420px)', 
-                    maxHeight: 'min(75vh, 520px)', 
+                    width: isMobile ? '100%' : 'min(90vw, 420px)', 
+                    maxHeight: 'min(72vh, 480px)', 
                     display: 'flex', 
                     flexDirection: 'column', 
                     padding: '0', 
@@ -744,16 +776,13 @@ export default function CustomerPortal() {
 
         {/* Bottom Right: Tabbed Futuristic WEEK Section & Button */}
         {introStage === 'ready' && !activePointId && (
-          <div style={{ 
-            position: 'absolute', 
-            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)', 
-            right: 'calc(env(safe-area-inset-right, 0px) + 18px)', 
-            zIndex: 35, 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'flex-end', 
-            gap: '12px' 
-          }}>
+          <div style={
+            showExercisesModal
+              ? { display: 'none' }
+              : showPhasesModal && isMobile
+                ? { position: 'fixed', bottom: 'max(16px, env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', zIndex: 45, width: 'min(calc(100vw - 28px), 420px)' }
+                : { position: 'absolute', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)', right: 'calc(env(safe-area-inset-right, 0px) + 18px)', zIndex: 35, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }
+          }>
             
             {showPhasesModal && (() => {
               const week1Ex = exercises.filter(ex => ex.week === '1' || !ex.week);
@@ -866,12 +895,12 @@ export default function CustomerPortal() {
                 <div 
                   className="keep-menu-container"
                   onClick={(e) => e.stopPropagation()}
-                  style={{ zIndex: 40 }}
+                  style={{ zIndex: 45, width: '100%' }}
                 >
                   <div 
                     className="keep-menu-card" 
                     style={{ 
-                      width: 'min(92vw, 360px)', 
+                      width: isMobile ? '100%' : 'min(90vw, 380px)', 
                       maxHeight: 'min(70vh, 500px)', 
                       display: 'flex', 
                       flexDirection: 'column', 
@@ -1001,7 +1030,7 @@ export default function CustomerPortal() {
               }}
               aria-label="View Recovery Phases"
               title="Recovery Routine"
-              style={{ position: 'relative', bottom: 'auto', right: 'auto' }}
+              style={{ position: 'relative', bottom: 'auto', right: 'auto', display: (isMobile && showPhasesModal) ? 'none' : 'flex' }}
             >
               <img 
                 src="/arrow-logo-new.png" 
@@ -1020,21 +1049,18 @@ export default function CustomerPortal() {
 
         {/* Bottom Left: Floating Exercises Menu & SmartGrid Mode Toggle */}
         {introStage === 'ready' && !activePointId && (
-          <div style={{ 
-            position: 'absolute', 
-            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)', 
-            left: 'calc(env(safe-area-inset-left, 0px) + 18px)', 
-            zIndex: 35, 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'flex-start', 
-            gap: '12px' 
-          }}>
+          <div style={
+            showPhasesModal
+              ? { display: 'none' }
+              : showExercisesModal && isMobile
+                ? { position: 'fixed', bottom: 'max(16px, env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', zIndex: 45, width: 'min(calc(100vw - 28px), 360px)' }
+                : { position: 'absolute', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)', left: 'calc(env(safe-area-inset-left, 0px) + 18px)', zIndex: 35, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '12px' }
+          }>
             
             {/* Routine Progress Tracker Badge placed above exercises */}
             <div 
               style={{ 
-                display: 'flex',
+                display: (isMobile && showExercisesModal) ? 'none' : 'flex',
                 alignItems: 'center',
                 gap: '8px',
                 background: 'rgba(15, 23, 42, 0.85)',
@@ -1056,13 +1082,13 @@ export default function CustomerPortal() {
             {showExercisesModal && exercises.length > 0 && (
               <div 
                 className="keep-menu-container" 
-                style={{ alignItems: 'flex-start', transformOrigin: 'bottom left', zIndex: 40 }}
+                style={{ alignItems: 'flex-start', transformOrigin: 'bottom left', zIndex: 45, width: '100%' }}
                 onClick={(e) => e.stopPropagation()}
               >
                 <div 
                   className="keep-menu-card" 
                   style={{ 
-                    width: 'min(90vw, 320px)', 
+                    width: isMobile ? '100%' : 'min(90vw, 340px)', 
                     maxHeight: 'min(65vh, 440px)', 
                     overflowY: 'auto',
                     borderRadius: '16px',
@@ -1136,7 +1162,7 @@ export default function CustomerPortal() {
                 }}
                 aria-label="View recommended exercises"
                 title="Recommended Exercises"
-                style={{ position: 'relative', bottom: 'auto', left: 'auto' }}
+                style={{ position: 'relative', bottom: 'auto', left: 'auto', display: (isMobile && showExercisesModal) ? 'none' : 'flex' }}
               >
                 <img 
                   src="/exercise-logo-new.png" 
@@ -1291,7 +1317,8 @@ export default function CustomerPortal() {
 
         @media (max-width: 640px) {
           .keep-menu-card {
-            width: calc(100vw - 32px) !important;
+            width: 100% !important;
+            max-width: 100% !important;
           }
         }
       `}</style>
