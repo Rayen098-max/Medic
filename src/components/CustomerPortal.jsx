@@ -72,17 +72,33 @@ export default function CustomerPortal() {
   // Cinematic Intro Animation state
   // stages: 'assembling' (0-1.6s) -> 'targeting' (1.6-3.0s) -> 'locked' (3.0-3.6s) -> 'ready' (3.6s+)
   const [introStage, setIntroStage] = useState('assembling');
+  const fadeOutAmbienceAudio = useCallback(() => {
+    if (!ambienceAudioRef.current) return;
+    const audio = ambienceAudioRef.current;
+    let vol = 1.0;
+    const fadeTimer = setInterval(() => {
+      vol = Math.max(0, vol - 0.05);
+      audio.volume = Number(vol.toFixed(2));
+      if (vol <= 0) {
+        clearInterval(fadeTimer);
+        audio.pause();
+      }
+    }, 100);
+  }, []);
+
   const [introProgress, setIntroProgress] = useState(0);
 
   const playAmbienceAudio = useCallback(() => {
     try {
       if (!ambienceAudioRef.current) {
-        ambienceAudioRef.current = new Audio('/audio/mixkit-futuristic-sci-fi-computer-ambience-2507.wav');
+        const domAudio = typeof document !== 'undefined' ? document.getElementById('medic-ambience-audio') : null;
+        ambienceAudioRef.current = domAudio || new Audio('/audio/mixkit-futuristic-sci-fi-computer-ambience-2507.wav');
         ambienceAudioRef.current.loop = false;
       }
-      ambienceAudioRef.current.volume = 1.0;
-      ambienceAudioRef.current.currentTime = 0;
-      const promise = ambienceAudioRef.current.play();
+      const audio = ambienceAudioRef.current;
+      audio.volume = 1.0;
+      audio.currentTime = 0;
+      const promise = audio.play();
       if (promise !== undefined) {
         promise.catch((err) => {
           console.warn('Autoplay restricted by browser, will trigger on user interaction:', err);
@@ -91,11 +107,13 @@ export default function CustomerPortal() {
               ambienceAudioRef.current.volume = 1.0;
               ambienceAudioRef.current.play().catch(() => {});
             }
-            window.removeEventListener('click', onUserGesture);
-            window.removeEventListener('touchstart', onUserGesture);
+            ['pointerdown', 'touchstart', 'touchend', 'mousedown', 'click', 'keydown'].forEach((evt) => {
+              window.removeEventListener(evt, onUserGesture, true);
+            });
           };
-          window.addEventListener('click', onUserGesture, { once: true });
-          window.addEventListener('touchstart', onUserGesture, { once: true });
+          ['pointerdown', 'touchstart', 'touchend', 'mousedown', 'click', 'keydown'].forEach((evt) => {
+            window.addEventListener(evt, onUserGesture, { once: true, capture: true });
+          });
         });
       }
     } catch (e) {
@@ -367,16 +385,7 @@ export default function CustomerPortal() {
 
   // Cinematic Intro Animation Orchestration (expanded 8.2s sequence for clear visualization)
   useEffect(() => {
-    const portalId = id || 'demo';
-
-    // Check if user already saw intro in this tab session
-    const seen = sessionStorage.getItem(`medic_intro_seen_${portalId}`);
-    if (seen) {
-      setIntroStage('ready');
-      return;
-    }
-
-    // Phase 1: Assembling Particle Vortex & Energy Ribbons (0.0s - 4.5s)
+    // Play intro animation and sci-fi audio at full volume whenever the link is opened
     setIntroStage('assembling');
     playAmbienceAudio();
 
@@ -390,19 +399,20 @@ export default function CustomerPortal() {
 
     const t3 = setTimeout(() => {
       setIntroStage('ready');
-      sessionStorage.setItem(`medic_intro_seen_${portalId}`, 'true');
+      fadeOutAmbienceAudio();
     }, 8200);
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
+      if (ambienceAudioRef.current) {
+        ambienceAudioRef.current.pause();
+      }
     };
-  }, [id, playAmbienceAudio]);
+  }, [id, playAmbienceAudio, fadeOutAmbienceAudio]);
 
   const replayIntro = () => {
-    const portalId = id || 'demo';
-    sessionStorage.removeItem(`medic_intro_seen_${portalId}`);
     setIntroStage('assembling');
     playAmbienceAudio();
     setTimeout(() => {
@@ -413,6 +423,7 @@ export default function CustomerPortal() {
     }, 7000);
     setTimeout(() => {
       setIntroStage('ready');
+      fadeOutAmbienceAudio();
     }, 8200);
   };
 

@@ -20,6 +20,9 @@
     <meta property="og:url" content="https://medic-tau.vercel.app/" />
     <meta name="twitter:card" content="summary_large_image" />
 
+    <!-- Preload sci-fi ambience audio for instant full-volume playback -->
+    <link rel="preload" href="/audio/mixkit-futuristic-sci-fi-computer-ambience-2507.wav" as="fetch" crossorigin="anonymous" />
+
     <link href="https://api.fontshare.com/v2/css?f[]=ranade@900,700,500,400&display=swap" rel="stylesheet">
     <title>Medic - 3D Posture Recovery</title>
     <script>
@@ -33,6 +36,7 @@
     </script>
   </head>
   <body>
+    <audio id="medic-ambience-audio" src="/audio/mixkit-futuristic-sci-fi-computer-ambience-2507.wav" preload="auto" playsinline></audio>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
