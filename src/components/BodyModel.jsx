@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
-import { useFrame, useLoader } from '@react-three/fiber';
+import { useFrame, useLoader, useThree } from '@react-three/fiber';
 import { Center } from '@react-three/drei';
 import * as THREE from 'three';
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
@@ -28,8 +28,8 @@ function ShockwavePulse({ position, scale, active }) {
   );
 }
 
-// Phase 1: Inward Converging Particle Vortex (0.0s - 2.0s)
-function ParticleVortex({ elapsed, active }) {
+// Phase 1: Inward Converging Particle Vortex (0.0s - 3.2s timeline)
+function ParticleVortex({ timeRef, elapsed, active }) {
   const pointsRef = useRef();
   const count = 350;
 
@@ -76,9 +76,15 @@ function ParticleVortex({ elapsed, active }) {
 
   useFrame(() => {
     if (!pointsRef.current || !active) return;
+    const t = timeRef ? timeRef.current : (elapsed || 0);
+    if (t > 3.2) {
+      if (pointsRef.current.visible) pointsRef.current.visible = false;
+      return;
+    }
+    pointsRef.current.visible = true;
     const pos = pointsRef.current.geometry.attributes.position.array;
-    const t = Math.min(Math.max(elapsed, 0), 2.5);
-    const tau = Math.min(t / 2.0, 1.0);
+    const clampedT = Math.min(Math.max(t, 0), 2.8);
+    const tau = Math.min(clampedT / 2.2, 1.0);
     const ease = Math.pow(tau, 2.0);
 
     for (let i = 0; i < count; i++) {
@@ -93,9 +99,9 @@ function ParticleVortex({ elapsed, active }) {
     }
     pointsRef.current.geometry.attributes.position.needsUpdate = true;
 
-    // Fade out past 1.8s
-    if (t > 1.8) {
-      material.opacity = Math.max(0, 1.0 - (t - 1.8) / 0.6);
+    // Fade out past 2.2s
+    if (t > 2.2) {
+      material.opacity = Math.max(0, 1.0 - (t - 2.2) / 0.8);
     } else {
       material.opacity = 1.0;
     }
@@ -106,8 +112,8 @@ function ParticleVortex({ elapsed, active }) {
   return <points ref={pointsRef} geometry={geometry} material={material} />;
 }
 
-// Phase 2: Swirling Helical Energy Ribbons (2.0s - 4.0s)
-function EnergyRibbons({ elapsed, active }) {
+// Phase 2: Swirling Helical Energy Ribbons (1.6s - 5.8s timeline)
+function EnergyRibbons({ timeRef, elapsed, active }) {
   const groupRef = useRef();
   const ribbonCount = 3;
   const segments = 60;
@@ -153,19 +159,23 @@ function EnergyRibbons({ elapsed, active }) {
 
   useFrame(() => {
     if (!groupRef.current || !active) return;
-    const t = elapsed;
+    const t = timeRef ? timeRef.current : (elapsed || 0);
+
+    // Active from t = 1.6 to 5.8
+    if (t < 1.6 || t > 5.8) {
+      material.opacity = 0;
+      if (groupRef.current.visible) groupRef.current.visible = false;
+      return;
+    }
+    groupRef.current.visible = true;
 
     // Opacity envelope
-    if (t < 1.8) {
-      material.opacity = 0;
-    } else if (t < 2.5) {
-      material.opacity = THREE.MathUtils.lerp(0, 0.75, (t - 1.8) / 0.7);
-    } else if (t < 3.8) {
+    if (t < 2.4) {
+      material.opacity = THREE.MathUtils.lerp(0, 0.75, (t - 1.6) / 0.8);
+    } else if (t < 5.0) {
       material.opacity = 0.75;
-    } else if (t < 4.5) {
-      material.opacity = THREE.MathUtils.lerp(0.75, 0, (t - 3.8) / 0.7);
     } else {
-      material.opacity = 0;
+      material.opacity = THREE.MathUtils.lerp(0.75, 0, (t - 5.0) / 0.8);
     }
 
     if (material.opacity <= 0) return;
@@ -209,15 +219,15 @@ function EnergyRibbons({ elapsed, active }) {
   );
 }
 
-// Phase 4: Chest Core Energy Flash Shockwave (5.5s - 7.0s)
-function ChestCoreFlash({ elapsed, scale, active }) {
+// Phase 4: Chest Core Energy Flash Shockwave (5.2s - 7.1s timeline)
+function ChestCoreFlash({ timeRef, elapsed, scale, active }) {
   const meshRef = useRef();
   const lightRef = useRef();
 
   useFrame(() => {
     if (!active) return;
-    const t = elapsed;
-    if (t < 5.4 || t > 7.0) {
+    const t = timeRef ? timeRef.current : (elapsed || 0);
+    if (t < 5.2 || t > 7.1) {
       if (meshRef.current) meshRef.current.visible = false;
       if (lightRef.current) lightRef.current.intensity = 0;
       return;
@@ -225,7 +235,7 @@ function ChestCoreFlash({ elapsed, scale, active }) {
 
     if (meshRef.current) {
       meshRef.current.visible = true;
-      const progress = (t - 5.5) / 1.4;
+      const progress = (t - 5.2) / 1.7;
       const currentRadius = 0.1 + Math.pow(Math.max(progress, 0), 1.8) * 4.5;
       meshRef.current.scale.set(currentRadius, currentRadius, currentRadius);
       meshRef.current.material.opacity = Math.max(0, 0.85 * (1.0 - progress));
@@ -233,7 +243,7 @@ function ChestCoreFlash({ elapsed, scale, active }) {
 
     if (lightRef.current) {
       if (t < 5.8) {
-        lightRef.current.intensity = THREE.MathUtils.lerp(0, 120, (t - 5.4) / 0.4);
+        lightRef.current.intensity = THREE.MathUtils.lerp(0, 120, (t - 5.2) / 0.6);
       } else {
         lightRef.current.intensity = THREE.MathUtils.lerp(120, 0, (t - 5.8) / 1.2);
       }
@@ -258,7 +268,9 @@ export default function BodyModel({
   activeZones = [], 
   onZoneClick,
   introStage = 'ready', // 'assembling' | 'targeting' | 'locked' | 'ready'
-  activePointId = null
+  activePointId = null,
+  isBack = false,
+  onUserRotate = null
 }) {
   const group = useRef();
   const obj = useLoader(OBJLoader, '/model.obj');
@@ -267,7 +279,16 @@ export default function BodyModel({
 
   // Animation timeline tracking
   const introTimer = useRef(0);
-  const [animTime, setAnimTime] = useState(0);
+
+  // Dedicated model rotation & pointer drag interaction state
+  const { gl } = useThree();
+  const isDraggingRef = useRef(false);
+  const prevPointerXRef = useRef(0);
+  const totalDragDistRef = useRef(0);
+  const lastUserInteractionRef = useRef(Date.now());
+  const dragVelocityRef = useRef(0);
+  const targetYRotation = isBack ? Math.PI : 0;
+  const hasInitializedRotation = useRef(false);
 
   useEffect(() => {
     getBodyModelConfig()
@@ -283,8 +304,63 @@ export default function BodyModel({
   useEffect(() => {
     if (introStage === 'assembling') {
       introTimer.current = 0;
+      hasInitializedRotation.current = false;
+      lastUserInteractionRef.current = Date.now();
     }
   }, [introStage]);
+
+  // Model-only pointer drag handling (decouples model rotation from stationary GridRoom & camera)
+  useEffect(() => {
+    const dom = gl?.domElement;
+    if (!dom) return;
+
+    const handlePointerDown = (e) => {
+      // Only permit manual figure rotation when intro has completed
+      if (introStage !== 'ready') return;
+      isDraggingRef.current = true;
+      prevPointerXRef.current = e.clientX;
+      totalDragDistRef.current = 0;
+      dragVelocityRef.current = 0;
+      lastUserInteractionRef.current = Date.now();
+      try {
+        if (dom.setPointerCapture) dom.setPointerCapture(e.pointerId);
+      } catch (_) {}
+      if (onUserRotate) onUserRotate();
+    };
+
+    const handlePointerMove = (e) => {
+      if (!isDraggingRef.current) return;
+      const dx = e.clientX - prevPointerXRef.current;
+      totalDragDistRef.current += Math.abs(dx);
+      prevPointerXRef.current = e.clientX;
+      const rotDelta = dx * 0.007;
+      if (group.current) {
+        group.current.rotation.y += rotDelta;
+      }
+      dragVelocityRef.current = rotDelta;
+      lastUserInteractionRef.current = Date.now();
+      if (onUserRotate) onUserRotate();
+    };
+
+    const handlePointerUp = (e) => {
+      isDraggingRef.current = false;
+      try {
+        if (dom.releasePointerCapture && e.pointerId) dom.releasePointerCapture(e.pointerId);
+      } catch (_) {}
+    };
+
+    dom.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
+
+    return () => {
+      dom.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+    };
+  }, [gl, introStage, onUserRotate]);
 
   // Standard Signature Metallic Blue Material
   const bodyMaterial = useMemo(() => {
@@ -407,32 +483,47 @@ export default function BodyModel({
       bodyMaterial.emissiveIntensity = 0.2;
       wireframeMaterial.opacity = 0.0;
 
-      // Slow ambient auto-rotate of the human mannequin when in ready state without active beacon popup
-      if (!activePointId) {
+      // Default orientation facing the diagnosed pain point side (e.g. back side when isBack is true)
+      if (!hasInitializedRotation.current) {
+        group.current.rotation.y = targetYRotation;
+        hasInitializedRotation.current = true;
+        lastUserInteractionRef.current = Date.now();
+      }
+
+      // Apply drag momentum inertia decay
+      if (!isDraggingRef.current && Math.abs(dragVelocityRef.current) > 0.0001) {
+        group.current.rotation.y += dragVelocityRef.current;
+        dragVelocityRef.current *= 0.92;
+      }
+
+      // Slow ambient auto-rotate of the human mannequin when in ready state without active beacon popup and no active diagnosed zones to preserve pain-side focus
+      if (activeZones.length === 0 && !activePointId && !isDraggingRef.current && (Date.now() - lastUserInteractionRef.current > 4000)) {
         group.current.rotation.y += dt * 0.2;
       }
       return;
     }
 
-    // Accumulate animation time during intro phases (accelerated 2.2x to complete snappily in ~3.2s)
-    introTimer.current += dt * 2.2;
+    // Accumulate animation time during intro phases (expanded ~8.2s sequence mapping to 7.0s timeline)
+    introTimer.current += dt * (7.0 / 8.2);
     const t = introTimer.current;
-    setAnimTime(t);
 
-    // Phase 1 (0.0s - 2.0s) & Phase 2 (2.0s - 4.0s):
-    // Silhouette scales up smoothly
-    if (introStage === 'assembling' || t < 4.0) {
+    // Phase 1 (0.0s - 4.5s) Assembling: Silhouette scales up smoothly
+    if (introStage === 'assembling' || t < 3.8) {
       const s = THREE.MathUtils.lerp(0.2, 1.0, Math.min(t / 3.0, 1.0));
       group.current.scale.set(s, s, s);
       group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, 0, dt * 4);
+    } else if (introStage === 'targeting' || introStage === 'locked') {
+      group.current.scale.set(1, 1, 1);
+      // Smoothly rotate figure to face diagnosed pain point side (e.g. back side when isBack is true)
+      group.current.rotation.y = THREE.MathUtils.lerp(group.current.rotation.y, targetYRotation, dt * 2.5);
     } else {
       group.current.scale.set(1, 1, 1);
     }
 
-    // Phase 3 (4.0s - 5.5s): Holographic Wireframe
-    if (t >= 3.5 && t < 5.5) {
-      if (t < 4.2) {
-        wireframeMaterial.opacity = THREE.MathUtils.lerp(0, 0.85, (t - 3.5) / 0.7);
+    // Phase 3 (3.2s - 5.5s timeline): Holographic Wireframe
+    if (t >= 3.2 && t < 5.5) {
+      if (t < 4.0) {
+        wireframeMaterial.opacity = THREE.MathUtils.lerp(0, 0.85, (t - 3.2) / 0.8);
       } else {
         wireframeMaterial.opacity = 0.85;
       }
@@ -443,17 +534,17 @@ export default function BodyModel({
       wireframeMaterial.opacity = 0;
     }
 
-    // Phase 4 (5.5s - 7.0s): Chest Flash & Solid Crystallization
-    if (t >= 5.5 && t < 7.0) {
-      const crystallizeProgress = Math.min((t - 5.5) / 1.3, 1.0);
+    // Phase 4 (5.4s - 7.0s timeline): Chest Flash & Solid Crystallization
+    if (t >= 5.4 && t < 7.0) {
+      const crystallizeProgress = Math.min((t - 5.4) / 1.4, 1.0);
       bodyMaterial.opacity = THREE.MathUtils.lerp(0, 1.0, crystallizeProgress);
       // Flash flare pulse
       if (t < 5.8) {
-        bodyMaterial.emissiveIntensity = THREE.MathUtils.lerp(0.2, 0.7, (t - 5.5) / 0.3);
+        bodyMaterial.emissiveIntensity = THREE.MathUtils.lerp(0.2, 0.7, (t - 5.4) / 0.4);
       } else {
         bodyMaterial.emissiveIntensity = THREE.MathUtils.lerp(0.7, 0.2, (t - 5.8) / 1.2);
       }
-    } else if (t < 5.5) {
+    } else if (t < 5.4) {
       bodyMaterial.opacity = 0.0;
     } else {
       bodyMaterial.opacity = 1.0;
@@ -464,6 +555,8 @@ export default function BodyModel({
   const handlePointerInteraction = (e, isClick, zoneId) => {
     e.stopPropagation();
     if (isClick) {
+      if (totalDragDistRef.current > 6) return; // user was dragging figure to rotate, not clicking hotspot
+      try { navigator.vibrate?.(10); } catch (_) {}
       if (onZoneClick) onZoneClick(zoneId);
     } else {
       setHovered(true);
@@ -476,17 +569,17 @@ export default function BodyModel({
     <group ref={group}>
       {/* Phase 1: Particle Vortex */}
       {isIntroActive && (
-        <ParticleVortex elapsed={animTime} active={animTime <= 2.5} />
+        <ParticleVortex timeRef={introTimer} active={isIntroActive} />
       )}
 
       {/* Phase 2: Helical Energy Ribbons */}
       {isIntroActive && (
-        <EnergyRibbons elapsed={animTime} active={animTime >= 1.8 && animTime <= 4.5} />
+        <EnergyRibbons timeRef={introTimer} active={isIntroActive} />
       )}
 
       {/* Phase 4: Chest Core Energy Flash */}
       {isIntroActive && (
-        <ChestCoreFlash elapsed={animTime} scale={scale} active={animTime >= 5.4 && animTime <= 7.0} />
+        <ChestCoreFlash timeRef={introTimer} scale={scale} active={isIntroActive} />
       )}
 
       <Center>

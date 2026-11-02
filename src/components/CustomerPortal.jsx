@@ -19,7 +19,9 @@ import {
   ChevronRight,
   ShieldCheck,
   Calendar,
-  Activity
+  Activity,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { sounds } from '../utils/soundEffects';
 
@@ -43,7 +45,7 @@ const getDefaultZone = () => {
       { name: 'Neck Retraction', duration: '', sets: '', week: '1', instructions: 'Sit tall, gently glide your chin straight back like making a double chin. Hold 5 sec.', customPlan: 'Perform in the morning before starting work at your desk.' },
       { name: 'Thoracic Extension', duration: '10', sets: '3', week: '1', instructions: 'Gently arch backwards over a rolled towel placed at upper back.' }
     ],
-    isBack: false
+    isBack: true
   };
 };
 
@@ -106,6 +108,101 @@ export default function CustomerPortal() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  // Fullscreen view and rotation gesture guidance state
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hasInteractedRotation, setHasInteractedRotation] = useState(false);
+  const userManuallyExitedFullscreen = useRef(false);
+
+  // Sync fullscreen state with document events
+  useEffect(() => {
+    const handleFsChange = () => {
+      const active = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      setIsFullscreen(active);
+      if (!active) {
+        userManuallyExitedFullscreen.current = true;
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
+    };
+  }, []);
+
+  // Request fullscreen on first user touch/click gesture
+  useEffect(() => {
+    const requestFsOnFirstGesture = () => {
+      if (userManuallyExitedFullscreen.current) return;
+      try {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          const docEl = document.documentElement;
+          const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
+          if (req) {
+            const p = req.call(docEl);
+            if (p && p.catch) p.catch(() => {});
+          }
+        }
+      } catch (_) {}
+      // Minimise address bar on mobile viewports
+      try {
+        if (window.scrollY === 0) {
+          window.scrollTo(0, 1);
+        }
+      } catch (_) {}
+    };
+
+    window.addEventListener('click', requestFsOnFirstGesture, { once: true });
+    window.addEventListener('touchend', requestFsOnFirstGesture, { once: true });
+    return () => {
+      window.removeEventListener('click', requestFsOnFirstGesture);
+      window.removeEventListener('touchend', requestFsOnFirstGesture);
+    };
+  }, []);
+
+  const toggleFullscreen = useCallback((e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    try {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        userManuallyExitedFullscreen.current = false;
+        const docEl = document.documentElement;
+        const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen;
+        if (req) {
+          const p = req.call(docEl);
+          if (p && p.catch) p.catch(() => {});
+        }
+      } else {
+        userManuallyExitedFullscreen.current = true;
+        const exit = document.exitFullscreen || document.webkitExitFullscreen;
+        if (exit) {
+          const p = exit.call(document);
+          if (p && p.catch) p.catch(() => {});
+        }
+      }
+    } catch (e) {
+      console.warn('Fullscreen toggle error:', e);
+    }
+  }, []);
+
+  // Prevent accidental multi-touch pinch zooming on mobile browser viewport
+  useEffect(() => {
+    const preventPinchZoom = (e) => {
+      if (e.touches && e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('touchstart', preventPinchZoom, { passive: false });
+    return () => document.removeEventListener('touchstart', preventPinchZoom);
+  }, []);
+
+  // Auto-fade rotate hint after 5 seconds in ready stage
+  useEffect(() => {
+    if (introStage === 'ready') {
+      const timer = setTimeout(() => setHasInteractedRotation(true), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [introStage]);
 
   // Universal close for any open popup when clicking backdrop / outside
   const closeAllPopups = () => {
@@ -185,7 +282,7 @@ export default function CustomerPortal() {
           { name: 'Neck Retraction', duration: '', sets: '', week: '1', instructions: 'Sit tall, gently glide your chin straight back like making a double chin. Hold 5 sec.', customPlan: 'Perform in the morning before starting work at your desk.' },
           { name: 'Thoracic Extension', duration: '10', sets: '3', week: '1', instructions: 'Gently arch backwards over a rolled towel placed at upper back.' }
         ],
-        isBack: false
+        isBack: true
       });
     }
 
@@ -210,8 +307,8 @@ export default function CustomerPortal() {
         
         const activeZoneIds = matchedPoints.map(p => p.id);
         const isBackPain = matchedPoints.some(p => {
-          const z = p.zone?.toLowerCase() || '';
-          return z.includes('back') || z.includes('neck') || z.includes('shoulder');
+          const z = (p.zone || p.name || '').toLowerCase();
+          return z.includes('back') || z.includes('neck') || z.includes('shoulder') || z.includes('cervical') || z.includes('lumbar') || z.includes('thoracic') || z.includes('scapul') || z.includes('glute') || z.includes('hamstring') || z.includes('calf') || z.includes('achilles') || p.isBack;
         });
 
         setZone({
@@ -232,7 +329,7 @@ export default function CustomerPortal() {
             activeZones: [matchedZone.id],
             recommendedExercises: (data.recommendedExercises && data.recommendedExercises.length > 0) ? data.recommendedExercises : (getDefaultZone().recommendedExercises || []),
             conditionNotes: data.conditionNotes || {},
-            isBack: ['neck', 'shoulders', 'upper_back', 'lower_back'].includes(matchedZone.id)
+            isBack: ['neck', 'shoulders', 'upper_back', 'lower_back', 'back'].includes(matchedZone.id)
           });
         } else {
           loadDummyData();
@@ -261,13 +358,14 @@ export default function CustomerPortal() {
       [exerciseName]: !completedExercises[exerciseName]
     };
     setCompletedExercises(updated);
+    try { navigator.vibrate?.(10); } catch (_) {}
     localStorage.setItem(`medic_done_${patient.id}_${today}`, JSON.stringify(updated));
 
     // Persist to Supabase if table columns exist
     updatePatientProgress(patient.id, updated);
   };
 
-  // Cinematic Intro Animation Orchestration (snappy 3.2s total flow)
+  // Cinematic Intro Animation Orchestration (expanded 8.2s sequence for clear visualization)
   useEffect(() => {
     const portalId = id || 'demo';
 
@@ -278,22 +376,22 @@ export default function CustomerPortal() {
       return;
     }
 
-    // Phase 1: Assembling Particle Vortex & Energy Ribbons (0.0s - 1.8s)
+    // Phase 1: Assembling Particle Vortex & Energy Ribbons (0.0s - 4.5s)
     setIntroStage('assembling');
     playAmbienceAudio();
 
     const t1 = setTimeout(() => {
       setIntroStage('targeting');
-    }, 1800);
+    }, 4500);
 
     const t2 = setTimeout(() => {
       setIntroStage('locked');
-    }, 2500);
+    }, 7000);
 
     const t3 = setTimeout(() => {
       setIntroStage('ready');
       sessionStorage.setItem(`medic_intro_seen_${portalId}`, 'true');
-    }, 3200);
+    }, 8200);
 
     return () => {
       clearTimeout(t1);
@@ -309,13 +407,13 @@ export default function CustomerPortal() {
     playAmbienceAudio();
     setTimeout(() => {
       setIntroStage('targeting');
-    }, 1800);
+    }, 4500);
     setTimeout(() => {
       setIntroStage('locked');
-    }, 2500);
+    }, 7000);
     setTimeout(() => {
       setIntroStage('ready');
-    }, 3200);
+    }, 8200);
   };
 
   // Close modals on Escape key
@@ -366,6 +464,8 @@ export default function CustomerPortal() {
           }} 
           introStage={introStage}
           activePointId={activePointId}
+          isBack={zone.isBack}
+          onUserRotate={() => setHasInteractedRotation(true)}
         />
         <ContactShadows resolution={256} frames={1} position={[0, -3.5, 0]} opacity={0.5} scale={20} blur={2} far={4.5} />
         <Environment preset="city" />
@@ -373,6 +473,8 @@ export default function CustomerPortal() {
       <OrbitControls 
         target={[0, 0, 0]}
         enablePan={false}
+        enableRotate={false}
+        enableZoom={false}
         minDistance={3}
         maxDistance={10}
         minPolarAngle={Math.PI / 2}
@@ -410,6 +512,9 @@ export default function CustomerPortal() {
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {isMobile && (
+          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: 'rgba(255, 255, 255, 0.25)', margin: '-6px auto 14px' }} />
+        )}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid rgba(0, 210, 255, 0.2)', paddingBottom: '10px' }}>
           <div>
             <span style={{ fontSize: '0.72rem', color: '#00d2ff', letterSpacing: '1.5px', textTransform: 'uppercase', fontWeight: 800 }}>
@@ -620,13 +725,48 @@ export default function CustomerPortal() {
         <Canvas 
           style={{ position: 'absolute', inset: 0, touchAction: 'none' }} 
           dpr={[1, 1.5]} 
-          camera={{ position: [0, 0, zone.isBack ? -(isMobile ? 14 : 9) : (isMobile ? 14 : 9)], fov: 45 }}
+          camera={{ position: [0, 0, isMobile ? 14 : 9], fov: 45 }}
         >
           {renderScene()}
         </Canvas>
 
         {/* Pain Point Hotspot Details Panel */}
         {renderHotspotOverlay()}
+
+        {/* Mobile / Desktop Drag to Rotate Body Gesture Guidance */}
+        {introStage === 'ready' && !activePointId && !showPhasesModal && !showExercisesModal && !showDisclaimerModal && !hasInteractedRotation && (
+          <div 
+            className="rotate-hint-pill"
+            style={{ 
+              position: 'absolute', 
+              bottom: isMobile ? 'max(88px, calc(env(safe-area-inset-bottom) + 72px))' : '36px', 
+              left: '50%', 
+              transform: 'translateX(-50%)', 
+              zIndex: 25, 
+              pointerEvents: 'none',
+              background: 'rgba(15, 23, 42, 0.8)', 
+              border: '1px solid rgba(0, 210, 255, 0.3)', 
+              borderRadius: '20px', 
+              padding: '6px 14px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              color: '#cbd5e1', 
+              fontSize: 'clamp(0.7rem, 2vw, 0.78rem)', 
+              fontWeight: 700, 
+              letterSpacing: '1px', 
+              textTransform: 'uppercase',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              boxShadow: '0 0 20px rgba(0, 210, 255, 0.2)',
+              animation: 'slideUpFade 0.3s ease-out'
+            }}
+          >
+            <span className="animate-pulse" style={{ color: '#00d2ff', fontSize: '1.05rem', lineHeight: 1 }}>‹</span>
+            <span>Drag to rotate body</span>
+            <span className="animate-pulse" style={{ color: '#00d2ff', fontSize: '1.05rem', lineHeight: 1 }}>›</span>
+          </div>
+        )}
 
         {/* Top Right: Medical Disclaimer Button & Responsive Modal */}
         {introStage === 'ready' && (
@@ -662,6 +802,33 @@ export default function CustomerPortal() {
                   transition: 'transform 0.3s ease'
                 }} 
               />
+            </button>
+
+            {/* Discrete Fullscreen Toggle Button */}
+            <button
+              className="fullscreen-toggle-btn"
+              onClick={toggleFullscreen}
+              aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+              style={{ 
+                width: 'clamp(36px, 8.5vw, 42px)', 
+                height: 'clamp(36px, 8.5vw, 42px)', 
+                borderRadius: '50%',
+                background: 'rgba(15, 23, 42, 0.85)',
+                border: '1px solid rgba(0, 210, 255, 0.35)',
+                color: '#00d2ff',
+                display: (isMobile && showDisclaimerModal) ? 'none' : 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                boxShadow: '0 0 15px rgba(0, 210, 255, 0.2)',
+                transition: 'all 0.2s ease',
+                outline: 'none'
+              }}
+            >
+              {isFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
             </button>
             
             {showDisclaimerModal && (
