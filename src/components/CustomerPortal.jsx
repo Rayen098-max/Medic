@@ -68,22 +68,71 @@ export default function CustomerPortal() {
   // Upgrades state
   const [completedExercises, setCompletedExercises] = useState({});
   const ambienceAudioRef = useRef(null);
+  const audioCtxRef = useRef(null);
+  const audioBufferRef = useRef(null);
+  const audioSourceNodeRef = useRef(null);
+  const gainNodeRef = useRef(null);
 
   // Cinematic Intro Animation state
   // stages: 'assembling' (0-1.6s) -> 'targeting' (1.6-3.0s) -> 'locked' (3.0-3.6s) -> 'ready' (3.6s+)
   const [introStage, setIntroStage] = useState('assembling');
+
+  // Eagerly prefetch and decode lightweight 470KB MP3 for instant mobile Web Audio playback
+  useEffect(() => {
+    const AudioContextClass = typeof window !== 'undefined' ? (window.AudioContext || window.webkitAudioContext) : null;
+    if (AudioContextClass) {
+      try {
+        const ctx = new AudioContextClass();
+        audioCtxRef.current = ctx;
+        fetch('/audio/mixkit-futuristic-sci-fi-computer-ambience-2507.mp3')
+          .then((res) => res.arrayBuffer())
+          .then((arrayBuf) => ctx.decodeAudioData(arrayBuf))
+          .then((decoded) => {
+            audioBufferRef.current = decoded;
+          })
+          .catch(() => {});
+      } catch (_) {}
+    }
+    return () => {
+      try {
+        if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+          audioCtxRef.current.close();
+        }
+      } catch (_) {}
+    };
+  }, []);
+
   const fadeOutAmbienceAudio = useCallback(() => {
-    if (!ambienceAudioRef.current) return;
-    const audio = ambienceAudioRef.current;
-    let vol = 1.0;
-    const fadeTimer = setInterval(() => {
-      vol = Math.max(0, vol - 0.05);
-      audio.volume = Number(vol.toFixed(2));
-      if (vol <= 0) {
-        clearInterval(fadeTimer);
-        audio.pause();
-      }
-    }, 100);
+    // 1. Fade HTML5 audio
+    if (ambienceAudioRef.current) {
+      const audio = ambienceAudioRef.current;
+      let vol = audio.volume || 1.0;
+      const fadeTimer = setInterval(() => {
+        vol = Math.max(0, vol - 0.05);
+        audio.volume = Number(vol.toFixed(2));
+        if (vol <= 0) {
+          clearInterval(fadeTimer);
+          audio.pause();
+        }
+      }, 100);
+    }
+    // 2. Fade Web Audio gain node
+    if (gainNodeRef.current && audioCtxRef.current) {
+      try {
+        const gain = gainNodeRef.current;
+        const ctx = audioCtxRef.current;
+        gain.gain.setValueAtTime(gain.gain.value, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 2.0);
+        setTimeout(() => {
+          try {
+            if (audioSourceNodeRef.current) {
+              audioSourceNodeRef.current.stop();
+              audioSourceNodeRef.current = null;
+            }
+          } catch (_) {}
+        }, 2100);
+      } catch (_) {}
+    }
   }, []);
 
   const [introProgress, setIntroProgress] = useState(0);
@@ -92,27 +141,52 @@ export default function CustomerPortal() {
     try {
       if (!ambienceAudioRef.current) {
         const domAudio = typeof document !== 'undefined' ? document.getElementById('medic-ambience-audio') : null;
-        ambienceAudioRef.current = domAudio || new Audio('/audio/mixkit-futuristic-sci-fi-computer-ambience-2507.wav');
+        ambienceAudioRef.current = domAudio || new Audio('/audio/mixkit-futuristic-sci-fi-computer-ambience-2507.mp3');
         ambienceAudioRef.current.loop = false;
       }
       const audio = ambienceAudioRef.current;
       audio.volume = 1.0;
       audio.currentTime = 0;
+
+      const triggerPlayback = () => {
+        // Unlock Web Audio API context (vital for mobile iOS Safari & Android Chrome)
+        if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+          audioCtxRef.current.resume().catch(() => {});
+        }
+        if (audioCtxRef.current && audioBufferRef.current && !audioSourceNodeRef.current) {
+          try {
+            const ctx = audioCtxRef.current;
+            const src = ctx.createBufferSource();
+            src.buffer = audioBufferRef.current;
+            const gain = ctx.createGain();
+            gain.gain.value = 1.0;
+            src.connect(gain);
+            gain.connect(ctx.destination);
+            src.start(0);
+            audioSourceNodeRef.current = src;
+            gainNodeRef.current = gain;
+          } catch (_) {}
+        }
+        if (audio) {
+          audio.volume = 1.0;
+          audio.play().catch(() => {});
+        }
+      };
+
       const promise = audio.play();
       if (promise !== undefined) {
         promise.catch((err) => {
-          console.warn('Autoplay restricted by browser, will trigger on user interaction:', err);
+          console.warn('Autoplay restricted by mobile browser, registered high-priority gesture listeners:', err);
           const onUserGesture = () => {
-            if (ambienceAudioRef.current) {
-              ambienceAudioRef.current.volume = 1.0;
-              ambienceAudioRef.current.play().catch(() => {});
-            }
+            triggerPlayback();
             ['pointerdown', 'touchstart', 'touchend', 'mousedown', 'click', 'keydown'].forEach((evt) => {
               window.removeEventListener(evt, onUserGesture, true);
+              document.removeEventListener(evt, onUserGesture, true);
             });
           };
           ['pointerdown', 'touchstart', 'touchend', 'mousedown', 'click', 'keydown'].forEach((evt) => {
             window.addEventListener(evt, onUserGesture, { once: true, capture: true });
+            document.addEventListener(evt, onUserGesture, { once: true, capture: true });
           });
         });
       }
@@ -1234,28 +1308,6 @@ export default function CustomerPortal() {
                 ? { position: 'fixed', bottom: 'max(16px, env(safe-area-inset-bottom))', left: '50%', transform: 'translateX(-50%)', zIndex: 45, width: 'min(calc(100vw - 28px), 360px)' }
                 : { position: 'absolute', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 18px)', left: 'calc(env(safe-area-inset-left, 0px) + 18px)', zIndex: 35, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '12px' }
           }>
-            
-            {/* Routine Progress Tracker Badge placed above exercises */}
-            <div 
-              style={{ 
-                display: (isMobile && showExercisesModal) ? 'none' : 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'rgba(15, 23, 42, 0.85)',
-                border: '1px solid rgba(0, 210, 255, 0.3)',
-                borderRadius: '20px',
-                padding: '6px 14px',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 0 15px rgba(0, 210, 255, 0.2)',
-                animation: 'slideUpFade 0.3s ease-out'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#2ecc71', fontWeight: 700, fontSize: '0.78rem' }}>
-                <CheckCircle2 size={13} />
-                <span>{completedCount}/{exercises.length} TODAY</span>
-              </div>
-            </div>
-
             {/* Exercise List Popup */}
             {showExercisesModal && exercises.length > 0 && (
               <div 
