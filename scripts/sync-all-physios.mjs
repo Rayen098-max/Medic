@@ -59,8 +59,8 @@ function parseStandardDate(raw, physioName = '') {
     const month = isKritika ? p1 : p2;
     const day = isKritika ? p2 : p1;
 
-    // Reject future dates (November/December 2026 or year > 2026)
-    if (year > 2026 || (year === 2026 && month > 10)) {
+    // Reject unparseable or distant future years
+    if (year > 2027 || year < 2024 || month < 1 || month > 12) {
       return { isoDate: '', displayDate: '', monthKey: '', monthName: '', timestamp: 0 };
     }
 
@@ -97,21 +97,29 @@ async function fetchTabCsv(tabName) {
   return await res.text();
 }
 
-async function sendBatchToSupabase(records) {
+async function sendBatchToSupabase(records, retries = 5) {
   const endpoint = `${SUPABASE_URL}/rest/v1/tracker_tasks?on_conflict=id`;
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "apikey": SUPABASE_SERVICE_KEY,
-      "Authorization": "Bearer " + SUPABASE_SERVICE_KEY,
-      "Prefer": "resolution=merge-duplicates"
-    },
-    body: JSON.stringify(records)
-  });
-  if (!res.ok) {
-    const txt = await res.text();
-    throw new Error(`Failed to save batch (${res.status}): ${txt}`);
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_SERVICE_KEY,
+          "Authorization": "Bearer " + SUPABASE_SERVICE_KEY,
+          "Prefer": "resolution=merge-duplicates"
+        },
+        body: JSON.stringify(records)
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(`Failed to save batch (${res.status}): ${txt}`);
+      }
+      return;
+    } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise(r => setTimeout(r, 1000 * attempt));
+    }
   }
 }
 
@@ -134,24 +142,36 @@ async function main() {
     console.log(`\nFetching ${tabName} for ${config.full_name}...`);
     try {
       const csv = await fetchTabCsv(tabName);
-      const result = Papa.parse(csv, { header: true, skipEmptyLines: true });
+      const result = Papa.parse(csv, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (h) => h.trim()
+      });
       let lastDate = "";
       let count = 0;
 
+      // Find date key dynamically if headers vary (e.g. "Date 25/1")
+      const firstRow = result.data[0] || {};
+      const allKeys = Object.keys(firstRow);
+      const dynamicDateKey = allKeys.find(k => /^dates?/i.test(k)) || 'Date';
+      const dynamicNameKey = allKeys.find(k => /customer\s*name|^name$/i.test(k)) || 'Customer Name';
+      const dynamicPhoneKey = allKeys.find(k => /customer\s*number|phone|number/i.test(k)) || 'Customer Number';
+      const dynamicDoneKey = allKeys.find(k => /physio\s*session\s*done|session\s*done/i.test(k)) || 'Physio session Done';
+
       for (let r = 0; r < result.data.length; r++) {
         const row = result.data[r];
-        const rawDate = row['Date'] || row['Dates'];
+        const rawDate = row[dynamicDateKey] || row['Date'] || row['Dates'];
         const dateTrim = rawDate ? String(rawDate).trim() : "";
-        if (dateTrim && !['Start', 'Mid', 'End', 'cc', 'no cc'].includes(dateTrim)) {
+        if (dateTrim && !['Start', 'Mid', 'End', 'cc', 'no cc', '..'].includes(dateTrim)) {
           lastDate = dateTrim;
         }
 
-        const custName = String(row['Customer Name'] || row['Name'] || '').trim();
-        const custPhone = String(row['Customer Number'] || row['Number'] || row['Phone'] || '').replace(/\D/g, '');
+        const custName = String(row[dynamicNameKey] || row['Customer Name'] || row['Name'] || '').trim();
+        const custPhone = String(row[dynamicPhoneKey] || row['Customer Number'] || row['Number'] || row['Phone'] || '').replace(/\D/g, '');
 
         if (!custName && !custPhone) continue;
 
-        const sessionDone = String(row['Physio session Done'] || row['Session Done'] || '').trim();
+        const sessionDone = String(row[dynamicDoneKey] || row['Physio session Done'] || row['Session Done'] || '').trim();
         const parsed = parseStandardDate(lastDate, config.physio_name);
 
         // Deterministic composite ID (NO row number!)

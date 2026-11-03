@@ -99,8 +99,8 @@ function syncAllPhysioTabs() {
         const m = isKritika ? p1 : p2;
         const d = isKritika ? p2 : p1;
 
-        // Reject future dates (November/December 2026 or year > 2026)
-        if (year > 2026 || (year === 2026 && m > 10)) {
+        // Reject unparseable or distant future years
+        if (year > 2027 || year < 2024 || m < 1 || m > 12) {
           continue;
         }
 
