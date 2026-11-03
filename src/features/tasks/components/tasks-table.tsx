@@ -11,11 +11,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { MessageCircle, Eye, Trash2 } from 'lucide-react'
+import { MessageCircle, Eye, Trash2, Sparkles } from 'lucide-react'
 import CaptureForm from '@/components/CaptureForm'
 import { getPatients, recordFollowup, softDeleteTrackerTask, markTaskWhatsAppSent } from '@/utils/db'
 import { useAuth } from '@/context/AuthContext'
@@ -172,6 +174,43 @@ export function TasksTable({ data }: TasksTableProps) {
     window.open(url, '_blank');
   }
 
+  const handleSleepScienceWhatsApp = (row: TrackerRow, id: string, appType: 'default' | 'business' | 'web' = 'default') => {
+    let phone = String(row["Customer Number"] || "").replace(/\D/g, '');
+    if (!phone) {
+      alert("No phone number available for this customer.");
+      return;
+    }
+    if (phone.length === 10) {
+      phone = '91' + phone;
+    }
+
+    const patientId = getMatchedPatientId(row, id);
+    const link = patientId 
+      ? `${window.location.origin}/m/${patientId}` 
+      : `${window.location.origin}/mattress`;
+
+    const customerName = row["Customer Name"] || "there";
+    const physioName = profile?.full_name?.replace(/^Dr\.?\s+/i, '') || 'Physio Specialist';
+
+    const fullMessage = `Hi ${customerName},\n\nIt was a pleasure consulting with you today! As discussed, choosing the right spinal support makes all the difference for your posture and deep sleep recovery.\n\nExplore how your spine aligns on our patented SmartGRID™ vs ordinary memory foam in our 3D Interactive Lab:\n👉 ${link}\n\nWarm regards,\nDr. ${physioName} (PT)\nThe Sleep Company`;
+
+    const encoded = encodeURIComponent(fullMessage);
+    
+    let url = `https://wa.me/${phone}?text=${encoded}`;
+    if (appType === 'business') {
+      url = `intent://send/?phone=${phone}&text=${encoded}#Intent;scheme=whatsapp;package=com.whatsapp.w4b;end`;
+    } else if (appType === 'web') {
+      url = `https://web.whatsapp.com/send?phone=${phone}&text=${encoded}`;
+    }
+
+    if (profile?.id) {
+      recordFollowup(patientId, profile.id, customerName);
+    }
+    markTaskWhatsAppSent(id);
+
+    window.open(url, '_blank');
+  }
+
   // Partition into pending and completed
   const { pendingTasks, completedTasks } = useMemo(() => {
     const pending: Array<{ row: TrackerRow, id: string, patientId: string | null }> = []
@@ -279,17 +318,33 @@ export function TasksTable({ data }: TasksTableProps) {
                           )}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="secondary"
-                            className="w-full gap-1.5 text-xs"
-                            onClick={() => handlePreview(row, id)}
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                            Preview
-                          </Button>
+                          <div className="flex flex-col sm:flex-row gap-1 w-full">
+                            <Button
+                              variant="secondary"
+                              className="flex-1 gap-1 text-[11px] h-7 px-1.5"
+                              onClick={() => handlePreview(row, id)}
+                              title="Preview Exercise Recovery Routine"
+                            >
+                              <Eye className="h-3 w-3" />
+                              Routine
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="flex-1 gap-1 text-[11px] h-7 px-1.5 border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10"
+                              onClick={() => {
+                                const patientId = getMatchedPatientId(row, id);
+                                const link = patientId ? `/m/${patientId}` : `/mattress`;
+                                window.open(link, '_blank');
+                              }}
+                              title="Open 3D SmartGRID Posture Simulator"
+                            >
+                              <Sparkles className="h-3 w-3 text-cyan-400" />
+                              SmartGRID
+                            </Button>
+                          </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2 w-full">
+                          <div className="flex gap-1.5 w-full">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button 
@@ -300,21 +355,40 @@ export function TasksTable({ data }: TasksTableProps) {
                                   WhatsApp
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent>
+                              <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuLabel className="text-[10px] text-muted-foreground uppercase font-mono tracking-wider">
+                                  Exercise Recovery Plan
+                                </DropdownMenuLabel>
                                 <DropdownMenuItem onClick={() => handleWhatsApp(row, id, 'default')}>
-                                  WhatsApp (Default)
+                                  Send Recovery (Default)
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleWhatsApp(row, id, 'business')}>
-                                  WhatsApp Business (Android)
+                                  Send Recovery (WA Business)
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleWhatsApp(row, id, 'web')}>
-                                  WhatsApp Web
+                                  Send Recovery (WA Web)
+                                </DropdownMenuItem>
+
+                                <DropdownMenuSeparator />
+                                
+                                <DropdownMenuLabel className="text-[10px] text-cyan-400 uppercase font-mono tracking-wider flex items-center gap-1">
+                                  <Sparkles className="w-3 h-3 text-cyan-400" />
+                                  SmartGRID™ (No Pain)
+                                </DropdownMenuLabel>
+                                <DropdownMenuItem onClick={() => handleSleepScienceWhatsApp(row, id, 'default')} className="text-cyan-400 font-medium focus:text-cyan-300">
+                                  Send Sleep Science (Default)
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleSleepScienceWhatsApp(row, id, 'business')} className="text-cyan-400 font-medium focus:text-cyan-300">
+                                  Send Sleep Science (WA Business)
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleSleepScienceWhatsApp(row, id, 'web')} className="text-cyan-400 font-medium focus:text-cyan-300">
+                                  Send Sleep Science (WA Web)
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                             <Button
                               variant="outline"
-                              className="border-destructive/30 text-destructive hover:bg-destructive/10 px-2.5"
+                              className="border-destructive/30 text-destructive hover:bg-destructive/10 px-2"
                               onClick={() => setTaskToDelete({ id, name: row["Customer Name"] || "this customer" })}
                               title="Remove Task"
                             >

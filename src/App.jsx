@@ -125,6 +125,7 @@ function MapView() {
 import { Tasks } from './features/tasks';
 import { UsageReport } from './features/usage-report';
 import { DailyReport } from './features/dailyReport';
+import { MattressExperience } from './features/mattress';
 import { Analytics } from '@vercel/analytics/react';
 
 export default function App() {
@@ -142,6 +143,11 @@ export default function App() {
           <Route path="/preview" element={<CustomerPortal />} />
           <Route path="/portal/:id" element={<CustomerPortal />} />
           <Route path="/portal" element={<CustomerPortal />} />
+          {/* SmartGRID 3D Mattress & Posture Simulation Routes */}
+          <Route path="/m/:id" element={<MattressExperience />} />
+          <Route path="/m" element={<MattressExperience />} />
+          <Route path="/mattress" element={<MattressExperience />} />
+          <Route path="/sleep-science" element={<MattressExperience />} />
           <Route path="/map" element={
             <ProtectedRoute allowedRoles={['admin', 'manager', 'physio']}>
               <MapView />
