@@ -123,7 +123,7 @@ export function parseISODate(s: string): DateParts | null {
   return { y, m: mo, d };
 }
 
-export function parseCellDate(v: any): DateParts | null {
+export function parseCellDate(v: any, isMDY = false): DateParts | null {
   if (v === null || v === undefined || v === '') return null;
 
   if (Object.prototype.toString.call(v) === '[object Date]') {
@@ -153,12 +153,15 @@ export function parseCellDate(v: any): DateParts | null {
   m = s.match(/^(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?$/);
   if (!m) return null;
 
-  let d = +m[1];
-  let mo = +m[2];
+  let p1 = +m[1];
+  let p2 = +m[2];
   let y = m[3] ? (+m[3] < 100 ? 2000 + (+m[3]) : +m[3]) : 0;
 
-  // "10/27" typed the American way (month > 12 guard)
-  if (mo > 12 && d <= 12) {
+  let d = isMDY ? p2 : p1;
+  let mo = isMDY ? p1 : p2;
+
+  // "10/27" typed the American way (month > 12 guard when not already MDY)
+  if (!isMDY && mo > 12 && d <= 12) {
     const t = d;
     d = mo;
     mo = t;
@@ -198,7 +201,7 @@ function findColIndex(headers: string[], aliases: string[]): number {
   return -1;
 }
 
-export function extractClientRecords(rows: any[][], rawHeaders?: string[]): ParsedClientRecord[] {
+export function extractClientRecords(rows: any[][], rawHeaders?: string[], isMDY = false): ParsedClientRecord[] {
   if (!rows || rows.length < 2) return [];
 
   const headers = (rawHeaders || rows[0]).map(norm);
@@ -219,7 +222,7 @@ export function extractClientRecords(rows: any[][], rawHeaders?: string[]): Pars
     if (!row || !row.length) continue;
 
     const cellVal = colDate >= 0 ? row[colDate] : null;
-    const parsed = parseCellDate(cellVal);
+    const parsed = parseCellDate(cellVal, isMDY);
     if (parsed) {
       currentDate = parsed;
     }
@@ -345,7 +348,8 @@ export function generatePhysioDailyReport(
     };
   }
 
-  const allRecords = extractClientRecords(rawRows);
+  const isMDY = String(physio.key || physio.display || '').toLowerCase().includes('kritika');
+  const allRecords = extractClientRecords(rawRows, undefined, isMDY);
   const matched = filterRowsForDay(allRecords, day);
   const counts = countDayBuckets(matched.rows, excludeNsFromSessions);
   const message = buildWhatsAppReportMessage(physio, day, counts);

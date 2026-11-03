@@ -29,8 +29,8 @@ interface TrackerRow {
 
 const KNOWN_PHYSIOS = ['Aishwarya', 'Gursheen', 'Dipti', 'Rutuja', 'Pooja', 'Hritika', 'Kritika', 'Gaurav'];
 
-const CACHE_KEY = 'medic_tasks_cache_v7';
-const CACHE_TIME_KEY = 'medic_tasks_cache_time_v7';
+const CACHE_KEY = 'medic_tasks_cache_v8';
+const CACHE_TIME_KEY = 'medic_tasks_cache_time_v8';
 
 export interface DateMeta {
   isoDate: string;       // "2026-10-15"
@@ -113,8 +113,8 @@ export function parseDateMetadata(raw: string, physioName?: string): DateMeta {
     const month = parseInt(isoMatch[2], 10);
     const day = parseInt(isoMatch[3], 10);
 
-    // Reject future dates (November/December 2026 or year > 2026)
-    if (year > 2026 || (year === 2026 && month > 10)) {
+    // Reject unparseable or distant future years
+    if (year > 2027 || year < 2024 || month < 1 || month > 12) {
       return { isoDate: '', displayDate: '', monthKey: 'future', monthName: 'Future', timestamp: 0 };
     }
 
@@ -140,8 +140,8 @@ export function parseDateMetadata(raw: string, physioName?: string): DateMeta {
     const month = isKritika ? p1 : p2;
     const day = isKritika ? p2 : p1;
 
-    // Reject future dates (November/December 2026 or year > 2026)
-    if (year > 2026 || (year === 2026 && month > 10)) {
+    // Reject unparseable or distant future years
+    if (year > 2027 || year < 2024 || month < 1 || month > 12) {
       return { isoDate: '', displayDate: '', monthKey: 'future', monthName: 'Future', timestamp: 0 };
     }
 
@@ -162,8 +162,8 @@ export function parseDateMetadata(raw: string, physioName?: string): DateMeta {
     const month = dt.getMonth() + 1;
     const day = dt.getDate();
 
-    // Reject future dates (November/December 2026 or year > 2026)
-    if (year > 2026 || (year === 2026 && month > 10)) {
+    // Reject unparseable or distant future years
+    if (year > 2027 || year < 2024 || month < 1 || month > 12) {
       return { isoDate: '', displayDate: '', monthKey: 'future', monthName: 'Future', timestamp: 0 };
     }
 

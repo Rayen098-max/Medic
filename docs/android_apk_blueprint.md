@@ -93,3 +93,4 @@ This diagnostic roadmap outlines the exact, 100% free architecture to turn **Med
 - **Immediate Deployment**: Physios can install it directly by tapping the APK on WhatsApp and clicking "Install".
 - **Zero Maintenance Overhead**: Because it uses Live-Sync mode, any bug fixes or feature additions pushed to Vercel instantly appear in the physio's app without requiring them to download a new APK!
 - **Uncompromised Website**: The public customer preview links (`/r/:id`) and desktop browser links continue to work identically as before.
+

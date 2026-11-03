@@ -55,7 +55,7 @@ export interface SheetLeaderboardResult {
   overallRate: number
 }
 
-function parseSheetDateKey(dStr: string): string | null {
+function parseSheetDateKey(dStr: string, isMDY = false): string | null {
   if (!dStr) return null
   const cleaned = dStr.trim()
   const parts = cleaned.split(/[/\\]/)
@@ -65,18 +65,16 @@ function parseSheetDateKey(dStr: string): string | null {
     const val3 = parts.length >= 3 ? parseInt(parts[2], 10) : 2026
     const year = val3 < 100 ? 2000 + val3 : val3
 
-    let day = val1
-    let month = val2
-    if (val1 > 12) {
-      day = val1
-      month = val2
-    } else if (val2 > 12) {
-      day = val2
-      month = val1
-    } else {
-      // Default to day/month (standard in India)
-      day = val1
-      month = val2
+    let day = isMDY ? val2 : val1
+    let month = isMDY ? val1 : val2
+    if (!isMDY) {
+      if (val1 > 12) {
+        day = val1
+        month = val2
+      } else if (val2 > 12) {
+        day = val2
+        month = val1
+      }
     }
     const pad = (n: number) => String(n).padStart(2, '0')
     return `${year}-${pad(month)}-${pad(day)}`
@@ -112,7 +110,8 @@ async function fetchGoogleSheetFallback(dateKey: string) {
         const phone = (row['Customer Number'] || row['Phone'] || '').trim()
         if (!name && !phone) continue
 
-        const rowDateKey = parseSheetDateKey(lastDate)
+        const isMDY = physio.key === 'kritika' || physio.name.toLowerCase().includes('kritika')
+        const rowDateKey = parseSheetDateKey(lastDate, isMDY)
         if (rowDateKey === dateKey) {
           const sessionDone = (row['Physio session Done'] || row['Session Done'] || 'Yes').trim()
           tasks.push({
