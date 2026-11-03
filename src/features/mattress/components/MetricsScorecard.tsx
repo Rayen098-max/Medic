@@ -72,3 +72,4 @@ export function MetricsScorecard({ hasSmartGrid, hasSevenZone }: MetricsScorecar
     </div>
   );
 }
+

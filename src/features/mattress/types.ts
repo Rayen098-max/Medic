@@ -181,3 +181,4 @@ export const MATTRESS_LAYERS: LayerMetadata[] = [
     bullet2: 'Maintains neutral horizontal spinal alignment throughout all 8 hours of sleep.'
   }
 ];
+
