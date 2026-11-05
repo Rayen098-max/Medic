@@ -35,8 +35,8 @@ export function MonthCardsHeader({
         </span>
       </div>
 
-      {/* Grid of Month Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      {/* Grid of Month Cards: Balanced 3-column layout for Sep, Oct, Nov */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {monthSummaries.map((summary) => {
           const { monthKey, monthName, totalAttended, sentCount, pendingCount, percentage, dateCount } = summary;
 

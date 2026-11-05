@@ -181,6 +181,7 @@ async function main() {
       const dynamicNameKey = allKeys.find(k => /customer\s*name|^name$/i.test(k)) || 'Customer Name';
       const dynamicPhoneKey = allKeys.find(k => /customer\s*number|phone|number/i.test(k)) || 'Customer Number';
       const dynamicDoneKey = allKeys.find(k => /session\s*done/i.test(k)) || 'Physio session Done';
+      const dynamicWhatsappKey = allKeys.find(k => /whatsapp/i.test(k));
 
       // If header itself has a date (e.g. "Date 25/1")
       let lastDate = "";
@@ -239,6 +240,10 @@ async function main() {
         const altKey = `${custPhone || custName.toLowerCase()}_${parsed.isoDate}`;
         const preserved = preservedFollowups.get(taskId) || preservedFollowups.get(altKey);
 
+        const rawWhatsapp = dynamicWhatsappKey ? String(row[dynamicWhatsappKey] || '').trim() : '';
+        const isWhatsappSent = /yes/i.test(rawWhatsapp);
+        const whatsappSentAt = preserved?.whatsapp_sent_at || (isWhatsappSent ? `${parsed.isoDate}T12:00:00.000Z` : null);
+
         taskMap.set(taskId, {
           id: taskId,
           physio_name: config.physio_name,
@@ -256,7 +261,7 @@ async function main() {
           product_suggested: String(row['Product Suggested'] || row['Product suggested'] || '').trim(),
           comments: String(row['Comment'] || row['Comments'] || '').trim(),
           patient_id: preserved?.patient_id || null,
-          whatsapp_sent_at: preserved?.whatsapp_sent_at || null,
+          whatsapp_sent_at: whatsappSentAt,
           updated_at: new Date().toISOString()
         });
         count++;

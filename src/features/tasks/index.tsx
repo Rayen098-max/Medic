@@ -29,8 +29,11 @@ interface TrackerRow {
 
 const KNOWN_PHYSIOS = ['Aishwarya', 'Gursheen', 'Dipti', 'Rutuja', 'Pooja', 'Hritika', 'Kritika', 'Gaurav'];
 
-const CACHE_KEY = 'medic_tasks_cache_v10';
-const CACHE_TIME_KEY = 'medic_tasks_cache_time_v10';
+// Strictly display only the active 3 months: September, October, and November
+export const ALLOWED_MONTH_KEYS = ['2026-11', '2026-10', '2026-09'];
+
+const CACHE_KEY = 'medic_tasks_cache_v12';
+const CACHE_TIME_KEY = 'medic_tasks_cache_time_v12';
 
 export interface DateMeta {
   isoDate: string;       // "2026-10-15"
@@ -261,6 +264,7 @@ export function Tasks() {
             const dynamicNameKey = allKeys.find(k => /customer\s*name|^name$/i.test(k)) || 'Customer Name';
             const dynamicPhoneKey = allKeys.find(k => /customer\s*number|phone|number/i.test(k)) || 'Customer Number';
             const dynamicDoneKey = allKeys.find(k => /session\s*done/i.test(k)) || 'Physio session Done';
+            const dynamicWhatsappKey = allKeys.find(k => /whatsapp/i.test(k));
 
             let lastDate = '';
             const headerDateMatch = dynamicDateKey.match(/(\d+[\/\-]\d+)/);
@@ -280,16 +284,19 @@ export function Tasks() {
               const nameVal = String(r[dynamicNameKey] || r['Customer Name'] || r['Name'] || '').trim();
               const numVal = String(r[dynamicPhoneKey] || r['Customer Number'] || r['Number'] || r['Phone'] || '').replace(/\D/g, '');
               const isAttended = String(r[dynamicDoneKey] || r['Physio session Done'] || r['Session Done'] || '').trim().toLowerCase() === 'yes';
+              const rawWa = dynamicWhatsappKey ? String(r[dynamicWhatsappKey] || '').trim().toLowerCase() : '';
+              const isWhatsappSent = rawWa.includes('yes');
 
               if ((nameVal || numVal) && isAttended) {
                 const parsed = parseDateMetadata(lastDate, physioKey);
-                if (parsed.isoDate) {
+                if (parsed.isoDate && ALLOWED_MONTH_KEYS.includes(parsed.monthKey)) {
                   mergedRows.push({
                     Date: parsed.isoDate,
                     "Physio Name": physioKey,
                     "Customer Name": nameVal || 'Unknown',
                     "Customer Number": numVal,
-                    "Physio session Done": 'Yes'
+                    "Physio session Done": 'Yes',
+                    whatsapp_sent_at: isWhatsappSent ? `${parsed.isoDate}T12:00:00.000Z` : null
                   });
                 }
               }
@@ -323,14 +330,14 @@ export function Tasks() {
     }
   }, [profile, fetchTasks])
 
-  // Attach pre-calculated date metadata to each attended task
+  // Attach pre-calculated date metadata to each attended task, strictly filtered to last 3 months: Sep, Oct, Nov
   const enhancedTasks = useMemo(() => {
     return deduplicateTasks(data)
       .map(row => ({
         ...row,
         _meta: parseDateMetadata(row.Date, row['Physio Name'])
       }))
-      .filter(t => t._meta.monthKey && t._meta.monthKey !== 'nodate' && t._meta.monthKey !== 'future' && t._meta.monthKey !== 'Other');
+      .filter(t => ALLOWED_MONTH_KEYS.includes(t._meta.monthKey));
   }, [data]);
 
   // Level 1: Month Summaries (Sorted descending: October first, September second, etc.)

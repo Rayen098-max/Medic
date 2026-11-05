@@ -89,6 +89,7 @@ function syncAllPhysioTabs() {
     const durationIdx = headers.findIndex(h => h.includes("duration"));
     const productIdx = headers.findIndex(h => h.includes("product suggested"));
     const commentsIdx = headers.findIndex(h => h.includes("comment"));
+    const whatsappIdx = headers.findIndex(h => h.includes("whatsapp"));
 
     let lastSeenDate = "";
     if (dateIdx >= 0) {
@@ -140,6 +141,9 @@ function syncAllPhysioTabs() {
       const identifier = cleanPhone || custName.toLowerCase().replace(/[^a-z0-9]/g, "_");
       const taskId = `${config.physio_name}_${identifier}_${isoDate}`;
 
+      const rawWhatsapp = whatsappIdx >= 0 ? String(row[whatsappIdx] || "").trim() : "";
+      const isWhatsappSent = /yes/i.test(rawWhatsapp);
+
       taskMap[taskId] = {
         id: taskId,
         physio_name: config.physio_name,
@@ -156,6 +160,7 @@ function syncAllPhysioTabs() {
         duration: durationIdx >= 0 ? String(row[durationIdx] || "").trim() : "",
         product_suggested: productIdx >= 0 ? String(row[productIdx] || "").trim() : "",
         comments: commentsIdx >= 0 ? String(row[commentsIdx] || "").trim() : "",
+        whatsapp_sent_at: isWhatsappSent ? `${isoDate}T12:00:00.000Z` : null,
         updated_at: new Date().toISOString()
       };
     }
