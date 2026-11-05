@@ -1,6 +1,23 @@
 /**
  * CLINICAL ADVISOR PILOT -> SUPABASE REAL-TIME AUTOMATION (100% FREE)
+ * 
+ * Instructions to set up in Google Sheets:
+ * 1. Open the Google Spreadsheet: https://docs.google.com/spreadsheets/d/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU
+ * 2. In the menu, go to: Extensions -> Apps Script
+ * 3. Replace the code in Code.gs with this entire script.
+ * 4. Click the Save icon (floppy disk).
+ * 5. Run the function `syncAllPhysioTabs` once to test.
+ * 6. Set up an automated Trigger:
+ *    - Click the clock icon on the left (Triggers).
+ *    - Click "+ Add Trigger" (bottom right).
+ *    - Choose which function to run: `syncAllPhysioTabs`.
+ *    - Which runs at deployment: Head.
+ *    - Select event source: "Time-driven" -> "Minutes timer" -> "Every 15 minutes" (or "On change").
+ *    - Click Save.
+ * 
+ * Now every time physios enter consultations, they are automatically synced to Supabase!
  */
+
 const SUPABASE_URL = "https://bkifvxbtisntaewelsng.supabase.co";
 const SUPABASE_SERVICE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJraWZ2eGJ0aXNudGFld2Vsc25nIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NTgzNDQ3NywiZXhwIjoyMTAxNDEwNDc3fQ.lPV0SuP5IkuZ_9StjqZ-gJR4hekQtd_-V3p6mTDVejY";
 
@@ -42,9 +59,13 @@ const TAB_PHYSIO_MAPPING = {
   }
 };
 
+const IGNORED_NON_DATES = [
+  'start', 'mid', 'end', 'cc', 'no cc', '..', '...', 'physio', 
+  'dates', 'date', 'lbp', 'na', 'n/a', '', 'yes', 'no'
+];
+
 function syncAllPhysioTabs() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  // Use a Map/Object to de-duplicate any identical keys within the batch
   const taskMap = {};
 
   for (const [tabName, config] of Object.entries(TAB_PHYSIO_MAPPING)) {
@@ -70,13 +91,21 @@ function syncAllPhysioTabs() {
     const commentsIdx = headers.findIndex(h => h.includes("comment"));
 
     let lastSeenDate = "";
+    if (dateIdx >= 0) {
+      const headerDateMatch = headers[dateIdx].match(/(\d+[\/\-]\d+)/);
+      if (headerDateMatch) {
+        lastSeenDate = headerDateMatch[1];
+      }
+    }
 
     for (let r = 1; r < values.length; r++) {
       const row = values[r];
       
-      const rawDate = dateIdx >= 0 ? String(row[dateIdx] || "").trim() : "";
-      if (rawDate && rawDate !== "" && !["start", "mid", "end", "cc", "no cc"].includes(rawDate.toLowerCase())) {
-        lastSeenDate = rawDate;
+      const rawDate = dateIdx >= 0 ? String(row[dateIdx] || "").trim().replace(/\\/g, '/') : "";
+      if (rawDate && !IGNORED_NON_DATES.includes(rawDate.toLowerCase())) {
+        if (/\d+[\/\-\.]\d+/.test(rawDate)) {
+          lastSeenDate = rawDate;
+        }
       }
 
       const custName = nameIdx >= 0 ? String(row[nameIdx] || "").trim() : "";
@@ -85,8 +114,8 @@ function syncAllPhysioTabs() {
       if (!custName && !custPhone) continue;
 
       // Standardize format into YYYY-MM-DD
-      let isoDate = lastSeenDate;
-      const slashParts = lastSeenDate.split(/[\/\-]/);
+      let isoDate = "";
+      const slashParts = lastSeenDate.split(/[\/\-\.]/);
       if (slashParts.length >= 2) {
         const p1 = parseInt(slashParts[0], 10);
         const p2 = parseInt(slashParts[1], 10);
@@ -99,19 +128,17 @@ function syncAllPhysioTabs() {
         const m = isKritika ? p1 : p2;
         const d = isKritika ? p2 : p1;
 
-        // Reject unparseable or distant future years
-        if (year > 2027 || year < 2024 || m < 1 || m > 12) {
-          continue;
-        }
-
-        if (!isNaN(d) && !isNaN(m) && d >= 1 && d <= 31 && m >= 1 && m <= 12) {
+        if (year >= 2024 && year <= 2027 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
           isoDate = year + "-" + (m < 10 ? "0" + m : m) + "-" + (d < 10 ? "0" + d : d);
         }
       }
 
-      // Deterministic unique identifier (NO row number, so shifting rows never causes duplicates)
-      const identifier = custPhone || custName.toLowerCase().replace(/[^a-z0-9]/g, "_");
-      const taskId = `${config.physio_name}_${identifier}_${isoDate || "nodate"}`;
+      if (!isoDate) continue;
+
+      // Deterministic unique identifier
+      const cleanPhone = custPhone.length >= 7 ? custPhone.slice(-10) : '';
+      const identifier = cleanPhone || custName.toLowerCase().replace(/[^a-z0-9]/g, "_");
+      const taskId = `${config.physio_name}_${identifier}_${isoDate}`;
 
       taskMap[taskId] = {
         id: taskId,
@@ -135,37 +162,38 @@ function syncAllPhysioTabs() {
   }
 
   const allRecords = Object.values(taskMap);
-  Logger.log(`Found ${allRecords.length} unique deduplicated rows to sync.`);
+  Logger.log("Total unique records ready to push: " + allRecords.length);
 
-  const BATCH_SIZE = 100;
+  // Send to Supabase in batches of 200
+  const BATCH_SIZE = 200;
   for (let i = 0; i < allRecords.length; i += BATCH_SIZE) {
     const chunk = allRecords.slice(i, i + BATCH_SIZE);
-    sendToSupabase(chunk);
+    sendBatchToSupabase(chunk);
   }
 
-  Logger.log("SUCCESS! All 7 physio tabs synced directly to Supabase!");
+  Logger.log("Supabase Sync Complete!");
 }
 
-function sendToSupabase(records) {
+function sendBatchToSupabase(chunk) {
   const endpoint = `${SUPABASE_URL}/rest/v1/tracker_tasks?on_conflict=id`;
-  
   const options = {
-    method: "POST",
+    method: "post",
     contentType: "application/json",
     headers: {
       "apikey": SUPABASE_SERVICE_KEY,
       "Authorization": "Bearer " + SUPABASE_SERVICE_KEY,
       "Prefer": "resolution=merge-duplicates"
     },
-    payload: JSON.stringify(records),
+    payload: JSON.stringify(chunk),
     muteHttpExceptions: true
   };
 
-  const response = UrlFetchApp.fetch(endpoint, options);
-  const code = response.getResponseCode();
-  if (code >= 200 && code < 300) {
-    Logger.log(`✓ Batch of ${records.length} tasks saved to Supabase (HTTP ${code})`);
-  } else {
-    Logger.log(`✗ Error syncing to Supabase (HTTP ${code}): ` + response.getContentText());
+  try {
+    const res = UrlFetchApp.fetch(endpoint, options);
+    if (res.getResponseCode() >= 400) {
+      Logger.log("Supabase error (" + res.getResponseCode() + "): " + res.getContentText());
+    }
+  } catch (err) {
+    Logger.log("Fetch error: " + err.toString());
   }
 }

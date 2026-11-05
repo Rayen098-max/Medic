@@ -41,12 +41,17 @@ const TAB_PHYSIO_MAPPING = {
   }
 };
 
-function parseStandardDate(raw, physioName = '') {
+const IGNORED_NON_DATES = [
+  'start', 'mid', 'end', 'cc', 'no cc', '..', '...', 'physio', 
+  'dates', 'date', 'lbp', 'na', 'n/a', '', 'yes', 'no'
+];
+
+export function parseStandardDate(raw, physioName = '') {
   if (!raw) return { isoDate: '', displayDate: 'No Date', monthKey: '', monthName: '', timestamp: 0 };
-  const str = String(raw).trim();
+  let str = String(raw).trim().replace(/\\/g, '/');
   
-  // Format 1: DD/MM or MM/DD
-  const slashParts = str.split(/[\/\-]/);
+  // Format 1: DD/MM or MM/DD or DD/MM/YYYY
+  const slashParts = str.split(/[\/\-\.]/);
   if (slashParts.length >= 2) {
     const p1 = parseInt(slashParts[0], 10);
     const p2 = parseInt(slashParts[1], 10);
@@ -59,12 +64,8 @@ function parseStandardDate(raw, physioName = '') {
     const month = isKritika ? p1 : p2;
     const day = isKritika ? p2 : p1;
 
-    // Reject unparseable or distant future years
-    if (year > 2027 || year < 2024 || month < 1 || month > 12) {
-      return { isoDate: '', displayDate: '', monthKey: '', monthName: '', timestamp: 0 };
-    }
-
-    if (!isNaN(day) && !isNaN(month) && day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+    // Reject unparseable or out-of-range dates
+    if (year >= 2024 && year <= 2027 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
       const dt = new Date(year, month - 1, day);
       const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const monthKey = `${year}-${String(month).padStart(2, '0')}`;
@@ -78,16 +79,18 @@ function parseStandardDate(raw, physioName = '') {
   const dt = new Date(str);
   if (!isNaN(dt.getTime())) {
     const year = dt.getFullYear();
-    const m = dt.getMonth() + 1;
-    const d = dt.getDate();
-    const isoDate = `${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const monthKey = `${year}-${String(m).padStart(2, '0')}`;
-    const monthName = dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    const displayDate = dt.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-    return { isoDate, displayDate, monthKey, monthName, timestamp: dt.getTime() };
+    const month = dt.getMonth() + 1;
+    const day = dt.getDate();
+    if (year >= 2024 && year <= 2027 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+      const monthName = dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      const displayDate = dt.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+      return { isoDate, displayDate, monthKey, monthName, timestamp: dt.getTime() };
+    }
   }
 
-  return { isoDate: str, displayDate: str, monthKey: 'Other', monthName: 'Other', timestamp: 0 };
+  return { isoDate: '', displayDate: str, monthKey: 'Other', monthName: 'Other', timestamp: 0 };
 }
 
 async function fetchTabCsv(tabName) {
@@ -126,9 +129,32 @@ async function sendBatchToSupabase(records, retries = 5) {
 async function main() {
   console.log("=== STARTING FULL CLEAN SYNC WITH STANDARDIZED DATES ===");
   
-  // Clean wipe old records first
-  console.log("Cleaning old records in Supabase...");
-  await fetch(`${SUPABASE_URL}/rest/v1/tracker_tasks?id=not.is.null`, {
+  // 1. Fetch and preserve existing follow-up status (patient_id and whatsapp_sent_at)
+  console.log("Preserving existing patient links and WhatsApp sent statuses from Supabase...");
+  const preservedFollowups = new Map();
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/tracker_tasks?or=(whatsapp_sent_at.not.is.null,patient_id.not.is.null)&select=id,customer_phone,customer_name,consult_date,patient_id,whatsapp_sent_at`, {
+      headers: {
+        "apikey": SUPABASE_SERVICE_KEY,
+        "Authorization": "Bearer " + SUPABASE_SERVICE_KEY
+      }
+    });
+    if (res.ok) {
+      const rows = await res.json();
+      for (const r of rows) {
+        if (r.id) preservedFollowups.set(r.id, r);
+        const altKey = `${r.customer_phone || r.customer_name?.toLowerCase()}_${r.consult_date}`;
+        preservedFollowups.set(altKey, r);
+      }
+      console.log(`Preserved ${rows.length} existing tasks with active followups.`);
+    }
+  } catch (err) {
+    console.warn("Could not query existing follow-ups to preserve:", err.message);
+  }
+
+  // 2. Delete corrupted records with consult_date = 'Physio' or invalid dates
+  console.log("Deleting corrupted records with consult_date='Physio'...");
+  await fetch(`${SUPABASE_URL}/rest/v1/tracker_tasks?consult_date=eq.Physio`, {
     method: "DELETE",
     headers: {
       "apikey": SUPABASE_SERVICE_KEY,
@@ -147,23 +173,48 @@ async function main() {
         skipEmptyLines: true,
         transformHeader: (h) => h.trim()
       });
-      let lastDate = "";
-      let count = 0;
 
-      // Find date key dynamically if headers vary (e.g. "Date 25/1")
+      // Find column keys dynamically
       const firstRow = result.data[0] || {};
       const allKeys = Object.keys(firstRow);
       const dynamicDateKey = allKeys.find(k => /^dates?/i.test(k)) || 'Date';
       const dynamicNameKey = allKeys.find(k => /customer\s*name|^name$/i.test(k)) || 'Customer Name';
       const dynamicPhoneKey = allKeys.find(k => /customer\s*number|phone|number/i.test(k)) || 'Customer Number';
-      const dynamicDoneKey = allKeys.find(k => /physio\s*session\s*done|session\s*done/i.test(k)) || 'Physio session Done';
+      const dynamicDoneKey = allKeys.find(k => /session\s*done/i.test(k)) || 'Physio session Done';
 
+      // If header itself has a date (e.g. "Date 25/1")
+      let lastDate = "";
+      const headerDateMatch = dynamicDateKey.match(/(\d+[\/\-]\d+)/);
+      if (headerDateMatch) {
+        lastDate = headerDateMatch[1];
+      }
+
+      // Pre-scan: if rows start without a date, find the first valid date in the sheet
+      if (!lastDate) {
+        for (const row of result.data) {
+          const val = row[dynamicDateKey] || row['Date'] || row['Dates'];
+          if (val) {
+            const clean = String(val).trim().replace(/\\/g, '/');
+            if (!IGNORED_NON_DATES.includes(clean.toLowerCase()) && /\d+[\/\-]\d+/.test(clean)) {
+              lastDate = clean;
+              break;
+            }
+          }
+        }
+      }
+
+      let count = 0;
       for (let r = 0; r < result.data.length; r++) {
         const row = result.data[r];
         const rawDate = row[dynamicDateKey] || row['Date'] || row['Dates'];
-        const dateTrim = rawDate ? String(rawDate).trim() : "";
-        if (dateTrim && !['Start', 'Mid', 'End', 'cc', 'no cc', '..'].includes(dateTrim)) {
-          lastDate = dateTrim;
+        if (rawDate) {
+          const cleanDate = String(rawDate).trim().replace(/\\/g, '/');
+          if (cleanDate && !IGNORED_NON_DATES.includes(cleanDate.toLowerCase())) {
+            // Check if it looks like a date
+            if (/\d+[\/\-\.]\d+/.test(cleanDate) || !isNaN(new Date(cleanDate).getTime())) {
+              lastDate = cleanDate;
+            }
+          }
         }
 
         const custName = String(row[dynamicNameKey] || row['Customer Name'] || row['Name'] || '').trim();
@@ -174,9 +225,19 @@ async function main() {
         const sessionDone = String(row[dynamicDoneKey] || row['Physio session Done'] || row['Session Done'] || '').trim();
         const parsed = parseStandardDate(lastDate, config.physio_name);
 
-        // Deterministic composite ID (NO row number!)
-        const identifier = custPhone || custName.toLowerCase().replace(/[^a-z0-9]/g, '_');
-        const taskId = `${config.physio_name}_${identifier}_${parsed.isoDate || 'nodate'}`;
+        if (!parsed.isoDate) {
+          // Skip if date could not be parsed
+          continue;
+        }
+
+        // Deterministic composite ID
+        const cleanPhone = custPhone.length >= 7 ? custPhone.slice(-10) : '';
+        const identifier = cleanPhone || custName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        const taskId = `${config.physio_name}_${identifier}_${parsed.isoDate}`;
+
+        // Check if there was preserved followup state
+        const altKey = `${custPhone || custName.toLowerCase()}_${parsed.isoDate}`;
+        const preserved = preservedFollowups.get(taskId) || preservedFollowups.get(altKey);
 
         taskMap.set(taskId, {
           id: taskId,
@@ -184,16 +245,18 @@ async function main() {
           physio_id: config.physio_id,
           customer_name: custName || 'Unknown',
           customer_phone: custPhone,
-          consult_date: parsed.isoDate || lastDate, // Standard YYYY-MM-DD
-          pain_point: String(row['Concern / Painpoint'] || row['Concern'] || row['Painpoint'] || '').trim(),
-          primary_category: String(row['Category'] || '').trim(),
+          consult_date: parsed.isoDate, // Standard YYYY-MM-DD
+          pain_point: String(row['Concern / Painpoint'] || row['Customer Concern/Painpoint'] || row['Concern'] || row['Painpoint'] || '').trim(),
+          primary_category: String(row['Category'] || row['Primary Category'] || '').trim(),
           physio_pitched: String(row['Physio Pitched'] || '').trim(),
           session_done: sessionDone,
-          session_timing: String(row['When was the session done?'] || '').trim(),
-          reason_not_done: String(row['Reason why session was not done'] || '').trim(),
-          duration: String(row['Duration'] || '').trim(),
-          product_suggested: String(row['Product Suggested'] || '').trim(),
+          session_timing: String(row['When was the session done?'] || row['When was the Session Done'] || '').trim(),
+          reason_not_done: String(row['Reason why session was not done'] || row['Reason (If Not done)'] || '').trim(),
+          duration: String(row['Duration'] || row['Duration of session'] || '').trim(),
+          product_suggested: String(row['Product Suggested'] || row['Product suggested'] || '').trim(),
           comments: String(row['Comment'] || row['Comments'] || '').trim(),
+          patient_id: preserved?.patient_id || null,
+          whatsapp_sent_at: preserved?.whatsapp_sent_at || null,
           updated_at: new Date().toISOString()
         });
         count++;
@@ -218,4 +281,6 @@ async function main() {
   console.log("\nALL TASKS SYNCED SUCCESSFULLY TO SUPABASE WITH CLEAN DATES!");
 }
 
-main().catch(console.error);
+if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith('scripts/sync-all-physios.mjs')) {
+  main().catch(console.error);
+}

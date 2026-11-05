@@ -59,19 +59,23 @@ export const getTrackerTasks = async (physioProfile) => {
     let query = supabase
       .from('tracker_tasks')
       .select('*')
-      .eq('is_deleted', false)
-      .order('consult_date', { ascending: false })
-      .range(from, from + pageSize - 1);
+      .eq('is_deleted', false);
 
     // If physio, filter for their tasks
     if (physioProfile && physioProfile.role === 'physio') {
       const nameMatch = physioProfile.full_name?.replace(/^Dr\.?\s+/i, '').trim().split(' ')[0] || '';
-      if (physioProfile.id) {
+      if (physioProfile.id && nameMatch) {
         query = query.or(`physio_id.eq.${physioProfile.id},physio_name.ilike.%${nameMatch}%`);
+      } else if (physioProfile.id) {
+        query = query.eq('physio_id', physioProfile.id);
       } else if (nameMatch) {
         query = query.ilike('physio_name', `%${nameMatch}%`);
       }
     }
+
+    query = query
+      .order('consult_date', { ascending: false })
+      .range(from, from + pageSize - 1);
 
     const { data, error } = await query;
     if (error) {

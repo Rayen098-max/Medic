@@ -29,8 +29,8 @@ interface TrackerRow {
 
 const KNOWN_PHYSIOS = ['Aishwarya', 'Gursheen', 'Dipti', 'Rutuja', 'Pooja', 'Hritika', 'Kritika', 'Gaurav'];
 
-const CACHE_KEY = 'medic_tasks_cache_v8';
-const CACHE_TIME_KEY = 'medic_tasks_cache_time_v8';
+const CACHE_KEY = 'medic_tasks_cache_v10';
+const CACHE_TIME_KEY = 'medic_tasks_cache_time_v10';
 
 export interface DateMeta {
   isoDate: string;       // "2026-10-15"
@@ -83,6 +83,7 @@ export function deduplicateTasks(tasks: TrackerRow[]): TrackerRow[] {
         existing["Customer Name"] = t["Customer Name"];
       }
 
+      if (!existing.id && t.id) existing.id = t.id;
       if (!existing.patient_id && t.patient_id) existing.patient_id = t.patient_id;
       if (!existing.whatsapp_sent_at && t.whatsapp_sent_at) existing.whatsapp_sent_at = t.whatsapp_sent_at;
 
@@ -100,11 +101,20 @@ export function deduplicateTasks(tasks: TrackerRow[]): TrackerRow[] {
   return result;
 }
 
+const IGNORED_NON_DATES = [
+  'start', 'mid', 'end', 'cc', 'no cc', '..', '...', 'physio', 
+  'dates', 'date', 'lbp', 'na', 'n/a', '', 'yes', 'no'
+];
+
 export function parseDateMetadata(raw: string, physioName?: string): DateMeta {
   if (!raw) {
     return { isoDate: '', displayDate: 'No Date', monthKey: 'nodate', monthName: 'Other', timestamp: 0 };
   }
-  const str = String(raw).trim();
+  const str = String(raw).trim().replace(/\\/g, '/');
+
+  if (IGNORED_NON_DATES.includes(str.toLowerCase())) {
+    return { isoDate: '', displayDate: str, monthKey: 'Other', monthName: 'Other', timestamp: 0 };
+  }
 
   // 1. Check ISO YYYY-MM-DD
   const isoMatch = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
@@ -113,8 +123,7 @@ export function parseDateMetadata(raw: string, physioName?: string): DateMeta {
     const month = parseInt(isoMatch[2], 10);
     const day = parseInt(isoMatch[3], 10);
 
-    // Reject unparseable or distant future years
-    if (year > 2027 || year < 2024 || month < 1 || month > 12) {
+    if (year > 2027 || year < 2024 || month < 1 || month > 12 || day < 1 || day > 31) {
       return { isoDate: '', displayDate: '', monthKey: 'future', monthName: 'Future', timestamp: 0 };
     }
 
@@ -126,8 +135,8 @@ export function parseDateMetadata(raw: string, physioName?: string): DateMeta {
     return { isoDate, displayDate, monthKey, monthName, timestamp: dt.getTime() };
   }
 
-  // 2. Check DD/MM or MM/DD
-  const slashParts = str.split(/[\/\-]/);
+  // 2. Check DD/MM or MM/DD or DD/MM/YYYY
+  const slashParts = str.split(/[\/\-\.]/);
   if (slashParts.length >= 2) {
     const p1 = parseInt(slashParts[0], 10);
     const p2 = parseInt(slashParts[1], 10);
@@ -140,12 +149,7 @@ export function parseDateMetadata(raw: string, physioName?: string): DateMeta {
     const month = isKritika ? p1 : p2;
     const day = isKritika ? p2 : p1;
 
-    // Reject unparseable or distant future years
-    if (year > 2027 || year < 2024 || month < 1 || month > 12) {
-      return { isoDate: '', displayDate: '', monthKey: 'future', monthName: 'Future', timestamp: 0 };
-    }
-
-    if (!isNaN(day) && !isNaN(month) && day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+    if (year >= 2024 && year <= 2027 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
       const dt = new Date(year, month - 1, day);
       const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const monthKey = `${year}-${String(month).padStart(2, '0')}`;
@@ -162,16 +166,13 @@ export function parseDateMetadata(raw: string, physioName?: string): DateMeta {
     const month = dt.getMonth() + 1;
     const day = dt.getDate();
 
-    // Reject unparseable or distant future years
-    if (year > 2027 || year < 2024 || month < 1 || month > 12) {
-      return { isoDate: '', displayDate: '', monthKey: 'future', monthName: 'Future', timestamp: 0 };
+    if (year >= 2024 && year <= 2027 && month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+      const monthName = dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      const displayDate = dt.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+      return { isoDate, displayDate, monthKey, monthName, timestamp: dt.getTime() };
     }
-
-    const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const monthKey = `${year}-${String(month).padStart(2, '0')}`;
-    const monthName = dt.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-    const displayDate = dt.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-    return { isoDate, displayDate, monthKey, monthName, timestamp: dt.getTime() };
   }
 
   return { isoDate: str, displayDate: str, monthKey: 'Other', monthName: 'Other', timestamp: 0 };
@@ -191,57 +192,9 @@ export function Tasks() {
 
   const fetchTasks = useCallback(async (force = false) => {
     setIsFetching(true);
-
-    // 1. Try fetching directly from Supabase first
-    try {
-      const supabaseTasks = await getTrackerTasks(profile);
-      if (Array.isArray(supabaseTasks) && supabaseTasks.length > 0) {
-        // Strictly filter for customers where session_done === 'Yes'
-        const attendedOnly = supabaseTasks.filter(t => {
-          const done = String(t.session_done || '').trim().toLowerCase();
-          return done === 'yes';
-        });
-
-        // Client-side de-duplication: ensure identical customers on same date are never duplicated
-        const rawRows: TrackerRow[] = attendedOnly.map(t => ({
-          id: t.id,
-          Date: t.consult_date || '',
-          "Physio Name": t.physio_name || '',
-          "Customer Name": t.customer_name || '',
-          "Customer Number": t.customer_phone || '',
-          "Physio session Done": t.session_done || '',
-          patient_id: t.patient_id,
-          whatsapp_sent_at: t.whatsapp_sent_at
-        }));
-
-        const mapped = deduplicateTasks(rawRows);
-
-        setData(mapped);
-        const userCacheKey = `${CACHE_KEY}_${profile?.id || 'guest'}`;
-        localStorage.setItem(userCacheKey, JSON.stringify(mapped));
-        localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
-        setLoading(false);
-        setIsFetching(false);
-        if (force) {
-          toast.success("Tasks refreshed successfully from Supabase!");
-        }
-        return;
-      }
-    } catch (err) {
-      console.warn("Supabase tasks fetch error, checking Google Sheet:", err);
-    }
-
-    // 2. Fallback to direct Google Sheet fetching if Supabase table has no rows
-    let tabName = 'Master Data';
-    if (profile?.role === 'physio' && profile?.full_name) {
-      const clean = profile.full_name.toLowerCase();
-      const matched = KNOWN_PHYSIOS.find(p => clean.includes(p.toLowerCase()) || clean.includes(p.substring(0, 4).toLowerCase()));
-      if (matched) {
-        tabName = `Daily Tracker - ${matched}`;
-      }
-    }
-
     const userCacheKey = `${CACHE_KEY}_${profile?.id || 'guest'}`;
+
+    // 1. Check local cache first for instant initial render
     if (!force) {
       const cached = localStorage.getItem(userCacheKey);
       if (cached) {
@@ -250,77 +203,118 @@ export function Tasks() {
           if (Array.isArray(parsed) && parsed.length > 0) {
             setData(parsed);
             setLoading(false);
-            setIsFetching(false);
-            return;
           }
         } catch (e) {
-          console.error("Cache parsing error", e);
+          console.warn("Cache parsing error", e);
         }
       }
     }
 
-    const csvUrl = `https://docs.google.com/spreadsheets/d/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}&_cb=${Date.now()}`;
-    
-    fetch(csvUrl, { cache: 'no-store' })
-      .then(res => res.text())
-      .then(csv => {
-        const result = Papa.parse(csv, { 
-          header: true, 
-          skipEmptyLines: true,
-          transformHeader: (h) => {
-            let ht = h.trim();
-            if (ht.toLowerCase().startsWith('date')) return 'Date';
-            if (ht.toLowerCase() === 'name') return 'Customer Name';
-            return ht;
-          }
-        });
-        const json = result.data as TrackerRow[];
+    try {
+      // 2. Fetch from Supabase (authoritative for whatsapp_sent_at and patient_id)
+      const supabaseTasks = await getTrackerTasks(profile);
+      const attendedSupabase = (supabaseTasks || []).filter(t => {
+        const done = String(t.session_done || '').trim().toLowerCase();
+        return done === 'yes';
+      });
 
-        let lastDate = '';
-        const filledData: TrackerRow[] = [];
-        const seenFallbackKeys = new Set<string>();
+      const dbRows: TrackerRow[] = attendedSupabase.map(t => ({
+        id: t.id,
+        Date: t.consult_date || '',
+        "Physio Name": t.physio_name || '',
+        "Customer Name": t.customer_name || '',
+        "Customer Number": t.customer_phone || '',
+        "Physio session Done": t.session_done || '',
+        patient_id: t.patient_id,
+        whatsapp_sent_at: t.whatsapp_sent_at
+      }));
 
-        for (const row of json) {
-          const val = row.Date || row.Dates;
-          const rawDate = typeof val === 'string' ? val.trim() : (val ? String(val).trim() : undefined);
-          if (rawDate && rawDate !== '' && !['Start', 'Mid', 'End', 'cc', 'no cc'].includes(rawDate)) {
-            lastDate = rawDate;
-          }
-          const nameVal = row['Customer Name'];
-          const numVal = row['Customer Number'];
-          const hasCustomer = (nameVal && String(nameVal).trim() !== '') || 
-                              (numVal && String(numVal).trim() !== '');
-          const isAttended = String(row['Physio session Done'] || '').trim().toLowerCase() === 'yes';
+      // 3. In parallel, fetch the physio's Google Sheet tab to capture live / newly added rows
+      let tabName = 'Master Data';
+      let physioKey = '';
+      if (profile?.role === 'physio' && profile?.full_name) {
+        const clean = profile.full_name.toLowerCase();
+        const matched = KNOWN_PHYSIOS.find(p => clean.includes(p.toLowerCase()) || clean.includes(p.substring(0, 4).toLowerCase()));
+        if (matched) {
+          tabName = `Daily Tracker - ${matched}`;
+          physioKey = matched;
+        }
+      }
 
-          if (hasCustomer && isAttended) {
-            const phone = String(numVal || '').replace(/\D/g, '');
-            const name = String(nameVal || '').trim().toLowerCase();
-            const dedupeKey = `${phone || name}_${lastDate}`;
-            if (!seenFallbackKeys.has(dedupeKey)) {
-              seenFallbackKeys.add(dedupeKey);
-              filledData.push({
-                ...row,
-                Date: lastDate
-              });
+      const mergedRows: TrackerRow[] = [...dbRows];
+
+      if (tabName !== 'Master Data') {
+        try {
+          const csvUrl = `https://docs.google.com/spreadsheets/d/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}&_cb=${Date.now()}`;
+          const sheetRes = await fetch(csvUrl, { cache: 'no-store' });
+          if (sheetRes.ok) {
+            const csv = await sheetRes.text();
+            const result = Papa.parse<any>(csv, {
+              header: true,
+              skipEmptyLines: true,
+              transformHeader: (h) => h.trim()
+            });
+
+            const firstRow = result.data[0] || {};
+            const allKeys = Object.keys(firstRow);
+            const dynamicDateKey = allKeys.find(k => /^dates?/i.test(k)) || 'Date';
+            const dynamicNameKey = allKeys.find(k => /customer\s*name|^name$/i.test(k)) || 'Customer Name';
+            const dynamicPhoneKey = allKeys.find(k => /customer\s*number|phone|number/i.test(k)) || 'Customer Number';
+            const dynamicDoneKey = allKeys.find(k => /session\s*done/i.test(k)) || 'Physio session Done';
+
+            let lastDate = '';
+            const headerDateMatch = dynamicDateKey.match(/(\d+[\/\-]\d+)/);
+            if (headerDateMatch) lastDate = headerDateMatch[1];
+
+            for (const r of result.data) {
+              const raw = r[dynamicDateKey] || r['Date'] || r['Dates'];
+              if (raw) {
+                const clean = String(raw).trim().replace(/\\/g, '/');
+                if (clean && !IGNORED_NON_DATES.includes(clean.toLowerCase())) {
+                  if (/\d+[\/\-\.]\d+/.test(clean) || !isNaN(new Date(clean).getTime())) {
+                    lastDate = clean;
+                  }
+                }
+              }
+
+              const nameVal = String(r[dynamicNameKey] || r['Customer Name'] || r['Name'] || '').trim();
+              const numVal = String(r[dynamicPhoneKey] || r['Customer Number'] || r['Number'] || r['Phone'] || '').replace(/\D/g, '');
+              const isAttended = String(r[dynamicDoneKey] || r['Physio session Done'] || r['Session Done'] || '').trim().toLowerCase() === 'yes';
+
+              if ((nameVal || numVal) && isAttended) {
+                const parsed = parseDateMetadata(lastDate, physioKey);
+                if (parsed.isoDate) {
+                  mergedRows.push({
+                    Date: parsed.isoDate,
+                    "Physio Name": physioKey,
+                    "Customer Name": nameVal || 'Unknown',
+                    "Customer Number": numVal,
+                    "Physio session Done": 'Yes'
+                  });
+                }
+              }
             }
           }
+        } catch (sheetErr) {
+          console.warn("Could not fetch live sheet fallback, using Supabase rows:", sheetErr);
         }
+      }
 
-        setData(filledData);
-        localStorage.setItem(userCacheKey, JSON.stringify(filledData));
-        localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
-        setLoading(false);
-        setIsFetching(false);
-        if (force) {
-          toast.success("Tasks refreshed from Google Sheet!");
-        }
-      })
-      .catch(err => {
-        console.error("Error fetching data from sheet:", err);
-        setLoading(false);
-        setIsFetching(false);
-        toast.error("Failed to refresh tasks.");
-      });
+      const deduplicated = deduplicateTasks(mergedRows);
+      setData(deduplicated);
+      localStorage.setItem(userCacheKey, JSON.stringify(deduplicated));
+      localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+      setLoading(false);
+      setIsFetching(false);
+      if (force) {
+        toast.success("Tasks refreshed with live Google Sheet & Supabase data!");
+      }
+    } catch (err) {
+      console.error("Error fetching tasks:", err);
+      setLoading(false);
+      setIsFetching(false);
+      toast.error("Failed to load tasks.");
+    }
   }, [profile])
 
   useEffect(() => {
