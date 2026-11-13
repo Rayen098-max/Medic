@@ -1,18 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import Papa from 'papaparse'
 import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LabelList
-} from 'recharts'
-import {
   Card,
   CardContent,
   CardDescription,
@@ -42,8 +30,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { getDashboardTrackerData } from '@/utils/db'
 
-// Types for the data from Google Sheets
+// Types for the data from Google Sheets & Supabase
 interface TrackerRow {
   Date: string;
   "Physio Name": string;
@@ -70,77 +59,73 @@ export function Dashboard() {
   // Filter States
   const [selectedMonth, setSelectedMonth] = useState<string>('all')
   const [selectedPhysio, setSelectedPhysio] = useState<string>('all')
-  const [timeAgg, setTimeAgg] = useState<string>('daily') // 'daily' or 'weekly'
 
   useEffect(() => {
-    const csvUrl = `https://docs.google.com/spreadsheets/d/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/gviz/tq?tqx=out:csv&sheet=Master%20Data&_cb=${Date.now()}`;
-    
-    fetch(csvUrl, { cache: 'no-store' })
-      .then(res => res.text())
-      .then(csv => {
+    let isMounted = true;
+    const loadData = async () => {
+      try {
+        // 1. Try authoritative Supabase tracker tasks first
+        const dbTasks = await getDashboardTrackerData();
+        if (isMounted && Array.isArray(dbTasks) && dbTasks.length > 0) {
+          setData(dbTasks as TrackerRow[]);
+          setLoading(false);
+          return;
+        }
+
+        // 2. Fallback to Google Sheets
+        const csvUrl = `https://docs.google.com/spreadsheets/d/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/gviz/tq?tqx=out:csv&sheet=Master%20Data&_cb=${Date.now()}`;
+        const res = await fetch(csvUrl, { cache: 'no-store' });
+        const csv = await res.text();
         const result = Papa.parse(csv, { header: true, skipEmptyLines: true });
-        setData(result.data as TrackerRow[])
-        setLoading(false)
-      })
-      .catch(err => {
-        console.error("Error fetching data:", err)
-        setLoading(false)
-      })
+        if (isMounted) {
+          setData(result.data as TrackerRow[]);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Error fetching dashboard data:", err);
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadData();
+    return () => { isMounted = false; };
   }, [])
 
-  // Derived filter options
-  const uniqueMonths = useMemo(() => {
-    const months = new Set<string>()
-    data.forEach(row => {
-      const dateStr = row.Date ? row.Date.trim() : "Unknown Date"
-      if (dateStr) months.add(dateStr)
-    })
-    return Array.from(months)
-  }, [data])
+  // Derived filter options - strictly September, October, November
+  const monthOptions = [
+    { key: 'all', label: 'All Active Months' },
+    { key: '2026-11', label: 'November 2026' },
+    { key: '2026-10', label: 'October 2026' },
+    { key: '2026-09', label: 'September 2026' },
+  ];
 
   const uniquePhysios = useMemo(() => {
     const physios = new Set<string>()
     data.forEach(row => {
       if (row["Physio Name"]) physios.add(row["Physio Name"].trim())
     })
-    return Array.from(physios)
+    return Array.from(physios).sort()
   }, [data])
 
   // Apply global filters
   const filteredData = useMemo(() => {
     return data.filter(row => {
-      const matchMonth = selectedMonth === 'all' || (row.Date || 'Unknown Date') === selectedMonth
-      const matchPhysio = selectedPhysio === 'all' || row["Physio Name"] === selectedPhysio
+      const matchMonth = selectedMonth === 'all' || (row.Date && row.Date.startsWith(selectedMonth));
+      const matchPhysio = selectedPhysio === 'all' || row["Physio Name"].trim().toLowerCase() === selectedPhysio.trim().toLowerCase();
       return matchMonth && matchPhysio
     })
   }, [data, selectedMonth, selectedPhysio])
 
   // --- KPI Cards Calculations ---
-  
-  // Pitched count (reverting to total rows as per original logic since column is missing/empty)
   const totalSessionsPitched = filteredData.length;
   
-  // Done count
   const doneRows = filteredData.filter(row => row["Physio session Done"]?.toLowerCase() === 'yes' || row["Physio session Done"]?.toLowerCase() === 'true');
   const sessionsDoneCount = doneRows.length;
 
-  // Conversion rate (Done / Pitched)
-  const conversionRate = totalSessionsPitched > 0 ? ((sessionsDoneCount / totalSessionsPitched) * 100).toFixed(2) : '0.00';
+  const followupsSentCount = filteredData.filter(row => row["Whatsapp followup done"]?.toLowerCase() === 'yes' || row["Whatsapp followup done"]?.toLowerCase() === 'true').length;
 
-  // Repeat rate logic fix
-  const normalizePhone = (num?: string) => {
-    if (!num) return null;
-    const cleaned = String(num).replace(/\D/g, '');
-    return cleaned.slice(-10); 
-  };
-  
-  const uniquePhones = new Set<string>();
-  filteredData.forEach(row => {
-    const p = normalizePhone(row["Customer Number"]);
-    if (p) uniquePhones.add(p);
-  });
-  const repeatRate = totalSessionsPitched > 0 ? (((totalSessionsPitched - uniquePhones.size) / totalSessionsPitched) * 100).toFixed(2) : '0.00';
-
+  const conversionRate = totalSessionsPitched > 0 ? ((sessionsDoneCount / totalSessionsPitched) * 100).toFixed(1) : '0.0';
+  const followRate = sessionsDoneCount > 0 ? ((followupsSentCount / sessionsDoneCount) * 100).toFixed(1) : '0.0';
 
   // --- SECTION 3: Performance by Physio Table ---
   const physioPerformance = useMemo(() => {
@@ -152,12 +137,10 @@ export function Dashboard() {
         grouped.set(physio, { pitched: 0, done: 0, whatsapp: 0 });
       }
       const stats = grouped.get(physio)!;
-      
-      // In the absence of Physio Pitched, each row counts as a pitch
       stats.pitched++;
       
-      const isDone = row["Physio session Done"]?.toLowerCase() === 'yes';
-      const isWhatsapp = row["Whatsapp followup done"]?.toLowerCase() === 'yes';
+      const isDone = row["Physio session Done"]?.toLowerCase() === 'yes' || row["Physio session Done"]?.toLowerCase() === 'true';
+      const isWhatsapp = row["Whatsapp followup done"]?.toLowerCase() === 'yes' || row["Whatsapp followup done"]?.toLowerCase() === 'true';
 
       if (isDone) stats.done++;
       if (isWhatsapp) stats.whatsapp++;
@@ -165,15 +148,16 @@ export function Dashboard() {
 
     return Array.from(grouped.entries()).map(([name, stats]) => {
       const convRate = stats.pitched > 0 ? ((stats.done / stats.pitched) * 100).toFixed(1) : '0.0';
-      const followRate = stats.done > 0 ? ((stats.whatsapp / stats.done) * 100).toFixed(1) : '0.0';
+      const fRate = stats.done > 0 ? ((stats.whatsapp / stats.done) * 100).toFixed(1) : '0.0';
       return {
         name,
         pitched: stats.pitched,
         done: stats.done,
+        whatsappSent: stats.whatsapp,
         conversionRate: parseFloat(convRate),
-        followRate: parseFloat(followRate)
+        followRate: parseFloat(fRate)
       };
-    }).sort((a, b) => b.conversionRate - a.conversionRate); // Highest conversion first
+    }).sort((a, b) => b.done - a.done);
   }, [filteredData]);
 
 
@@ -198,12 +182,11 @@ export function Dashboard() {
             <label className="text-sm font-medium text-muted-foreground">Filter by Month</label>
             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All Months" />
+                <SelectValue placeholder="All Active Months" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Months</SelectItem>
-                {uniqueMonths.map(month => (
-                  <SelectItem key={month} value={month}>{month}</SelectItem>
+                {monthOptions.map(m => (
+                  <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -227,7 +210,7 @@ export function Dashboard() {
         
         {loading ? (
           <div className="flex h-40 items-center justify-center">
-            <p className="text-muted-foreground animate-pulse">Fetching live data from Google Sheets...</p>
+            <p className="text-muted-foreground animate-pulse">Loading verified clinical tracker data...</p>
           </div>
         ) : (
           <Tabs orientation='vertical' defaultValue='overview' className='space-y-6 pb-12'>
@@ -270,10 +253,12 @@ export function Dashboard() {
                 
                 <Card>
                   <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-                    <CardTitle className='text-sm font-medium'>Repeat Rate</CardTitle>
+                    <CardTitle className='text-sm font-medium'>WhatsApp Follow-ups</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className='text-2xl font-bold text-purple-500'>{repeatRate}%</div>
+                    <div className='text-2xl font-bold text-purple-500'>
+                      {followupsSentCount} <span className="text-xs font-normal text-muted-foreground">({followRate}%)</span>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -282,7 +267,7 @@ export function Dashboard() {
               <Card>
                 <CardHeader>
                   <CardTitle>Performance by Physio</CardTitle>
-                  <CardDescription>Ranked by conversion rate</CardDescription>
+                  <CardDescription>Attended consultations and sent follow-ups</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Table>
@@ -290,9 +275,10 @@ export function Dashboard() {
                       <TableRow>
                         <TableHead>Physio Name</TableHead>
                         <TableHead className="text-right">Total Sessions Pitched</TableHead>
-                        <TableHead className="text-right">Total Sessions Done</TableHead>
+                        <TableHead className="text-right">Sessions Attended</TableHead>
                         <TableHead className="text-right">Conversion Rate</TableHead>
-                        <TableHead className="text-right">WhatsApp Follow-up Rate</TableHead>
+                        <TableHead className="text-right">Follow-ups Sent</TableHead>
+                        <TableHead className="text-right">Follow-up Rate</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -300,8 +286,9 @@ export function Dashboard() {
                         <TableRow key={row.name}>
                           <TableCell className="font-medium">{row.name}</TableCell>
                           <TableCell className="text-right">{row.pitched}</TableCell>
-                          <TableCell className="text-right">{row.done}</TableCell>
+                          <TableCell className="text-right text-green-500 font-semibold">{row.done}</TableCell>
                           <TableCell className="text-right font-semibold text-blue-500">{row.conversionRate}%</TableCell>
+                          <TableCell className="text-right text-purple-400 font-medium">{row.whatsappSent}</TableCell>
                           <TableCell className="text-right">{row.followRate}%</TableCell>
                         </TableRow>
                       ))}

@@ -46,19 +46,56 @@ function formatConsultDateToISO(rawDate) {
 export default function CaptureForm({ initialData = null, onSuccess = null, isEmbedded = false }) {
   const navigate = useNavigate();
   const { profile } = useAuth();
+
+  const getInitialPainPoints = () => {
+    if (!initialData) return [];
+    if (initialData.painPointId) return String(initialData.painPointId).split(',').filter(Boolean);
+    if (Array.isArray(initialData.painPointIds)) return initialData.painPointIds;
+    return [];
+  };
+
+  const getInitialMessage = () => {
+    if (!initialData) return '';
+    if (initialData.whatsappMessage) return initialData.whatsappMessage;
+    if (initialData.conditionNotes?.whatsappMessage) return initialData.conditionNotes.whatsappMessage;
+    if (initialData.conditionNotes && typeof initialData.conditionNotes === 'object') {
+      const vals = Object.values(initialData.conditionNotes).filter(v => typeof v === 'string' && v.trim().length > 0);
+      if (vals.length > 0) return vals[0];
+    }
+    return initialData.comments || initialData.Comments || '';
+  };
+
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     phone: initialData?.phone || '',
     consultDate: initialData?.consultDate || 'Few Days ago',
-    painPointIds: [], // Default to no pain point selected
-    consent: false
+    painPointIds: getInitialPainPoints(),
+    consent: !!initialData
   });
-  const [exercises, setExercises] = useState([]);
-  const [customConditions, setCustomConditions] = useState([]);
-  const [conditionNotes, setConditionNotes] = useState({});
-  const [whatsappMessage, setWhatsappMessage] = useState('');
+  const [exercises, setExercises] = useState(initialData?.recommendedExercises || []);
+  const [customConditions, setCustomConditions] = useState(initialData?.customConditions || []);
+  const [conditionNotes, setConditionNotes] = useState(initialData?.conditionNotes || {});
+  const [whatsappMessage, setWhatsappMessage] = useState(getInitialMessage());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableExercises, setAvailableExercises] = useState([]);
+
+  React.useEffect(() => {
+    if (initialData) {
+      setFormData(prev => ({
+        ...prev,
+        name: initialData.name || '',
+        phone: initialData.phone ? String(initialData.phone) : '',
+        consultDate: initialData.consultDate || 'Few Days ago',
+        painPointIds: getInitialPainPoints(),
+        consent: true
+      }));
+      if (initialData.recommendedExercises) setExercises(initialData.recommendedExercises);
+      if (initialData.customConditions) setCustomConditions(initialData.customConditions);
+      if (initialData.conditionNotes) setConditionNotes(initialData.conditionNotes);
+      const msg = getInitialMessage();
+      if (msg) setWhatsappMessage(msg);
+    }
+  }, [initialData]);
 
   React.useEffect(() => {
     const fetchExercises = async () => {

@@ -17,9 +17,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { MessageCircle, Eye, Trash2, Sparkles } from 'lucide-react'
+import { MessageCircle, Eye, Trash2, Sparkles, Check, FileText } from 'lucide-react'
 import CaptureForm from '@/components/CaptureForm'
-import { getPatients, recordFollowup, softDeleteTrackerTask, markTaskWhatsAppSent } from '@/utils/db'
+import { getPatients, recordFollowup, softDeleteTrackerTask, markTaskWhatsAppSent, updatePatientStatus } from '@/utils/db'
 import { useAuth } from '@/context/AuthContext'
 
 import { ConfirmDialog } from '@/components/confirm-dialog'
@@ -33,6 +33,15 @@ interface TrackerRow {
   "Physio session Done": string;
   patient_id?: string | null;
   whatsapp_sent_at?: string | null;
+  Comments?: string;
+  comments?: string;
+  "Customer Concern/Painpoint"?: string;
+  pain_point?: string;
+  "Product suggested"?: string;
+  product_suggested?: string;
+  "Exercise and changes in lifestyle"?: string;
+  "Advice Given "?: string;
+  "Whatsapp followup done"?: string;
 }
 
 interface TasksTableProps {
@@ -130,6 +139,37 @@ export function TasksTable({ data }: TasksTableProps) {
     }
   }
 
+  const getCustomerCustomMessage = (patient?: any, row?: TrackerRow) => {
+    if (patient?.conditionNotes?.whatsappMessage?.trim()) {
+      return patient.conditionNotes.whatsappMessage.trim();
+    }
+    if (patient?.conditionNotes && typeof patient.conditionNotes === 'object') {
+      const vals = Object.values(patient.conditionNotes).filter(v => typeof v === 'string' && v.trim().length > 0) as string[];
+      if (vals.length > 0) return vals[0].trim();
+    }
+    if (row?.Comments?.trim()) return row.Comments.trim();
+    if (row?.comments?.trim()) return row.comments.trim();
+    if (row?.["Advice Given "]?.trim()) return row["Advice Given "].trim();
+    if (row?.["Exercise and changes in lifestyle"]?.trim()) return row["Exercise and changes in lifestyle"].trim();
+    return '';
+  };
+
+  const getPersonalizedMessage = (row: TrackerRow, id: string) => {
+    const patientId = getMatchedPatientId(row, id);
+    const patient = dbPatients.find(p => p.id === patientId);
+    const customMessage = getCustomerCustomMessage(patient, row);
+    const customerName = row["Customer Name"] || "there";
+    const physioName = profile?.full_name?.replace(/^Dr\.?\s+/i, '') || 'Physio';
+    const link = patientId 
+      ? `${window.location.origin}/r/${patientId}` 
+      : `${window.location.origin}/r/demo`;
+
+    const defaultGreeting = `Hi ${customerName},\n\nHope your body is treating you better! Let me know if you have any questions.`;
+    const greeting = customMessage || defaultGreeting;
+
+    return `${greeting}\n\nYour Personalized Plan for ${customerName}:\n👉 ${link}\n\nBest regards,\nDr. ${physioName} (PT)`;
+  };
+
   const handleWhatsApp = (row: TrackerRow, id: string, appType: 'default' | 'business' | 'web' = 'default') => {
     let phone = String(row["Customer Number"] || "").replace(/\D/g, '');
     if (!phone) {
@@ -141,22 +181,8 @@ export function TasksTable({ data }: TasksTableProps) {
     }
 
     const patientId = getMatchedPatientId(row, id);
-    const cacheBuster = new Date().getTime();
-    const link = patientId 
-      ? `${window.location.origin}/r/${patientId}?v=${cacheBuster}` 
-      : `${window.location.origin}/r/demo?v=${cacheBuster}`;
-
-    const patient = dbPatients.find(p => p.id === patientId);
-    const customMessage = patient?.conditionNotes?.whatsappMessage;
-
     const customerName = row["Customer Name"] || "there";
-    const physioName = profile?.full_name?.replace(/^Dr\.?\s+/i, '') || 'Physio';
-
-    const defaultGreeting = `Hi ${customerName},\n\nHope your body is treating you better! Let me know if you have any questions.`;
-    const greeting = (customMessage && customMessage.trim().length > 0) ? customMessage : defaultGreeting;
-
-    const fullMessage = `${greeting}\n\nYour Personalized Plan for ${customerName}:\n👉 ${link}\n\nBest regards,\nDr. ${physioName} (PT)`;
-
+    const fullMessage = getPersonalizedMessage(row, id);
     const encoded = encodeURIComponent(fullMessage);
     
     let url = `https://wa.me/${phone}?text=${encoded}`;
@@ -166,10 +192,15 @@ export function TasksTable({ data }: TasksTableProps) {
       url = `https://web.whatsapp.com/send?phone=${phone}&text=${encoded}`;
     }
 
+    const now = new Date().toISOString();
     if (profile?.id) {
       recordFollowup(patientId, profile.id, customerName);
     }
-    markTaskWhatsAppSent(id);
+    markTaskWhatsAppSent(id, { phone: row["Customer Number"], date: row["Date"], name: row["Customer Name"] });
+    if (patientId) {
+      updatePatientStatus(patientId, { followup_sent_at: now });
+    }
+    row.whatsapp_sent_at = now;
 
     window.open(url, '_blank');
   }
@@ -203,10 +234,15 @@ export function TasksTable({ data }: TasksTableProps) {
       url = `https://web.whatsapp.com/send?phone=${phone}&text=${encoded}`;
     }
 
+    const now = new Date().toISOString();
     if (profile?.id) {
       recordFollowup(patientId, profile.id, customerName);
     }
-    markTaskWhatsAppSent(id);
+    markTaskWhatsAppSent(id, { phone: row["Customer Number"], date: row["Date"], name: row["Customer Name"] });
+    if (patientId) {
+      updatePatientStatus(patientId, { followup_sent_at: now });
+    }
+    row.whatsapp_sent_at = now;
 
     window.open(url, '_blank');
   }
@@ -292,11 +328,40 @@ export function TasksTable({ data }: TasksTableProps) {
                 tasks.map(({ row, id, patientId }) => {
                   const isExpanded = expandedRowIdx === id;
                   const isFilled = Boolean(patientId) || filledForms.has(id);
+                  const patient = dbPatients.find(p => p.id === patientId);
+                  const isSent = Boolean(row.whatsapp_sent_at || row["Whatsapp followup done"]?.toLowerCase() === 'yes' || patient?.followup_sent_at);
+                  const previewMessage = getPersonalizedMessage(row, id);
+                  const customAdvice = getCustomerCustomMessage(patient, row);
 
                   return (
                     <React.Fragment key={id}>
                       <TableRow>
-                        <TableCell className="font-medium">{row["Customer Name"] || 'Unknown'}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-foreground font-semibold">{row["Customer Name"] || 'Unknown'}</span>
+                              {isSent && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 px-2 py-0.5 rounded-full">
+                                  <Check className="w-3 h-3" /> Sent
+                                </span>
+                              )}
+                            </div>
+                            {(row.pain_point || row["Customer Concern/Painpoint"] || row.product_suggested || row["Product suggested"]) && (
+                              <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 flex-wrap">
+                                {(row.pain_point || row["Customer Concern/Painpoint"]) && (
+                                  <span className="bg-primary/10 text-primary font-medium px-1.5 py-0.5 rounded text-[10px]">
+                                    {row.pain_point || row["Customer Concern/Painpoint"]}
+                                  </span>
+                                )}
+                                {(row.product_suggested || row["Product suggested"]) && (
+                                  <span className="text-[10px] text-muted-foreground">
+                                    • {row.product_suggested || row["Product suggested"]}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell>{row["Customer Number"] || 'N/A'}</TableCell>
                         <TableCell>
                           {isFilled ? (
@@ -305,7 +370,7 @@ export function TasksTable({ data }: TasksTableProps) {
                               onClick={() => handleFillFormClick(id)}
                               className="bg-green-600 hover:bg-green-700 text-white w-full text-xs"
                             >
-                              {isExpanded ? 'Cancel' : 'Form Filled'}
+                              {isExpanded ? 'Close Form' : 'Form Filled'}
                             </Button>
                           ) : (
                             <Button 
@@ -313,7 +378,7 @@ export function TasksTable({ data }: TasksTableProps) {
                               onClick={() => handleFillFormClick(id)}
                               className="w-full text-xs"
                             >
-                              {isExpanded ? 'Cancel' : 'Fill Form'}
+                              {isExpanded ? 'Close Form' : 'Fill Form'}
                             </Button>
                           )}
                         </TableCell>
@@ -349,10 +414,14 @@ export function TasksTable({ data }: TasksTableProps) {
                               <DropdownMenuTrigger asChild>
                                 <Button 
                                   variant="outline"
-                                  className="flex-1 gap-1.5 border-emerald-600 text-emerald-600 hover:bg-emerald-500/10 text-xs px-2"
+                                  className={`flex-1 gap-1.5 text-xs px-2 ${
+                                    isSent 
+                                      ? 'border-emerald-600 text-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/15' 
+                                      : 'border-emerald-600 text-emerald-600 hover:bg-emerald-500/10'
+                                  }`}
                                 >
-                                  <MessageCircle className="h-3.5 w-3.5" />
-                                  WhatsApp
+                                  {isSent ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <MessageCircle className="h-3.5 w-3.5" />}
+                                  {isSent ? 'Sent' : 'WhatsApp'}
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-56">
@@ -360,7 +429,7 @@ export function TasksTable({ data }: TasksTableProps) {
                                   Exercise Recovery Plan
                                 </DropdownMenuLabel>
                                 <DropdownMenuItem onClick={() => handleWhatsApp(row, id, 'default')}>
-                                  Send Recovery (Default)
+                                  {isSent ? 'Resend Recovery (Default)' : 'Send Recovery (Default)'}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleWhatsApp(row, id, 'business')}>
                                   Send Recovery (WA Business)
@@ -401,21 +470,86 @@ export function TasksTable({ data }: TasksTableProps) {
                       {isExpanded && (
                         <TableRow>
                           <TableCell colSpan={5} className="p-0 border-b-0">
-                            <div className="p-4 bg-muted/30">
+                            <div className="p-4 bg-muted/30 space-y-4">
+                              {/* PREVIOUS MESSAGE & NOTES DISPLAY */}
+                              <div className="p-4 rounded-xl border border-primary/25 bg-card/95 shadow-sm space-y-3">
+                                <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                                  <div className="flex items-center gap-2">
+                                    <MessageCircle className="w-4 h-4 text-emerald-400" />
+                                    <span className="font-semibold text-sm text-foreground">Previous Consultation Message & Notes</span>
+                                  </div>
+                                  {isSent ? (
+                                    <span className="text-xs text-emerald-400 font-medium flex items-center gap-1 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+                                      <Check className="w-3.5 h-3.5" /> Follow-up Sent ({row.whatsapp_sent_at ? new Date(row.whatsapp_sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Verified'})
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-amber-400 font-medium bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+                                      Pending Follow-up
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Personalized Message Preview */}
+                                <div className="space-y-1">
+                                  <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+                                    WhatsApp Message Sent / Queued for Customer:
+                                  </div>
+                                  <div className="p-3 rounded-lg bg-background/80 border border-border/60 text-xs font-mono leading-relaxed whitespace-pre-wrap text-foreground">
+                                    {previewMessage}
+                                  </div>
+                                </div>
+
+                                {/* Clinical Notes / Advice if available */}
+                                {customAdvice && (
+                                  <div className="text-xs text-muted-foreground bg-muted/40 p-2.5 rounded-lg border border-border/40">
+                                    <span className="font-semibold text-foreground">Physio Consultation Notes / Sheet Advice: </span>
+                                    {customAdvice}
+                                  </div>
+                                )}
+
+                                <div className="flex flex-wrap gap-2 pt-1">
+                                  <Button 
+                                    size="sm"
+                                    variant="outline" 
+                                    className="text-xs border-emerald-600 text-emerald-500 hover:bg-emerald-500/10 gap-1.5"
+                                    onClick={() => handleWhatsApp(row, id, 'default')}
+                                  >
+                                    <MessageCircle className="w-3.5 h-3.5" />
+                                    {isSent ? 'Resend WhatsApp' : 'Send WhatsApp Now'}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-xs border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10 gap-1.5"
+                                    onClick={() => handleSleepScienceWhatsApp(row, id, 'default')}
+                                  >
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    Send SmartGRID Posture Routine
+                                  </Button>
+                                </div>
+                              </div>
+
+                              {/* PRESCRIPTION / EDIT FORM */}
                               <Card>
                                 <CardHeader>
                                   <CardTitle className="text-lg">
-                                    {isFilled ? 'Update Consult Details' : 'New Consult Form'}
+                                    {isFilled ? 'Update Consult Details & Routine' : 'New Consult Form'}
                                   </CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-0 sm:p-6">
                                   <CaptureForm 
                                     isEmbedded={true}
                                     initialData={{
+                                      id: patientId,
                                       name: row["Customer Name"],
                                       phone: row["Customer Number"] ? String(row["Customer Number"]) : "",
                                       consultDate: row["Date"],
-                                      tracker_id: id
+                                      tracker_id: id,
+                                      painPointId: patient?.painPointId || row.pain_point || row["Customer Concern/Painpoint"] || '',
+                                      conditionNotes: patient?.conditionNotes || {},
+                                      whatsappMessage: customAdvice,
+                                      recommendedExercises: patient?.recommendedExercises || [],
+                                      comments: row.Comments || row.comments || ''
                                     }}
                                     onSuccess={(newId?: string) => handleDone(id, newId)}
                                   />

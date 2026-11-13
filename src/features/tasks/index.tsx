@@ -15,7 +15,7 @@ import { DateCardsHeader, type DateSummary } from './components/date-cards-heade
 import Papa from 'papaparse'
 import { toast } from 'sonner'
 
-interface TrackerRow {
+export interface TrackerRow {
   id?: string;
   Date: string;
   "Physio Name": string;
@@ -25,6 +25,15 @@ interface TrackerRow {
   Dates?: string;
   patient_id?: string | null;
   whatsapp_sent_at?: string | null;
+  Comments?: string;
+  comments?: string;
+  "Customer Concern/Painpoint"?: string;
+  pain_point?: string;
+  "Product suggested"?: string;
+  product_suggested?: string;
+  "Exercise and changes in lifestyle"?: string;
+  "Advice Given "?: string;
+  "Primary Category"?: string;
 }
 
 const KNOWN_PHYSIOS = ['Aishwarya', 'Gursheen', 'Dipti', 'Rutuja', 'Pooja', 'Hritika', 'Kritika', 'Gaurav'];
@@ -89,6 +98,18 @@ export function deduplicateTasks(tasks: TrackerRow[]): TrackerRow[] {
       if (!existing.id && t.id) existing.id = t.id;
       if (!existing.patient_id && t.patient_id) existing.patient_id = t.patient_id;
       if (!existing.whatsapp_sent_at && t.whatsapp_sent_at) existing.whatsapp_sent_at = t.whatsapp_sent_at;
+      if (!existing.Comments && (t.Comments || t.comments)) {
+        existing.Comments = t.Comments || t.comments;
+        existing.comments = t.Comments || t.comments;
+      }
+      if (!existing.pain_point && (t.pain_point || t["Customer Concern/Painpoint"])) {
+        existing.pain_point = t.pain_point || t["Customer Concern/Painpoint"];
+        existing["Customer Concern/Painpoint"] = t.pain_point || t["Customer Concern/Painpoint"];
+      }
+      if (!existing.product_suggested && (t.product_suggested || t["Product suggested"])) {
+        existing.product_suggested = t.product_suggested || t["Product suggested"];
+        existing["Product suggested"] = t.product_suggested || t["Product suggested"];
+      }
 
       // Update secondary lookup maps
       if (phoneKey && !mapByPhone.has(phoneKey)) mapByPhone.set(phoneKey, existing);
@@ -229,7 +250,14 @@ export function Tasks() {
         "Customer Number": t.customer_phone || '',
         "Physio session Done": t.session_done || '',
         patient_id: t.patient_id,
-        whatsapp_sent_at: t.whatsapp_sent_at
+        whatsapp_sent_at: t.whatsapp_sent_at,
+        Comments: t.comments || '',
+        comments: t.comments || '',
+        "Customer Concern/Painpoint": t.pain_point || '',
+        pain_point: t.pain_point || '',
+        "Product suggested": t.product_suggested || '',
+        product_suggested: t.product_suggested || '',
+        "Primary Category": t.primary_category || ''
       }));
 
       // 3. In parallel, fetch the physio's Google Sheet tab to capture live / newly added rows
@@ -286,6 +314,9 @@ export function Tasks() {
               const isAttended = String(r[dynamicDoneKey] || r['Physio session Done'] || r['Session Done'] || '').trim().toLowerCase() === 'yes';
               const rawWa = dynamicWhatsappKey ? String(r[dynamicWhatsappKey] || '').trim().toLowerCase() : '';
               const isWhatsappSent = rawWa.includes('yes');
+              const rawComments = r['Comments'] || r['Comments '] || r['Advice Given '] || r['Exercise and changes in lifestyle'] || '';
+              const rawPain = r['Customer Concern/Painpoint'] || r['Customer Concern/Painpoint '] || r['Concern'] || '';
+              const rawProduct = r['Product suggested'] || r['Product suggested '] || '';
 
               if ((nameVal || numVal) && isAttended) {
                 const parsed = parseDateMetadata(lastDate, physioKey);
@@ -296,7 +327,13 @@ export function Tasks() {
                     "Customer Name": nameVal || 'Unknown',
                     "Customer Number": numVal,
                     "Physio session Done": 'Yes',
-                    whatsapp_sent_at: isWhatsappSent ? `${parsed.isoDate}T12:00:00.000Z` : null
+                    whatsapp_sent_at: isWhatsappSent ? `${parsed.isoDate}T12:00:00.000Z` : null,
+                    Comments: rawComments,
+                    comments: rawComments,
+                    "Customer Concern/Painpoint": rawPain,
+                    pain_point: rawPain,
+                    "Product suggested": rawProduct,
+                    product_suggested: rawProduct
                   });
                 }
               }

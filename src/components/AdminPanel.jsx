@@ -7,6 +7,8 @@ import Papa from 'papaparse';
 
 export default function AdminPanel() {
   const [patients, setPatients] = useState([]);
+  const [trackerFollowups, setTrackerFollowups] = useState([]);
+  const [activeTab, setActiveTab] = useState('patients'); // 'patients' or 'followups'
   const [physios, setPhysios] = useState([]);
   const [queueList, setQueueList] = useState([]);
   const [queueIndex, setQueueIndex] = useState(0);
@@ -147,7 +149,62 @@ export default function AdminPanel() {
     setLoading(true);
     try {
       const data = await getPatients();
-      setPatients(data || []);
+
+      // Query live followups table and tracker_tasks with sent followups
+      let followups = [];
+      let recentTrackerFollowups = [];
+      if (supabase) {
+        const [fRes, tRes] = await Promise.allSettled([
+          supabase.from('followups').select('id, patient_id, created_at, patient_name_fallback, physio_id').order('created_at', { ascending: false }),
+          supabase.from('tracker_tasks').select('id, whatsapp_sent_at, physio_name, customer_name, customer_phone, consult_date, pain_point').not('whatsapp_sent_at', 'is', null).order('whatsapp_sent_at', { ascending: false }).limit(1000)
+        ]);
+        if (fRes.status === 'fulfilled' && Array.isArray(fRes.value.data)) followups = fRes.value.data;
+        if (tRes.status === 'fulfilled' && Array.isArray(tRes.value.data)) recentTrackerFollowups = tRes.value.data;
+      }
+
+      setTrackerFollowups(recentTrackerFollowups);
+
+      // Build fast lookup maps for followups
+      const followupByPatientId = new Map();
+      const followupByPhone = new Map();
+      const followupByName = new Map();
+
+      followups.forEach(f => {
+        if (f.patient_id && !followupByPatientId.has(f.patient_id)) {
+          followupByPatientId.set(f.patient_id, f.created_at);
+        }
+        if (f.patient_name_fallback) {
+          const clean = f.patient_name_fallback.trim().toLowerCase();
+          if (!followupByName.has(clean)) followupByName.set(clean, f.created_at);
+        }
+      });
+
+      recentTrackerFollowups.forEach(t => {
+        if (t.customer_phone) {
+          const cleanPhone = String(t.customer_phone).replace(/\D/g, '').slice(-10);
+          if (cleanPhone.length >= 7 && !followupByPhone.has(cleanPhone)) {
+            followupByPhone.set(cleanPhone, t.whatsapp_sent_at);
+          }
+        }
+        if (t.customer_name) {
+          const clean = String(t.customer_name).trim().toLowerCase();
+          if (!followupByName.has(clean)) followupByName.set(clean, t.whatsapp_sent_at);
+        }
+      });
+
+      // Enrich patients with verified follow-up timestamp
+      const enrichedPatients = (data || []).map(p => {
+        const pPhone = p.phone ? String(p.phone).replace(/\D/g, '').slice(-10) : '';
+        const pName = p.name ? String(p.name).trim().toLowerCase() : '';
+        const sentAt = p.followup_sent_at || 
+                       followupByPatientId.get(p.id) || 
+                       (pPhone && followupByPhone.get(pPhone)) || 
+                       (pName && followupByName.get(pName)) || 
+                       null;
+        return sentAt ? { ...p, followup_sent_at: sentAt } : p;
+      });
+
+      setPatients(enrichedPatients);
 
       if (profile?.role === 'admin' || profile?.role === 'manager') {
         const { data: physioData } = await supabase
@@ -212,6 +269,16 @@ export default function AdminPanel() {
     return matchesSearch && matchesOwnPhysio && matchesPhysioFilter;
   });
 
+  const filteredTrackerFollowups = trackerFollowups.filter(t => {
+    const matchesSearch = (t.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          (t.customer_phone || '').includes(searchTerm);
+    const selectedPhysioObj = physios.find(p => p.id === physioFilter);
+    const pTarget = selectedPhysioObj?.full_name?.replace(/^Dr\.?\s+/i, '').trim().toLowerCase().split(' ')[0] || '';
+    const matchesPhysioFilter = !physioFilter || !pTarget || 
+      (t.physio_name || '').toLowerCase().includes(pTarget);
+    return matchesSearch && matchesPhysioFilter;
+  });
+
   // Calculate total patients for the current user's view
   const displayTotalPatients = filteredPatients.length;
 
@@ -222,6 +289,8 @@ export default function AdminPanel() {
     const now = new Date();
     return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
   }).length;
+
+  const totalFollowupsSent = trackerFollowups.length;
 
   if (loading) {
     return <div className="p-10 text-muted-foreground flex items-center justify-center min-h-[50vh]">Loading dashboard...</div>;
@@ -250,21 +319,49 @@ export default function AdminPanel() {
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          <div className="glass-panel p-6 rounded-xl border border-border/80 bg-card shadow-xs">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Total Patients</h3>
-            <p className="text-3xl font-extrabold text-primary">{displayTotalPatients}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="glass-panel p-5 rounded-xl border border-border/80 bg-card shadow-xs">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Prescription Patients</h3>
+            <p className="text-2xl font-extrabold text-primary">{displayTotalPatients}</p>
           </div>
-          <div className="glass-panel p-6 rounded-xl border border-border/80 bg-card shadow-xs">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Consults This Month</h3>
-            <p className="text-3xl font-extrabold text-primary">{consultsThisMonth}</p>
+          <div className="glass-panel p-5 rounded-xl border border-border/80 bg-card shadow-xs">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Consults This Month</h3>
+            <p className="text-2xl font-extrabold text-primary">{consultsThisMonth}</p>
+          </div>
+          <div className="glass-panel p-5 rounded-xl border border-border/80 bg-card shadow-xs">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Total Follow-ups Sent</h3>
+            <p className="text-2xl font-extrabold text-emerald-500">{totalFollowupsSent}</p>
           </div>
           {(profile?.role === 'admin' || profile?.role === 'manager') && (
-            <div className="glass-panel p-6 rounded-xl border border-border/80 bg-card shadow-xs">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Active Physios</h3>
-              <p className="text-3xl font-extrabold text-primary">{physios.length || 1}</p>
+            <div className="glass-panel p-5 rounded-xl border border-border/80 bg-card shadow-xs">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Active Physios</h3>
+              <p className="text-2xl font-extrabold text-primary">{physios.length || 1}</p>
             </div>
           )}
+        </div>
+
+        {/* View Switcher Tabs */}
+        <div className="flex gap-2 border-b border-border pb-2">
+          <button 
+            onClick={() => setActiveTab('patients')}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+              activeTab === 'patients' 
+                ? 'bg-primary text-primary-foreground shadow-xs' 
+                : 'text-muted-foreground hover:bg-muted/50'
+            }`}
+          >
+            Prescription Patients ({filteredPatients.length})
+          </button>
+          <button 
+            onClick={() => setActiveTab('followups')}
+            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+              activeTab === 'followups' 
+                ? 'bg-primary text-primary-foreground shadow-xs' 
+                : 'text-muted-foreground hover:bg-muted/50'
+            }`}
+          >
+            All Physio Follow-ups ({filteredTrackerFollowups.length})
+          </button>
         </div>
 
         {/* Controls Row */}
@@ -273,7 +370,7 @@ export default function AdminPanel() {
             <Search className="absolute left-3.5 top-3 text-muted-foreground pointer-events-none" size={18} />
             <input 
               type="text" 
-              placeholder="Search patients by name or phone..." 
+              placeholder={activeTab === 'patients' ? "Search patients by name or phone..." : "Search follow-ups by customer name or phone..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-3.5 py-2.5 rounded-lg border border-input bg-card text-foreground text-sm shadow-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-muted-foreground"
@@ -294,9 +391,11 @@ export default function AdminPanel() {
           )}
 
           <div className="flex gap-3">
-            <button onClick={startBulkSend} className="clinical-btn border-green-600 text-green-600 hover:bg-green-500/10">
-              <FastForward size={16} /> Send All Due Today
-            </button>
+            {activeTab === 'patients' && (
+              <button onClick={startBulkSend} className="clinical-btn border-green-600 text-green-600 hover:bg-green-500/10">
+                <FastForward size={16} /> Send All Due Today
+              </button>
+            )}
             <button onClick={handleExport} className="clinical-btn">
               <Download size={16} /> Export CSV
             </button>
@@ -304,6 +403,7 @@ export default function AdminPanel() {
         </div>
 
         {/* Data Table */}
+        {activeTab === 'patients' ? (
         <div className="glass-panel overflow-x-auto rounded-xl border border-border/80 bg-card shadow-xs">
           <table className="w-full border-collapse text-left text-sm">
             <thead>
@@ -394,6 +494,67 @@ export default function AdminPanel() {
             </tbody>
           </table>
         </div>
+        ) : (
+        /* Tab 2: Tracker Follow-ups Table */
+        <div className="glass-panel overflow-x-auto rounded-xl border border-border/80 bg-card shadow-xs">
+          <table className="w-full border-collapse text-left text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/40 text-muted-foreground text-xs uppercase tracking-wider">
+                <th className="p-4 font-semibold">Customer Name</th>
+                <th className="p-4 font-semibold">Phone</th>
+                <th className="p-4 font-semibold">Consult Date</th>
+                <th className="p-4 font-semibold">Physio</th>
+                <th className="p-4 font-semibold">Concern / Pain Point</th>
+                <th className="p-4 font-semibold">Status</th>
+                <th className="p-4 font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border/60">
+              {filteredTrackerFollowups.map(t => (
+                <tr key={t.id} className="hover:bg-muted/30 transition-colors">
+                  <td className="p-4 font-semibold text-foreground">{t.customer_name || 'Unknown'}</td>
+                  <td className="p-4 text-muted-foreground">{t.customer_phone || 'N/A'}</td>
+                  <td className="p-4 text-muted-foreground">{t.consult_date || 'N/A'}</td>
+                  <td className="p-4 text-muted-foreground text-xs font-medium">
+                    {t.physio_name?.startsWith('Dr.') ? t.physio_name : `Dr. ${t.physio_name || 'Physio'}`}
+                  </td>
+                  <td className="p-4 capitalize text-foreground">{t.pain_point || 'General Posture'}</td>
+                  <td className="p-4">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold text-emerald-500 bg-emerald-500/10 border border-emerald-500/20">
+                      <Check size={14} /> Follow-up Sent
+                    </span>
+                  </td>
+                  <td className="p-4">
+                    <div className="flex items-center gap-2">
+                      <Link 
+                        to="/r/demo" 
+                        target="_blank"
+                        className="clinical-btn text-xs py-1.5 px-2.5 no-underline"
+                      >
+                        <Eye size={14} /> Routine
+                      </Link>
+                      <Link 
+                        to="/mattress" 
+                        target="_blank"
+                        className="clinical-btn text-xs py-1.5 px-2.5 no-underline border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10"
+                      >
+                        SmartGRID
+                      </Link>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredTrackerFollowups.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                    No tracker follow-ups found for the selected filter.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        )}
 
         {/* Admin Controls section for managing Physios */}
         {profile?.role === 'admin' && (

@@ -127,13 +127,38 @@ export const softDeleteTrackerTask = async (taskId) => {
   }
 };
 
-export const markTaskWhatsAppSent = async (taskId) => {
-  if (!supabase || !taskId) return;
+export const markTaskWhatsAppSent = async (taskId, metadata = {}) => {
+  if (!supabase) return;
+  const now = new Date().toISOString();
   try {
-    await supabase
-      .from('tracker_tasks')
-      .update({ whatsapp_sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
-      .eq('id', taskId);
+    // 1. Update by primary taskId if provided
+    if (taskId) {
+      const { data, error } = await supabase
+        .from('tracker_tasks')
+        .update({ whatsapp_sent_at: now, updated_at: now })
+        .eq('id', taskId)
+        .select('id');
+      if (!error && Array.isArray(data) && data.length > 0) {
+        return;
+      }
+    }
+
+    // 2. Fallback matching by consult_date and phone or name
+    const cleanPhone = metadata.phone ? String(metadata.phone).replace(/\D/g, '').slice(-10) : '';
+    const dateStr = metadata.date || '';
+    if (cleanPhone && dateStr) {
+      await supabase
+        .from('tracker_tasks')
+        .update({ whatsapp_sent_at: now, updated_at: now })
+        .eq('consult_date', dateStr)
+        .ilike('customer_phone', `%${cleanPhone}%`);
+    } else if (metadata.name && dateStr) {
+      await supabase
+        .from('tracker_tasks')
+        .update({ whatsapp_sent_at: now, updated_at: now })
+        .eq('consult_date', dateStr)
+        .ilike('customer_name', `%${String(metadata.name).trim()}%`);
+    }
   } catch (err) {
     console.warn("Error updating task whatsapp status:", err);
   }
@@ -326,24 +351,121 @@ export const recordFollowup = async (patientId, physioId, fallbackName = null) =
 
 export const getFollowupsReport = async () => {
   if (!supabase) throw new Error("Supabase is not configured.");
-  const { data, error } = await supabase
+  
+  // 1. Fetch from explicit followups table
+  const { data: followupsData } = await supabase
     .from('followups')
     .select(`
       id,
       created_at,
       patient_name_fallback,
       profiles!physio_id (full_name),
-      patients!patient_id (name)
+      patients!patient_id (name, phone)
     `)
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
+  // 2. Fetch tracker tasks with whatsapp_sent_at
+  const { data: taskData } = await supabase
+    .from('tracker_tasks')
+    .select(`
+      id,
+      whatsapp_sent_at,
+      physio_name,
+      customer_name,
+      customer_phone,
+      consult_date,
+      pain_point
+    `)
+    .not('whatsapp_sent_at', 'is', null)
+    .order('whatsapp_sent_at', { ascending: false })
+    .limit(1000);
 
-  return data.map(f => ({
-    id: f.id,
-    dateSent: f.created_at,
-    physioName: f.profiles?.full_name || 'Unknown',
-    patientName: f.patients?.name || f.patient_name_fallback || 'Unknown (Unlinked)'
+  const combined = [];
+  const seenKeys = new Set();
+
+  (followupsData || []).forEach(f => {
+    const pName = f.patients?.name || f.patient_name_fallback || 'Unknown';
+    const key = `${f.profiles?.full_name || ''}_${pName.trim().toLowerCase()}_${f.created_at?.slice(0, 10)}`;
+    seenKeys.add(key);
+    combined.push({
+      id: f.id,
+      dateSent: f.created_at,
+      physioName: f.profiles?.full_name || 'Physio Specialist',
+      patientName: pName,
+      phone: f.patients?.phone || '',
+      source: 'Direct WhatsApp'
+    });
+  });
+
+  (taskData || []).forEach(t => {
+    const pName = t.customer_name || 'Unknown';
+    const cleanPhysio = t.physio_name?.startsWith('Dr.') ? t.physio_name : `Dr. ${t.physio_name || 'Physio'}`;
+    const key = `${cleanPhysio}_${pName.trim().toLowerCase()}_${t.whatsapp_sent_at?.slice(0, 10)}`;
+    if (!seenKeys.has(key)) {
+      seenKeys.add(key);
+      combined.push({
+        id: t.id,
+        dateSent: t.whatsapp_sent_at,
+        physioName: cleanPhysio,
+        patientName: pName,
+        phone: t.customer_phone || '',
+        consultDate: t.consult_date || '',
+        source: 'Consultation Tracker'
+      });
+    }
+  });
+
+  combined.sort((a, b) => new Date(b.dateSent).getTime() - new Date(a.dateSent).getTime());
+  return combined;
+};
+
+export const getDashboardTrackerData = async () => {
+  if (!supabase) return [];
+  const allRows = [];
+  const pageSize = 1000;
+  let from = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { data, error } = await supabase
+      .from('tracker_tasks')
+      .select('consult_date, physio_name, customer_name, customer_phone, session_done, whatsapp_sent_at, primary_category, product_suggested, pain_point')
+      .gte('consult_date', '2026-09-01')
+      .lte('consult_date', '2026-11-30')
+      .eq('is_deleted', false)
+      .order('consult_date', { ascending: false })
+      .range(from, from + pageSize - 1);
+
+    if (error) {
+      console.warn("Could not query dashboard tracker data from Supabase:", error);
+      break;
+    }
+
+    if (Array.isArray(data) && data.length > 0) {
+      allRows.push(...data);
+      if (data.length < pageSize) {
+        hasMore = false;
+      } else {
+        from += pageSize;
+      }
+    } else {
+      hasMore = false;
+    }
+
+    // Safety ceiling
+    if (allRows.length >= 10000) break;
+  }
+
+  return allRows.map(r => ({
+    Date: r.consult_date || '',
+    "Physio Name": r.physio_name?.startsWith('Dr.') ? r.physio_name : `Dr. ${r.physio_name || 'Physio'}`,
+    "Customer Name": r.customer_name || '',
+    "Customer Number": r.customer_phone || '',
+    "Physio session Done": r.session_done || 'No',
+    "Whatsapp followup done": r.whatsapp_sent_at ? 'Yes' : 'No',
+    "Primary Category": r.primary_category || 'Mattress',
+    "Product suggested": r.product_suggested || '',
+    "Customer Concern/Painpoint": r.pain_point || ''
   }));
 };
 
