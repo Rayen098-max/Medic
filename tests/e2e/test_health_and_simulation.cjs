@@ -95,6 +95,14 @@ runTest('HC-SIM-02', 'Simulation: Active months restriction strictly enforces Se
   assert.ok(dashFile.includes("'2026-11'") && dashFile.includes("'2026-10'") && dashFile.includes("'2026-09'"), 'Dashboard must restrict to Sep, Oct, Nov');
 });
 
+runTest('HC-SIM-03', 'Simulation: GID export URL & cache v13 preserve dates after 12th Nov without collapsing into Nov 12', () => {
+  const tasksFile = fs.readFileSync(path.join(ROOT_DIR, 'src/features/tasks/index.tsx'), 'utf8');
+  assert.ok(tasksFile.includes('PHYSIO_GID_MAP'), 'Tasks must define PHYSIO_GID_MAP');
+  assert.ok(tasksFile.includes('export?format=csv&gid='), 'Tasks must fetch via export format csv with gid');
+  assert.ok(tasksFile.includes('medic_tasks_cache_v13'), 'Tasks must bump cache key to v13 to clear old collapsed cache');
+  assert.ok(tasksFile.includes("aishwarya: '592000750'"), 'Dr. Aishwarya must be mapped to gid 592000750');
+});
+
 console.log('\n======================================================');
 console.log(`SIMULATION RESULTS: ${passedTests} PASSED, ${totalTests - passedTests} FAILED (TOTAL ${totalTests})`);
 console.log('======================================================\n');
@@ -104,3 +112,4 @@ if (passedTests === totalTests) {
 } else {
   process.exit(1);
 }
+

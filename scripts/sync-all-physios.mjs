@@ -7,37 +7,44 @@ const TAB_PHYSIO_MAPPING = {
   "Daily Tracker - Gursheen": {
     physio_name: "Gursheen",
     physio_id: "3910311c-199a-404d-9019-e522dafbf933",
-    full_name: "Dr. Gursheen Kaur"
+    full_name: "Dr. Gursheen Kaur",
+    gid: "1015773157"
   },
   "Daily Tracker - Dipti": {
     physio_name: "Dipti",
     physio_id: "f6b905a4-0c6f-40fb-8556-3c8ce718d59d",
-    full_name: "Dr. Dipti Mestry"
+    full_name: "Dr. Dipti Mestry",
+    gid: "1694551009"
   },
   "Daily Tracker - Aishwarya": {
     physio_name: "Aishwarya",
     physio_id: "272e746c-eff9-4900-a846-d0f668ef628f",
-    full_name: "Dr. Aishwarya Panchal"
+    full_name: "Dr. Aishwarya Panchal",
+    gid: "592000750"
   },
   "Daily Tracker - Rutuja": {
     physio_name: "Rutuja",
     physio_id: "73088240-d78a-4010-9dbb-b1ae57754fd4",
-    full_name: "Dr. Rutuja Tulaskar"
+    full_name: "Dr. Rutuja Tulaskar",
+    gid: "139271502"
   },
   "Daily Tracker - Pooja": {
     physio_name: "Pooja",
     physio_id: "416c3316-2885-4268-b4b0-544b2b3dc69c",
-    full_name: "Dr. Pooja Seema"
+    full_name: "Dr. Pooja Seema",
+    gid: "785897241"
   },
   "Daily Tracker - Kritika": {
     physio_name: "Kritika",
     physio_id: "c64339d0-eb42-4fd7-9f2b-c4752e4634f8",
-    full_name: "Dr. Kritika Gawand"
+    full_name: "Dr. Kritika Gawand",
+    gid: "1945751605"
   },
   "Daily Tracker - Hritika": {
     physio_name: "Hritika",
     physio_id: "df3cf918-2e16-4be4-af83-57d17501b646",
-    full_name: "Dr. Hritika Chavan"
+    full_name: "Dr. Hritika Chavan",
+    gid: "1486502114"
   }
 };
 
@@ -93,8 +100,10 @@ export function parseStandardDate(raw, physioName = '') {
   return { isoDate: '', displayDate: str, monthKey: 'Other', monthName: 'Other', timestamp: 0 };
 }
 
-async function fetchTabCsv(tabName) {
-  const url = `https://docs.google.com/spreadsheets/d/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}&_cb=${Date.now()}`;
+async function fetchTabCsv(tabName, gid) {
+  const url = gid
+    ? `https://docs.google.com/spreadsheets/d/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/export?format=csv&gid=${gid}&_cb=${Date.now()}`
+    : `https://docs.google.com/spreadsheets/d/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}&_cb=${Date.now()}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${tabName}`);
   return await res.text();
@@ -167,7 +176,7 @@ async function main() {
   for (const [tabName, config] of Object.entries(TAB_PHYSIO_MAPPING)) {
     console.log(`\nFetching ${tabName} for ${config.full_name}...`);
     try {
-      const csv = await fetchTabCsv(tabName);
+      const csv = await fetchTabCsv(tabName, config.gid);
       const result = Papa.parse(csv, {
         header: true,
         skipEmptyLines: true,

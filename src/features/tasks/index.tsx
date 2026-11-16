@@ -38,11 +38,21 @@ export interface TrackerRow {
 
 const KNOWN_PHYSIOS = ['Aishwarya', 'Gursheen', 'Dipti', 'Rutuja', 'Pooja', 'Hritika', 'Kritika', 'Gaurav'];
 
+const PHYSIO_GID_MAP: Record<string, string> = {
+  aishwarya: '592000750',
+  gursheen: '1015773157',
+  dipti: '1694551009',
+  rutuja: '139271502',
+  pooja: '785897241',
+  kritika: '1945751605',
+  hritika: '1486502114',
+};
+
 // Strictly display only the active 3 months: September, October, and November
 export const ALLOWED_MONTH_KEYS = ['2026-11', '2026-10', '2026-09'];
 
-const CACHE_KEY = 'medic_tasks_cache_v12';
-const CACHE_TIME_KEY = 'medic_tasks_cache_time_v12';
+const CACHE_KEY = 'medic_tasks_cache_v13';
+const CACHE_TIME_KEY = 'medic_tasks_cache_time_v13';
 
 export interface DateMeta {
   isoDate: string;       // "2026-10-15"
@@ -276,7 +286,10 @@ export function Tasks() {
 
       if (tabName !== 'Master Data') {
         try {
-          const csvUrl = `https://docs.google.com/spreadsheets/d/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}&_cb=${Date.now()}`;
+          const gid = physioKey ? PHYSIO_GID_MAP[physioKey.toLowerCase()] : null;
+          const csvUrl = gid
+            ? `https://docs.google.com/spreadsheets/d/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/export?format=csv&gid=${gid}&_cb=${Date.now()}`
+            : `https://docs.google.com/spreadsheets/d/1tKa5y8t7PxuqBTMJSwJRDLI9SJX5X00aeSZ8fcQwmsU/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}&_cb=${Date.now()}`;
           const sheetRes = await fetch(csvUrl, { cache: 'no-store' });
           if (sheetRes.ok) {
             const csv = await sheetRes.text();
