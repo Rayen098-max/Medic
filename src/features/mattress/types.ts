@@ -1,11 +1,16 @@
 /**
  * src/features/mattress/types.ts
- * Types and clinical posture data for the SmartGRID 3D Mattress & Posture Simulation Lab.
+ * Types and posture data for the SmartGRID 3D Mattress & Posture Lab.
+ *
+ * Metric scores are illustrative product-comparison values chosen to mirror
+ * the reference experience. They are not clinical measurements.
  */
 
 export type SimulationMode = 'comfort' | 'split';
 
-export type MattressModelId = 
+export type LayerId = 'smartgrid' | 'foam' | 'base';
+
+export type MattressModelId =
   | 'smart-ortho-pro'
   | 'smart-ortho'
   | 'smart-ortho-royale'
@@ -70,6 +75,8 @@ export interface ZoneClinicalInfo {
   id: string;
   zoneNumber: number;
   name: string;
+  /** Compact label for the one-handed zone strip. Never truncates the name. */
+  shortName: string;
   medicalRegion: string;
   xPercent: number; // Positioning along figure from head to foot
   smartGridBenefit: string;
@@ -81,6 +88,7 @@ export const SEVEN_ZONES_DATA: ZoneClinicalInfo[] = [
     id: 'head-neck',
     zoneNumber: 1,
     name: 'Head & Cervical Spine',
+    shortName: 'Head',
     medicalRegion: 'C1 - C7 Vertebrae',
     xPercent: 12,
     smartGridBenefit: 'Isolates head mass while supporting cervical lordosis. Prevents morning neck stiffness and tension headaches.',
@@ -90,6 +98,7 @@ export const SEVEN_ZONES_DATA: ZoneClinicalInfo[] = [
     id: 'shoulder-thoracic',
     zoneNumber: 2,
     name: 'Shoulders & Upper Thoracic',
+    shortName: 'Shoulders',
     medicalRegion: 'T1 - T6 Vertebrae',
     xPercent: 26,
     smartGridBenefit: 'Grid walls collapse intelligently under broad shoulder pressure, eliminating arm numbness and pins-and-needles.',
@@ -99,6 +108,7 @@ export const SEVEN_ZONES_DATA: ZoneClinicalInfo[] = [
     id: 'mid-back',
     zoneNumber: 3,
     name: 'Mid-Back & Ribcage',
+    shortName: 'Mid-Back',
     medicalRegion: 'T7 - T12 Vertebrae',
     xPercent: 40,
     smartGridBenefit: 'Maintains flat, balanced support across the thoracic-lumbar junction, aiding deep diaphragm breathing.',
@@ -108,6 +118,7 @@ export const SEVEN_ZONES_DATA: ZoneClinicalInfo[] = [
     id: 'lumbar-lordosis',
     zoneNumber: 4,
     name: 'Lumbar Spine & Lower Back',
+    shortName: 'Lumbar',
     medicalRegion: 'L1 - L5 Lordotic Curve',
     xPercent: 54,
     smartGridBenefit: 'Transitional ortho core provides active upward reactive support to fill the lower back gap and relax spinal erector muscles.',
@@ -117,6 +128,7 @@ export const SEVEN_ZONES_DATA: ZoneClinicalInfo[] = [
     id: 'pelvis-hips',
     zoneNumber: 5,
     name: 'Pelvis & Sacroiliac Joint',
+    shortName: 'Pelvis',
     medicalRegion: 'Sacrum & Hip Rotators',
     xPercent: 68,
     smartGridBenefit: 'Cradles the heaviest human pivot zone with zero counter-pressure, keeping the pelvic tilt completely neutral.',
@@ -126,6 +138,7 @@ export const SEVEN_ZONES_DATA: ZoneClinicalInfo[] = [
     id: 'thighs-knees',
     zoneNumber: 6,
     name: 'Thighs & Femoral Region',
+    shortName: 'Thighs',
     medicalRegion: 'Femur & Patellar Joint',
     xPercent: 82,
     smartGridBenefit: 'Graduated support balances leg weight to prevent pelvic rotation while side-sleeping.',
@@ -135,6 +148,7 @@ export const SEVEN_ZONES_DATA: ZoneClinicalInfo[] = [
     id: 'calves-feet',
     zoneNumber: 7,
     name: 'Calves, Ankles & Feet',
+    shortName: 'Calves, Ankles & Feet',
     medicalRegion: 'Achilles & Plantar Fascia',
     xPercent: 94,
     smartGridBenefit: 'Gentle pressure relief elevates lower extremities, promoting venous blood return throughout the night.',
@@ -143,42 +157,104 @@ export const SEVEN_ZONES_DATA: ZoneClinicalInfo[] = [
 ];
 
 export interface LayerMetadata {
-  id: 'smartgrid' | 'foam' | 'base';
+  id: LayerId;
   title: string;
   subtitle: string;
+  description: string;
+  detail: string;
   color: string;
   heightMm: string;
-  bullet1: string;
-  bullet2: string;
 }
 
+/**
+ * Headers and headline copy follow the reference experience.
+ * The detail line keeps the supporting product facts from the previous build.
+ */
 export const MATTRESS_LAYERS: LayerMetadata[] = [
   {
     id: 'smartgrid',
-    title: 'Patented SmartGRID™ Layer',
+    title: 'SMART GRID',
     subtitle: "India's 1st and Only Patented SmartGRID technology",
-    color: '#00d2ff',
-    heightMm: '45 mm',
-    bullet1: 'Hyper-elastic polymer grid collapses under pressure points while staying firm under posture curves.',
-    bullet2: '2,500+ air channels keep the mattress 2-3°C cooler than memory foam all night.'
+    description: 'Soft comfort with firm back support for peaceful sleep',
+    detail: 'Hyper-elastic polymer grid · 2,500+ air channels · 45 mm',
+    color: '#00e5ff',
+    heightMm: '45 mm'
   },
   {
     id: 'foam',
-    title: 'Ortho Relief Foam',
-    subtitle: 'High-Density Transitional Orthopedic Foam',
-    color: '#0d9488',
-    heightMm: '35 mm',
-    bullet1: 'Balances firmness and pressure relief, preventing the body from bottoming out.',
-    bullet2: 'Evenly distributes dynamic micro-movements so turning over feels effortless.'
+    title: 'ORTHORELIEF FOAM',
+    subtitle: 'Advanced orthopedic support for peaceful sleep',
+    description: 'Balances firmness and pressure relief',
+    detail: 'High-density transitional orthopedic foam · 35 mm',
+    color: '#2dd4bf',
+    heightMm: '35 mm'
   },
   {
     id: 'base',
-    title: '7-Zone Body Support Base',
-    subtitle: 'Targeted Orthopedic Support across 7 Body Zones',
-    color: '#1e3a8a',
-    heightMm: '120 mm',
-    bullet1: 'Engineered CNC grooves provide varying firmness for head, shoulders, lumbar, and hips.',
-    bullet2: 'Maintains neutral horizontal spinal alignment throughout all 8 hours of sleep.'
+    title: '7 ZONE BODY SUPPORT',
+    subtitle: 'Targeted Orthopedic Support across 7 key body zones',
+    description: 'Adapts to pressure points & aligns spine for peaceful sleep',
+    detail: 'CNC-contoured seven-zone support base · 120 mm',
+    color: '#3b82f6',
+    heightMm: '120 mm'
   }
 ];
 
+export interface MetricScore {
+  key: 'adaptive' | 'back' | 'firm' | 'relief';
+  label: string;
+  score: number;
+  flagged: boolean;
+}
+
+export interface MetricState {
+  scores: MetricScore[];
+  /** Human readable state used by the compact status pill. */
+  status: string;
+  tone: 'good' | 'warning' | 'critical';
+}
+
+/**
+ * Illustrative scores mirroring the reference video:
+ *  - all layers:      7 / 9 / 8 / 9
+ *  - no SmartGRID:    5 / 5 / 4 / 5  (back support flagged)
+ *  - no 7-zone base:  8 / 7 / 6 / 8  (firm support flagged)
+ */
+export function getMetricState(hasSmartGrid: boolean, hasSevenZone: boolean): MetricState {
+  if (!hasSmartGrid) {
+    return {
+      scores: [
+        { key: 'adaptive', label: 'ADAPTIVE SUPPORT', score: 5, flagged: false },
+        { key: 'back', label: 'BACK SUPPORT', score: 5, flagged: true },
+        { key: 'firm', label: 'FIRM SUPPORT', score: 4, flagged: false },
+        { key: 'relief', label: 'TARGETED PRESSURE RELIEF', score: 5, flagged: false }
+      ],
+      status: 'Ordinary memory foam',
+      tone: 'critical'
+    };
+  }
+
+  if (!hasSevenZone) {
+    return {
+      scores: [
+        { key: 'adaptive', label: 'ADAPTIVE SUPPORT', score: 8, flagged: false },
+        { key: 'back', label: 'BACK SUPPORT', score: 7, flagged: false },
+        { key: 'firm', label: 'FIRM SUPPORT', score: 6, flagged: true },
+        { key: 'relief', label: 'TARGETED PRESSURE RELIEF', score: 8, flagged: false }
+      ],
+      status: '7-zone base removed',
+      tone: 'warning'
+    };
+  }
+
+  return {
+    scores: [
+      { key: 'adaptive', label: 'ADAPTIVE SUPPORT', score: 7, flagged: false },
+      { key: 'back', label: 'BACK SUPPORT', score: 9, flagged: false },
+      { key: 'firm', label: 'FIRM SUPPORT', score: 8, flagged: false },
+      { key: 'relief', label: 'TARGETED PRESSURE RELIEF', score: 9, flagged: false }
+    ],
+    status: 'SmartGRID active',
+    tone: 'good'
+  };
+}

@@ -1,145 +1,189 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { Canvas } from '@react-three/fiber';
-import { RotateCcw, ChevronRight, Layers, User, Sparkles, Check, X } from 'lucide-react';
+import { useProgress } from '@react-three/drei';
+import {
+  Check,
+  ChevronDown,
+  Layers,
+  Minus,
+  RotateCcw,
+  User,
+  X
+} from 'lucide-react';
 import { MattressScene } from './components/MattressScene';
 import { MetricsScorecard } from './components/MetricsScorecard';
-import { SleepCycleScrubber } from './components/SleepCycleScrubber';
-import { LayerCardsModal } from './components/LayerCardsModal';
-import { 
-  SimulationMode, 
-  ZoneClinicalInfo, 
-  LayerMetadata, 
-  MATTRESS_MODELS, 
-  MATTRESS_LAYERS, 
-  MattressModelInfo 
+import { ZoneDetailSheet } from './components/ZoneDetailSheet';
+import { ModelPickerModal } from './components/ModelPickerModal';
+import { RotatePrompt } from './components/RotatePrompt';
+import {
+  getMetricState,
+  LayerId,
+  MATTRESS_LAYERS,
+  MATTRESS_MODELS,
+  MattressModelInfo,
+  SEVEN_ZONES_DATA,
+  SimulationMode,
+  ZoneClinicalInfo
 } from './types';
-import { getPatientById } from '@/utils/db';
+import { getMattressShareGreeting } from './shareToken';
+
+function SceneLoadingBadge() {
+  const { active, progress } = useProgress();
+  if (!active) return null;
+
+  return (
+    <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-700/50 bg-[#04101d]/85 px-3 py-1.5 font-mono text-[8px] uppercase tracking-[0.18em] text-cyan-300/80 backdrop-blur">
+      Loading anatomy · {Math.round(progress)}%
+    </div>
+  );
+}
 
 export function MattressExperience() {
-  const { id } = useParams<{ id?: string }>();
-  const navigate = useNavigate();
+  const { token } = useParams<{ token?: string }>();
 
-  // Consultation state
-  const [patientName, setPatientName] = useState<string>('');
-  const [physioName, setPhysioName] = useState<string>('');
-
-  // Simulation mode
+  const [greetingName, setGreetingName] = useState<string | null>(null);
   const [mode, setMode] = useState<SimulationMode>('comfort');
   const [selectedModel, setSelectedModel] = useState<MattressModelInfo>(MATTRESS_MODELS[0]);
   const [isModelPickerOpen, setIsModelPickerOpen] = useState(false);
 
-  // Mattress layer toggles
   const [hasSmartGrid, setHasSmartGrid] = useState(true);
   const [hasSevenZone, setHasSevenZone] = useState(true);
 
-  // Clinical zone & layer selection
   const [selectedZone, setSelectedZone] = useState<ZoneClinicalInfo | null>(null);
-  const [selectedLayerId, setSelectedLayerId] = useState<'smartgrid' | 'foam' | 'base' | null>(null);
+  const [selectedLayerId, setSelectedLayerId] = useState<LayerId | null>(null);
+  const [cameraResetKey, setCameraResetKey] = useState(0);
+  const [isCompactLandscape, setIsCompactLandscape] = useState(false);
 
-  // 8-Hour sleep cycle
-  const [sleepCycleHour, setSleepCycleHour] = useState(4);
-
-  // Load patient metadata if ID is present
+  // Token-scoped greeting. No token, expired token or a legacy /m/:id link all
+  // fall back to "Prepared for you" — never a patient id or full name.
   useEffect(() => {
-    async function loadPatient() {
-      if (!id || id === 'demo') {
-        setPatientName('Guest');
-        setPhysioName('Senior Physiotherapist');
-        return;
-      }
-      try {
-        const patient = await getPatientById(id);
-        if (patient) {
-          setPatientName(patient.name || 'Valued Customer');
-          setPhysioName(patient.physio_name || patient.physio || 'Physio Specialist');
-        }
-      } catch (err) {
-        console.warn('Could not fetch patient info for mattress lab:', err);
-      }
+    let alive = true;
+
+    if (!token) {
+      setGreetingName(null);
+      return () => {
+        alive = false;
+      };
     }
-    loadPatient();
-  }, [id]);
 
-  const selectedLayer = MATTRESS_LAYERS.find(l => l.id === selectedLayerId) || null;
+    getMattressShareGreeting(token).then((name) => {
+      if (alive) setGreetingName(name);
+    });
 
-  const handleReset = () => {
+    return () => {
+      alive = false;
+    };
+  }, [token]);
+
+  useEffect(() => {
+    const query = window.matchMedia('(orientation: landscape) and (max-height: 540px)');
+    const update = () => setIsCompactLandscape(query.matches);
+    update();
+
+    if (typeof query.addEventListener === 'function') {
+      query.addEventListener('change', update);
+      return () => query.removeEventListener('change', update);
+    }
+
+    // Safari < 14
+    query.addListener(update);
+    return () => query.removeListener(update);
+  }, []);
+
+  const metricState = getMetricState(hasSmartGrid, hasSevenZone);
+
+  const resetSimulation = () => {
     setMode('comfort');
     setHasSmartGrid(true);
     setHasSevenZone(true);
     setSelectedZone(null);
     setSelectedLayerId(null);
-    setSleepCycleHour(4);
+    setCameraResetKey((key) => key + 1);
   };
 
+  const handleSelectModel = (model: MattressModelInfo) => {
+    setSelectedModel(model);
+    setIsModelPickerOpen(false);
+    resetSimulation();
+  };
+
+  const handleModeChange = (nextMode: SimulationMode) => {
+    setMode(nextMode);
+    setSelectedZone(null);
+    setSelectedLayerId(null);
+    setCameraResetKey((key) => key + 1);
+  };
+
+  const handleSelectLayer = (layerId: LayerId) => {
+    setSelectedLayerId((current) => (current === layerId ? null : layerId));
+  };
+
+  const greeting = greetingName ? `Prepared for ${greetingName}` : 'Prepared for you';
+
   return (
-    <div className="relative w-screen h-[100dvh] bg-[#03060d] text-slate-100 flex flex-col justify-between overflow-hidden select-none font-sans">
-      
-      {/* 1. TOP HEADER HUD */}
-      <header className="px-4 py-3 border-b border-cyan-900/40 bg-slate-950/80 backdrop-blur-md z-30 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded border border-cyan-400 flex items-center justify-center bg-cyan-950/50 shadow-[0_0_12px_rgba(0,210,255,0.4)]">
-            <span className="text-cyan-300 font-bold font-mono text-sm">TSC</span>
+    <div className="relative flex h-[100dvh] w-full select-none flex-col overflow-hidden bg-[#03060d] font-sans text-slate-100">
+      {/* HEADER */}
+      <header
+        className="relative z-30 flex shrink-0 items-center justify-between gap-2 border-b border-cyan-900/40 bg-[#030912]/92 px-3 py-2 backdrop-blur-xl"
+        style={{ paddingTop: 'max(0.5rem, env(safe-area-inset-top))' }}
+      >
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-cyan-400/80 bg-cyan-950/50 shadow-[0_0_14px_rgba(0,210,255,0.35)]">
+            <span className="font-mono text-[11px] font-bold tracking-tight text-cyan-300">TSC</span>
           </div>
-          <div>
-            <div className="text-[10px] tracking-widest text-cyan-400 uppercase font-mono font-semibold">
+          <div className="min-w-0">
+            <div className="font-mono text-[7.5px] font-semibold uppercase tracking-[0.2em] text-cyan-400">
               The Sleep Company
             </div>
-            <div className="text-xs sm:text-sm font-bold text-white tracking-wide font-mono flex items-center gap-1.5">
-              <span>SmartGRID™ POSTURE LAB</span>
-              {patientName && (
-                <span className="hidden sm:inline-block text-[10px] text-cyan-300/80 font-normal">
-                  • Prepared for {patientName}
-                </span>
-              )}
+            <div className="mt-0.5 truncate font-mono text-[11px] font-bold tracking-[0.08em] text-white min-[400px]:text-[12px]">
+              SmartGRID™ <span className="text-cyan-300">POSTURE LAB</span>
+            </div>
+            <div
+              data-testid="greeting"
+              className="mt-0.5 truncate font-mono text-[8px] leading-none tracking-[0.1em] text-slate-400"
+            >
+              {greeting}
             </div>
           </div>
         </div>
 
-        {/* Model Switcher & Reset Button */}
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
           <button
-            onClick={() => setIsModelPickerOpen(true)}
-            className="px-2.5 py-1 rounded-md bg-slate-900 border border-slate-700 hover:border-cyan-400 text-xs text-slate-300 hover:text-white flex items-center gap-1 transition"
+            type="button"
+            onClick={() => {
+              setSelectedZone(null);
+              setSelectedLayerId(null);
+              setIsModelPickerOpen(true);
+            }}
+            className="flex h-8 max-w-[118px] items-center gap-1 rounded-md border border-slate-700/80 bg-slate-950/80 px-2 text-slate-300 transition hover:border-cyan-500/70 hover:text-white"
+            aria-label="Change mattress model"
           >
-            <span className="font-mono text-cyan-400 text-[11px] truncate max-w-[120px]">
+            <span className="truncate font-mono text-[9px] font-semibold tracking-wide">
               {selectedModel.name.replace(' Mattress', '')}
             </span>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <ChevronDown className="h-3 w-3 shrink-0 text-cyan-400" />
           </button>
 
           <button
-            onClick={handleReset}
-            className="p-1.5 rounded-md bg-slate-900 border border-slate-700 text-slate-300 hover:text-white hover:border-cyan-400 transition"
-            title="Reset Simulation"
+            type="button"
+            onClick={resetSimulation}
+            className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-700/80 bg-slate-950/80 text-slate-300 transition hover:border-cyan-500/70 hover:text-white"
+            aria-label="Reset simulation"
+            title="Reset simulation"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <RotateCcw className="h-3.5 w-3.5" />
           </button>
         </div>
       </header>
 
-      {/* 2. REAL-TIME SCORECARDS DOCK */}
-      <div className="px-3 pt-2.5 z-20">
-        <MetricsScorecard hasSmartGrid={hasSmartGrid} hasSevenZone={hasSevenZone} />
-      </div>
-
-      {/* 3. MAIN 3D INTERACTIVE CHAMBER (Three.js WebGL Canvas) */}
-      <main className="flex-1 w-full relative min-h-0">
-        {/* Floating Mode Indicator Badge */}
-        <div className="absolute top-2 left-3 z-10 flex items-center gap-2 pointer-events-none">
-          <span className="px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/60 text-cyan-300 text-[10px] font-mono tracking-wider">
-            {mode === 'comfort' ? 'COMFORT & POSTURE SIMULATOR' : 'EXPLODED 3D LAYERS'}
-          </span>
-          <span className="px-2 py-0.5 rounded bg-slate-900/80 border border-slate-800 text-slate-400 text-[10px] font-mono">
-            {hasSmartGrid ? 'Patented SmartGRID™ Active' : 'Ordinary Memory Foam'}
-          </span>
-        </div>
-
-        {/* Three.js Canvas */}
+      {/* 3D STAGE */}
+      <main className="relative min-h-0 flex-1 overflow-hidden">
         <Canvas
-          camera={{ position: [0, 2.2, 5.2], fov: 42 }}
+          camera={{ position: [-4.6, 3.8, 8.4], fov: 44, near: 0.1, far: 60 }}
           gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
-          className="w-full h-full"
+          dpr={[1, 1.8]}
+          className="h-full w-full touch-none"
         >
           <MattressScene
             mode={mode}
@@ -148,161 +192,213 @@ export function MattressExperience() {
             selectedZone={selectedZone}
             onSelectZone={setSelectedZone}
             selectedLayerId={selectedLayerId}
-            onSelectLayer={setSelectedLayerId}
-            sleepCycleHour={sleepCycleHour}
+            onSelectLayer={handleSelectLayer}
+            onCloseLayer={() => setSelectedLayerId(null)}
+            cameraResetKey={cameraResetKey}
           />
         </Canvas>
 
-        {/* Subtle Gesture Guidance Pill */}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 pointer-events-none z-10 text-[10px] font-mono text-cyan-400/70 bg-black/60 px-2.5 py-1 rounded-full border border-cyan-900/50 backdrop-blur">
-          Drag to rotate bed • Pinch to zoom • Tap glowing beacons
+        <SceneLoadingBadge />
+
+        {/* Metrics live inside the simulation view, on the canvas top edge. */}
+        {mode === 'comfort' && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-20 px-2 pt-2">
+            <MetricsScorecard hasSmartGrid={hasSmartGrid} hasSevenZone={hasSevenZone} />
+            <div className="mt-1.5 flex items-center justify-between gap-2">
+              <span className="rounded border border-cyan-700/50 bg-[#04101d]/80 px-1.5 py-0.5 font-mono text-[7px] uppercase tracking-[0.16em] text-cyan-300/80 backdrop-blur">
+                Comfort simulator
+              </span>
+              <span
+                className={`rounded border px-1.5 py-0.5 font-mono text-[7px] uppercase tracking-[0.12em] backdrop-blur ${
+                  metricState.tone === 'critical'
+                    ? 'border-rose-500/50 bg-rose-950/70 text-rose-300'
+                    : metricState.tone === 'warning'
+                      ? 'border-amber-500/40 bg-amber-950/60 text-amber-300'
+                      : 'border-cyan-700/50 bg-cyan-950/60 text-cyan-300'
+                }`}
+              >
+                {metricState.status}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Split-layers readout */}
+        {mode === 'split' && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between gap-2 px-3 pt-2">
+            <span className="rounded border border-cyan-700/50 bg-[#04101d]/80 px-1.5 py-0.5 font-mono text-[7px] uppercase tracking-[0.16em] text-cyan-300/80 backdrop-blur">
+              Split layers
+            </span>
+            <span className="rounded border border-slate-700/60 bg-slate-950/80 px-1.5 py-0.5 font-mono text-[7px] uppercase tracking-[0.12em] text-slate-400 backdrop-blur">
+              Inspect the stack
+            </span>
+          </div>
+        )}
+
+        {/* One-handed zone strip. Full names, horizontal scroll, never overlapping. */}
+        {mode === 'comfort' && (
+          <div className="absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-[#03060d] via-[#03060d]/85 to-transparent px-2 pb-1.5 pt-5">
+            <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5">
+              <span className="shrink-0 pr-0.5 font-mono text-[7px] uppercase tracking-[0.16em] text-slate-500">
+                Zones
+              </span>
+              {SEVEN_ZONES_DATA.map((zone) => {
+                const isSelected = selectedZone?.id === zone.id;
+                return (
+                  <button
+                    key={zone.id}
+                    type="button"
+                    onClick={() => setSelectedZone(zone)}
+                    aria-pressed={isSelected}
+                    className={`shrink-0 rounded-full border px-2 py-1 font-mono text-[8.5px] transition ${
+                      isSelected
+                        ? 'border-cyan-300 bg-cyan-400/20 text-cyan-100 shadow-[0_0_12px_rgba(34,211,238,0.3)]'
+                        : 'border-slate-700/70 bg-slate-950/80 text-slate-300 hover:border-cyan-600/60'
+                    }`}
+                  >
+                    Z{zone.zoneNumber} {zone.shortName}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Gesture hint, desktop only */}
+        <div className="pointer-events-none absolute bottom-2 right-2 hidden rounded-full border border-cyan-900/50 bg-black/55 px-2 py-1 font-mono text-[8px] tracking-wide text-cyan-400/55 backdrop-blur min-[700px]:block">
+          Drag to rotate · Pinch to zoom
         </div>
       </main>
 
-      {/* 4. CLINICAL DETAILS & SPECIFICATION DRAWERS */}
-      <LayerCardsModal
-        selectedZone={selectedZone}
-        onCloseZone={() => setSelectedZone(null)}
-        selectedLayer={selectedLayer}
-        onCloseLayer={() => setSelectedLayerId(null)}
-        selectedModel={selectedModel}
-        onSelectModel={setSelectedModel}
-        isModelPickerOpen={isModelPickerOpen}
-        onCloseModelPicker={() => setIsModelPickerOpen(false)}
-      />
-
-      {/* 5. CYBER-CLINICAL BOTTOM CONTROLS DOCK */}
-      <footer className="p-3 bg-slate-950/90 border-t border-cyan-900/40 z-20 flex flex-col gap-2.5 backdrop-blur-md">
-        
-        {/* Primary View Switcher */}
+      {/* BOTTOM DOCK: exactly two primary modes + one contextual row */}
+      <footer
+        className="relative z-30 shrink-0 border-t border-cyan-900/50 bg-[#030912]/95 px-2.5 pt-2 backdrop-blur-xl"
+        style={{ paddingBottom: 'max(0.625rem, env(safe-area-inset-bottom))' }}
+      >
         <div className="grid grid-cols-2 gap-2">
           <button
-            onClick={() => {
-              setMode('comfort');
-              setSelectedLayerId(null);
-            }}
-            className={`py-2 px-3 rounded-lg text-xs font-mono font-bold tracking-wider transition flex items-center justify-center gap-2 ${
+            type="button"
+            onClick={() => handleModeChange('comfort')}
+            aria-pressed={mode === 'comfort'}
+            className={`flex h-11 items-center justify-center gap-2 rounded-lg border font-mono text-[10px] font-bold tracking-[0.1em] transition ${
               mode === 'comfort'
-                ? 'bg-cyan-950/80 border border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(0,210,255,0.3)] ring-1 ring-cyan-400'
-                : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                ? 'border-cyan-400 bg-cyan-400/15 text-cyan-200 shadow-[0_0_18px_rgba(0,210,255,0.22)]'
+                : 'border-slate-800 bg-slate-950/80 text-slate-400 hover:border-cyan-800/70 hover:text-white'
             }`}
           >
-            <User className="w-3.5 h-3.5" />
+            <User className="h-3.5 w-3.5" />
             COMFORT SIMULATOR
           </button>
 
           <button
-            onClick={() => {
-              setMode('split');
-              setSelectedZone(null);
-            }}
-            className={`py-2 px-3 rounded-lg text-xs font-mono font-bold tracking-wider transition flex items-center justify-center gap-2 ${
+            type="button"
+            onClick={() => handleModeChange('split')}
+            aria-pressed={mode === 'split'}
+            className={`flex h-11 items-center justify-center gap-2 rounded-lg border font-mono text-[10px] font-bold tracking-[0.1em] transition ${
               mode === 'split'
-                ? 'bg-cyan-950/80 border border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(0,210,255,0.3)] ring-1 ring-cyan-400'
-                : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                ? 'border-cyan-400 bg-cyan-400/15 text-cyan-200 shadow-[0_0_18px_rgba(0,210,255,0.22)]'
+                : 'border-slate-800 bg-slate-950/80 text-slate-400 hover:border-cyan-800/70 hover:text-white'
             }`}
           >
-            <Layers className="w-3.5 h-3.5" />
-            SPLIT 3D LAYERS
+            <Layers className="h-3.5 w-3.5" />
+            SPLIT LAYERS
           </button>
         </div>
 
-        {/* Dynamic Contextual Layer & Posture Control Bar */}
-        {mode === 'comfort' ? (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs font-mono">
-            <span className="text-[10px] text-slate-400 uppercase tracking-widest shrink-0 mr-1">
-              Posture Comparison:
-            </span>
+        <div className="no-scrollbar mt-2 flex items-center gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5">
+          {mode === 'comfort' ? (
+            <>
+              <span className="shrink-0 pr-0.5 font-mono text-[7px] uppercase tracking-[0.16em] text-slate-500">
+                Posture
+              </span>
 
-            {/* Quick Toggle: SmartGRID (Neutral Spine) vs Ordinary Foam (Sagging Spine) */}
-            <button
-              onClick={() => {
-                setHasSmartGrid(true);
-                setHasSevenZone(true);
-              }}
-              className={`px-2.5 py-1.5 rounded text-xs font-semibold shrink-0 transition flex items-center gap-1 ${
-                hasSmartGrid && hasSevenZone
-                  ? 'bg-cyan-500/25 border border-cyan-400 text-cyan-300 shadow-[0_0_10px_rgba(0,210,255,0.3)]'
-                  : 'bg-slate-900 border border-slate-800 text-slate-400 hover:border-cyan-600'
-              }`}
-            >
-              <Check className="w-3 h-3 text-cyan-400" />
-              SmartGRID™ (Neutral Spine)
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setHasSmartGrid(true);
+                  setHasSevenZone(true);
+                }}
+                aria-pressed={hasSmartGrid && hasSevenZone}
+                className={`shrink-0 rounded border px-2 py-1.5 font-mono text-[9px] font-semibold transition ${
+                  hasSmartGrid && hasSevenZone
+                    ? 'border-cyan-400 bg-cyan-400/15 text-cyan-200'
+                    : 'border-slate-800 bg-slate-950/80 text-slate-400 hover:border-cyan-700/70'
+                }`}
+              >
+                <Check className="mr-1 inline h-2.5 w-2.5" />
+                SmartGRID™ (Neutral Spine)
+              </button>
 
-            <button
-              onClick={() => {
-                setHasSmartGrid(false);
-              }}
-              className={`px-2.5 py-1.5 rounded text-xs font-semibold shrink-0 transition flex items-center gap-1 ${
-                !hasSmartGrid
-                  ? 'bg-rose-500/25 border border-rose-400 text-rose-300 shadow-[0_0_10px_rgba(244,63,94,0.3)]'
-                  : 'bg-slate-900 border border-slate-800 text-slate-400 hover:border-rose-700'
-              }`}
-            >
-              <X className="w-3 h-3 text-rose-400" />
-              Remove Grid (Sagging Memory Foam)
-            </button>
+              <button
+                type="button"
+                onClick={() => setHasSmartGrid((current) => !current)}
+                aria-pressed={!hasSmartGrid}
+                className={`shrink-0 rounded border px-2 py-1.5 font-mono text-[9px] font-semibold transition ${
+                  !hasSmartGrid
+                    ? 'border-rose-400 bg-rose-500/20 text-rose-200'
+                    : 'border-slate-800 bg-slate-950/80 text-slate-400 hover:border-rose-800/70'
+                }`}
+              >
+                <X className="mr-1 inline h-2.5 w-2.5" />
+                Remove Grid (Sagging Memory Foam)
+              </button>
 
-            <button
-              onClick={() => setHasSevenZone(!hasSevenZone)}
-              className={`px-2.5 py-1.5 rounded text-xs font-semibold shrink-0 transition ${
-                !hasSevenZone
-                  ? 'bg-amber-500/25 border border-amber-400 text-amber-300'
-                  : 'bg-slate-900 border border-slate-800 text-slate-400 hover:border-amber-600'
-              }`}
-            >
-              {hasSevenZone ? 'Remove 7-Zone Base' : 'Restore 7-Zone Base'}
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs font-mono">
-            <span className="text-[10px] text-slate-400 uppercase tracking-widest shrink-0 mr-1">
-              Inspect Layer:
-            </span>
-            <button
-              onClick={() => setSelectedLayerId('smartgrid')}
-              className={`px-2.5 py-1.5 rounded shrink-0 transition ${
-                selectedLayerId === 'smartgrid'
-                  ? 'bg-cyan-500/30 border border-cyan-400 text-cyan-300'
-                  : 'bg-slate-900 border border-slate-800 text-slate-400 hover:border-cyan-500'
-              }`}
-            >
-              1. SmartGRID™ Layer
-            </button>
-            <button
-              onClick={() => setSelectedLayerId('foam')}
-              className={`px-2.5 py-1.5 rounded shrink-0 transition ${
-                selectedLayerId === 'foam'
-                  ? 'bg-teal-500/30 border border-teal-400 text-teal-300'
-                  : 'bg-slate-900 border border-slate-800 text-slate-400 hover:border-teal-500'
-              }`}
-            >
-              2. Ortho Relief Foam
-            </button>
-            <button
-              onClick={() => setSelectedLayerId('base')}
-              className={`px-2.5 py-1.5 rounded shrink-0 transition ${
-                selectedLayerId === 'base'
-                  ? 'bg-blue-500/30 border border-blue-400 text-blue-300'
-                  : 'bg-slate-900 border border-slate-800 text-slate-400 hover:border-blue-500'
-              }`}
-            >
-              3. 7-Zone Spinal Base
-            </button>
-          </div>
-        )}
+              <button
+                type="button"
+                onClick={() => setHasSevenZone((current) => !current)}
+                aria-pressed={!hasSevenZone}
+                className={`shrink-0 rounded border px-2 py-1.5 font-mono text-[9px] font-semibold transition ${
+                  !hasSevenZone
+                    ? 'border-amber-400 bg-amber-500/20 text-amber-200'
+                    : 'border-slate-800 bg-slate-950/80 text-slate-400 hover:border-amber-800/70'
+                }`}
+              >
+                <Minus className="mr-1 inline h-2.5 w-2.5" />
+                {hasSevenZone ? 'Remove 7-Zone Base' : 'Restore 7-Zone Base'}
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="shrink-0 pr-0.5 font-mono text-[7px] uppercase tracking-[0.16em] text-slate-500">
+                Inspect
+              </span>
 
-        {/* 8-Hour Sleep Cycle Scrubber */}
-        <SleepCycleScrubber
-          currentHour={sleepCycleHour}
-          onHourChange={setSleepCycleHour}
-          hasSmartGrid={hasSmartGrid}
-        />
-
+              {MATTRESS_LAYERS.map((layer) => {
+                const isSelected = selectedLayerId === layer.id;
+                return (
+                  <button
+                    key={layer.id}
+                    type="button"
+                    onClick={() => handleSelectLayer(layer.id)}
+                    aria-pressed={isSelected}
+                    className={`shrink-0 rounded border px-2 py-1.5 font-mono text-[9px] font-semibold tracking-[0.04em] transition ${
+                      isSelected
+                        ? 'border-cyan-300 bg-cyan-400/20 text-cyan-100'
+                        : 'border-slate-800 bg-slate-950/80 text-slate-400 hover:border-cyan-700/70'
+                    }`}
+                  >
+                    {layer.title}
+                  </button>
+                );
+              })}
+            </>
+          )}
+        </div>
       </footer>
 
+      {selectedZone && (
+        <ZoneDetailSheet zone={selectedZone} onClose={() => setSelectedZone(null)} />
+      )}
+
+      {isModelPickerOpen && (
+        <ModelPickerModal
+          selectedModel={selectedModel}
+          onSelectModel={handleSelectModel}
+          onClose={() => setIsModelPickerOpen(false)}
+        />
+      )}
+
+      <RotatePrompt visible={isCompactLandscape} />
     </div>
   );
 }
-

@@ -21,6 +21,7 @@ import { MessageCircle, Eye, Trash2, Sparkles, Check, FileText } from 'lucide-re
 import CaptureForm from '@/components/CaptureForm'
 import { getPatients, recordFollowup, softDeleteTrackerTask, markTaskWhatsAppSent, updatePatientStatus } from '@/utils/db'
 import { useAuth } from '@/context/AuthContext'
+import { createMattressShareToken } from '@/features/mattress/shareToken'
 
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
@@ -205,7 +206,7 @@ export function TasksTable({ data }: TasksTableProps) {
     window.open(url, '_blank');
   }
 
-  const handleSleepScienceWhatsApp = (row: TrackerRow, id: string, appType: 'default' | 'business' | 'web' = 'default') => {
+  const handleSleepScienceWhatsApp = async (row: TrackerRow, id: string, appType: 'default' | 'business' | 'web' = 'default') => {
     let phone = String(row["Customer Number"] || "").replace(/\D/g, '');
     if (!phone) {
       alert("No phone number available for this customer.");
@@ -216,9 +217,11 @@ export function TasksTable({ data }: TasksTableProps) {
     }
 
     const patientId = getMatchedPatientId(row, id);
-    const link = patientId 
-      ? `${window.location.origin}/m/${patientId}` 
-      : `${window.location.origin}/mattress`;
+    // Customer-facing links carry only an opaque, expiring share token. If the
+    // token migration is not deployed yet, fall back to the generic lab URL.
+    const shareToken = patientId ? await createMattressShareToken(patientId) : null;
+    const sharePath = shareToken ? `/mattress/s/${shareToken}` : '/mattress';
+    const link = `${window.location.origin}${sharePath}`;
 
     const customerName = row["Customer Name"] || "there";
     const physioName = profile?.full_name?.replace(/^Dr\.?\s+/i, '') || 'Physio Specialist';
@@ -396,10 +399,11 @@ export function TasksTable({ data }: TasksTableProps) {
                             <Button
                               variant="outline"
                               className="flex-1 gap-1 text-[11px] h-7 px-1.5 border-cyan-500/40 text-cyan-400 hover:bg-cyan-500/10"
-                              onClick={() => {
+                              onClick={async () => {
                                 const patientId = getMatchedPatientId(row, id);
-                                const link = patientId ? `/m/${patientId}` : `/mattress`;
-                                window.open(link, '_blank');
+                                const shareToken = patientId ? await createMattressShareToken(patientId) : null;
+                                const link = shareToken ? `/mattress/s/${shareToken}` : '/mattress';
+                                window.open(link, '_blank', 'noopener,noreferrer');
                               }}
                               title="Open 3D SmartGRID Posture Simulator"
                             >

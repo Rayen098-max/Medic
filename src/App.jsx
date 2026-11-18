@@ -144,6 +144,7 @@ export default function App() {
           <Route path="/portal/:id" element={<CustomerPortal />} />
           <Route path="/portal" element={<CustomerPortal />} />
           {/* SmartGRID 3D Mattress & Posture Simulation Routes */}
+          <Route path="/mattress/s/:token" element={<MattressExperience />} />
           <Route path="/m/:id" element={<MattressExperience />} />
           <Route path="/m" element={<MattressExperience />} />
           <Route path="/mattress" element={<MattressExperience />} />

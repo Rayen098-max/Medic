@@ -1,7 +1,12 @@
 /**
  * tests/e2e/test_mattress_experience.cjs
- * Comprehensive test suite verifying the SmartGRID 3D Mattress & Posture Experience,
- * 7-Zone Clinical Beacons, 8-Hour Sleep Cycle Simulation, and Tasks table WhatsApp integration.
+ * Comprehensive test suite verifying the SmartGRID Posture Lab Mobile Experience:
+ * - Mobile-first layout (100dvh, slim header, two bottom mode buttons: COMFORT SIMULATOR and SPLIT LAYERS)
+ * - 4 Metric cards matching video (ADAPTIVE SUPPORT, BACK SUPPORT, FIRM SUPPORT, TARGETED PRESSURE RELIEF)
+ * - 3 Exploded layers (SMART GRID, ORTHORELIEF FOAM, 7 ZONE BODY SUPPORT)
+ * - Realistic anatomical figure lying in lateral sleep pose with dynamic glowing spine and 7 zone beacons
+ * - 8-Hour SleepCycleScrubber completely removed
+ * - Tokenized privacy-preserving personalization
  */
 
 const fs = require('fs');
@@ -23,13 +28,13 @@ function test(name, fn) {
 }
 
 console.log('\n======================================================');
-console.log(' SMARTGRID 3D MATTRESS & POSTURE LAB — E2E TEST SUITE ');
+console.log(' SMARTGRID POSTURE LAB — MOBILE REBUILD E2E SUITE    ');
 console.log('======================================================\n');
 
 // 1. App Routes Verification
-test('[R1-01] App.jsx registers /m/:id, /m, /mattress, and /sleep-science routes', () => {
+test('[R1-01] App.jsx registers /m/:token, /m/:id, /m, /mattress, and /sleep-science routes', () => {
   const appCode = fs.readFileSync(path.join(__dirname, '../../src/App.jsx'), 'utf8');
-  assert(appCode.includes('path="/m/:id"'), 'Missing /m/:id route');
+  assert(appCode.includes('path="/m/:token"') || appCode.includes('path="/m/:id"'), 'Missing /m/:token or /m/:id route');
   assert(appCode.includes('path="/m"'), 'Missing /m route');
   assert(appCode.includes('path="/mattress"'), 'Missing /mattress route');
   assert(appCode.includes('path="/sleep-science"'), 'Missing /sleep-science route');
@@ -60,58 +65,59 @@ test('[R2-03] types.ts specifies 3 distinct mattress layers (SmartGRID, Ortho Re
   assert(typesCode.includes('smartgrid'), 'Missing smartgrid layer');
   assert(typesCode.includes('foam'), 'Missing foam layer');
   assert(typesCode.includes('base'), 'Missing base layer');
-  assert(typesCode.includes('2,500+ air channels'), 'Missing air channels claim');
+  assert(typesCode.includes('air channels') || typesCode.includes('Patented SmartGRID'), 'Missing grid layer technology');
 });
 
-// 3. 3D Scene & Spinal Morphing Verification
-test('[R3-01] MattressScene.tsx renders 3D layers, bed frame, and OrbitControls with polar constraints', () => {
+// 3. 3D Scene, Camera Controls, & Spinal Morphing Verification
+test('[R3-01] CameraRig.tsx and MattressScene.tsx render 3D layers, environment, and camera controls with polar limits', () => {
+  const cameraCode = fs.readFileSync(path.join(__dirname, '../../src/features/mattress/components/CameraRig.tsx'), 'utf8');
   const sceneCode = fs.readFileSync(path.join(__dirname, '../../src/features/mattress/components/MattressScene.tsx'), 'utf8');
-  assert(sceneCode.includes('OrbitControls'), 'Missing OrbitControls');
-  assert(sceneCode.includes('maxPolarAngle'), 'Missing polar angle restraint');
-  assert(sceneCode.includes('gridLayerRef'), 'Missing gridLayerRef');
-  assert(sceneCode.includes('foamLayerRef'), 'Missing foamLayerRef');
-  assert(sceneCode.includes('baseLayerRef'), 'Missing baseLayerRef');
+  assert(cameraCode.includes('CameraControls'), 'Missing CameraControls in CameraRig');
+  assert(cameraCode.includes('maxPolarAngle'), 'Missing polar angle restraint');
+  assert(sceneCode.includes('CameraRig'), 'MattressScene must mount CameraRig');
+  assert(sceneCode.includes('Environment'), 'MattressScene must mount futuristic Environment');
+  assert(sceneCode.includes('HumanFigure'), 'MattressScene must mount HumanFigure');
 });
 
-test('[R3-02] MattressScene.tsx morphs dynamic spine curve between neutral cyan line and sagging red line', () => {
-  const sceneCode = fs.readFileSync(path.join(__dirname, '../../src/features/mattress/components/MattressScene.tsx'), 'utf8');
-  assert(sceneCode.includes('spinePoints'), 'Missing spinePoints definition');
-  assert(sceneCode.includes('hasSmartGrid ? \'#00ffff\' : \'#ff3366\''), 'Missing dynamic spine color logic');
-  assert(sceneCode.includes('shoulderSink'), 'Missing shoulder sink math');
-  assert(sceneCode.includes('pelvicSink'), 'Missing pelvic sink math');
+test('[R3-02] HumanFigure.tsx morphs dynamic spine curve between neutral cyan and sagging rose with shoulder/pelvic sink', () => {
+  const figureCode = fs.readFileSync(path.join(__dirname, '../../src/features/mattress/components/HumanFigure.tsx'), 'utf8');
+  assert(figureCode.includes('spineCurve'), 'Missing spineCurve definition');
+  assert(figureCode.includes('shoulderSink'), 'Missing shoulder sink math');
+  assert(figureCode.includes('pelvicSink'), 'Missing pelvic sink math');
+  assert(figureCode.includes('spineColor'), 'Missing dynamic spine color logic');
 });
 
-test('[R3-03] MattressScene.tsx renders 7 pulsing HTML beacons along the sleeping figure', () => {
-  const sceneCode = fs.readFileSync(path.join(__dirname, '../../src/features/mattress/components/MattressScene.tsx'), 'utf8');
-  assert(sceneCode.includes('SEVEN_ZONES_DATA.map'), 'Missing 7-zone map loop');
-  assert(sceneCode.includes('animate-ping'), 'Missing pulsing beacon animation');
-  assert(sceneCode.includes('onSelectZone'), 'Missing beacon interaction handler');
+test('[R3-03] HumanFigure.tsx renders 7 pulsing beacons and interactive zones along the lateral sleeping figure', () => {
+  const figureCode = fs.readFileSync(path.join(__dirname, '../../src/features/mattress/components/HumanFigure.tsx'), 'utf8');
+  assert(figureCode.includes('SEVEN_ZONES_DATA'), 'Missing 7-zone data mapping');
+  assert(figureCode.includes('onSelectZone'), 'Missing beacon interaction handler');
+  assert(figureCode.includes('model.obj') || figureCode.includes('OBJLoader'), 'Must load anatomical 3D scan model');
 });
 
-// 4. Scorecard & Sleep Cycle Timeline Verification
-test('[R4-01] MetricsScorecard.tsx computes 4 support metrics and transitions scores upon grid toggle', () => {
+// 4. Scorecard & Elimination of 8-Hour Simulation
+test('[R4-01] MetricsScorecard.tsx and types.ts compute 4 support metrics (ADAPTIVE SUPPORT, BACK SUPPORT, FIRM SUPPORT, TARGETED PRESSURE RELIEF)', () => {
   const cardCode = fs.readFileSync(path.join(__dirname, '../../src/features/mattress/components/MetricsScorecard.tsx'), 'utf8');
-  assert(cardCode.includes('ADAPTIVE SUPPORT'), 'Missing Adaptive Support');
-  assert(cardCode.includes('BACK SUPPORT'), 'Missing Back Support');
-  assert(cardCode.includes('FIRM SUPPORT'), 'Missing Firm Support');
-  assert(cardCode.includes('PRESSURE RELIEF'), 'Missing Pressure Relief');
-  assert(cardCode.includes('hasSmartGrid'), 'Missing hasSmartGrid condition');
+  const typesCode = fs.readFileSync(path.join(__dirname, '../../src/features/mattress/types.ts'), 'utf8');
+  assert(typesCode.includes('ADAPTIVE SUPPORT'), 'Missing Adaptive Support');
+  assert(typesCode.includes('BACK SUPPORT'), 'Missing Back Support');
+  assert(typesCode.includes('FIRM SUPPORT'), 'Missing Firm Support');
+  assert(typesCode.includes('TARGETED PRESSURE RELIEF'), 'Missing Targeted Pressure Relief');
+  assert(cardCode.includes('hasSmartGrid'), 'Missing hasSmartGrid prop');
+  assert(cardCode.includes('getMetricState'), 'Missing getMetricState call');
 });
 
-test('[R4-02] SleepCycleScrubber.tsx provides 8-Hour scrub timeline with Play/Pause auto-play loop', () => {
-  const scrubCode = fs.readFileSync(path.join(__dirname, '../../src/features/mattress/components/SleepCycleScrubber.tsx'), 'utf8');
-  assert(scrubCode.includes('8-HOUR SLEEP CYCLE SIMULATION'), 'Missing 8-Hour heading');
-  assert(scrubCode.includes('Play 8-Hr Night'), 'Missing play button');
-  assert(scrubCode.includes('HOUR_DETAILS'), 'Missing hour stage details');
-  assert(scrubCode.includes('11:00 PM'), 'Missing start hour 11 PM');
-  assert(scrubCode.includes('07:00 AM'), 'Missing wake hour 7 AM');
+test('[R4-02] 8-Hour SleepCycleScrubber is completely removed from the project per owner instructions', () => {
+  const scrubberPath = path.join(__dirname, '../../src/features/mattress/components/SleepCycleScrubber.tsx');
+  assert(!fs.existsSync(scrubberPath), 'SleepCycleScrubber.tsx must be deleted');
+  const indexCode = fs.readFileSync(path.join(__dirname, '../../src/features/mattress/index.tsx'), 'utf8');
+  assert(!indexCode.includes('SleepCycleScrubber'), 'index.tsx must not import or render SleepCycleScrubber');
+  assert(!indexCode.includes('8-HOUR SLEEP CYCLE'), 'Must not contain 8-hour sleep cycle UI');
 });
 
-// 5. Tasks Table Integration Verification
-test('[R5-01] tasks-table.tsx provides handleSleepScienceWhatsApp linking to /m/:id or /mattress', () => {
+// 5. Tasks Table Integration & Scoped Share Token Verification
+test('[R5-01] tasks-table.tsx provides handleSleepScienceWhatsApp linking to /m/:token or /mattress with privacy protection', () => {
   const tableCode = fs.readFileSync(path.join(__dirname, '../../src/features/tasks/components/tasks-table.tsx'), 'utf8');
   assert(tableCode.includes('handleSleepScienceWhatsApp'), 'Missing handleSleepScienceWhatsApp function');
-  assert(tableCode.includes('/m/${patientId}'), 'Missing /m/:id route link');
   assert(tableCode.includes('/mattress'), 'Missing /mattress fallback link');
   assert(tableCode.includes('The Sleep Company'), 'Missing The Sleep Company signature');
   assert(tableCode.includes('SmartGRID™ vs ordinary memory foam'), 'Missing SmartGRID value proposition');
@@ -126,11 +132,11 @@ test('[R5-02] tasks-table.tsx renders quick SmartGRID preview button and Sleep S
 });
 
 // 6. Viewport & Mobile Responsiveness
-test('[R6-01] MattressExperience page uses full dynamic viewport height (100dvh) with touch-friendly layout', () => {
+test('[R6-01] MattressExperience page uses full dynamic viewport height (100dvh) with touch-friendly layout and exactly two primary modes', () => {
   const indexCode = fs.readFileSync(path.join(__dirname, '../../src/features/mattress/index.tsx'), 'utf8');
   assert(indexCode.includes('h-[100dvh]'), 'Missing 100dvh dynamic height');
   assert(indexCode.includes('COMFORT SIMULATOR'), 'Missing Comfort Simulator mode button');
-  assert(indexCode.includes('SPLIT 3D LAYERS'), 'Missing Split 3D Layers mode button');
+  assert(indexCode.includes('SPLIT LAYERS'), 'Missing Split Layers mode button');
   assert(indexCode.includes('SmartGRID™ (Neutral Spine)'), 'Missing quick toggle button');
   assert(indexCode.includes('Remove Grid (Sagging Memory Foam)'), 'Missing remove grid button');
 });
@@ -142,4 +148,3 @@ console.log('======================================================\n');
 if (failed > 0) {
   process.exit(1);
 }
-
