@@ -80,6 +80,16 @@ runTest('HC-PHY-04', 'CaptureForm pre-populates existing whatsappMessage, notes,
   assert.ok(captureFile.includes('initialData?.recommendedExercises'), 'CaptureForm must load existing recommendedExercises');
 });
 
+runTest('HC-PHY-05', 'CaptureForm auto-saves local drafts and protects against tab-switch / re-render data loss', () => {
+  const captureFile = fs.readFileSync(path.join(ROOT_DIR, 'src/components/CaptureForm.jsx'), 'utf8');
+  const tableFile = fs.readFileSync(path.join(ROOT_DIR, 'src/features/tasks/components/tasks-table.tsx'), 'utf8');
+  assert.ok(captureFile.includes('draftStorageKey'), 'CaptureForm must define scoped draftStorageKey');
+  assert.ok(captureFile.includes('localStorage.setItem(draftStorageKey'), 'CaptureForm must auto-save draft to localStorage');
+  assert.ok(captureFile.includes('prevTargetKeyRef'), 'CaptureForm must use prevTargetKeyRef to prevent re-render wipes');
+  assert.ok(captureFile.includes('handleDiscardDraft'), 'CaptureForm must provide handleDiscardDraft option');
+  assert.ok(tableFile.includes('sessionStorage.getItem(\'medic_tasks_expanded_row\')'), 'TasksTable must preserve expanded row across tab navigations');
+});
+
 // 3. System Data Flow Simulation
 runTest('HC-SIM-01', 'Simulation: WhatsApp send updates tracker_tasks, followups, and patients table in sync', () => {
   const tableFile = fs.readFileSync(path.join(ROOT_DIR, 'src/features/tasks/components/tasks-table.tsx'), 'utf8');

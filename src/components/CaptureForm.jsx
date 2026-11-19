@@ -65,37 +65,177 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
     return initialData.comments || initialData.Comments || '';
   };
 
-  const [formData, setFormData] = useState({
-    name: initialData?.name || '',
-    phone: initialData?.phone || '',
-    consultDate: initialData?.consultDate || 'Few Days ago',
-    painPointIds: getInitialPainPoints(),
-    consent: !!initialData
+  // Scoped key for persisting active draft in localStorage
+  const targetKey = initialData?.tracker_id
+    ? `tracker_${initialData.tracker_id}`
+    : initialData?.id
+      ? `patient_${initialData.id}`
+      : (initialData?.phone ? `phone_${initialData.phone}` : 'standalone_new');
+  const draftStorageKey = `medic_draft_${targetKey}`;
+
+  const loadSavedDraft = (key) => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch (e) {
+      console.warn("Error reading draft:", e);
+    }
+    return null;
+  };
+
+  const initialDraft = loadSavedDraft(draftStorageKey);
+
+  const [formData, setFormData] = useState(() => {
+    if (initialDraft?.formData) return initialDraft.formData;
+    return {
+      name: initialData?.name || '',
+      phone: initialData?.phone ? String(initialData.phone) : '',
+      consultDate: initialData?.consultDate || 'Few Days ago',
+      painPointIds: getInitialPainPoints(),
+      consent: !!initialData
+    };
   });
-  const [exercises, setExercises] = useState(initialData?.recommendedExercises || []);
-  const [customConditions, setCustomConditions] = useState(initialData?.customConditions || []);
-  const [conditionNotes, setConditionNotes] = useState(initialData?.conditionNotes || {});
-  const [whatsappMessage, setWhatsappMessage] = useState(getInitialMessage());
+  const [exercises, setExercises] = useState(() => {
+    if (initialDraft?.exercises) return initialDraft.exercises;
+    return initialData?.recommendedExercises || [];
+  });
+  const [customConditions, setCustomConditions] = useState(() => {
+    if (initialDraft?.customConditions) return initialDraft.customConditions;
+    return initialData?.customConditions || [];
+  });
+  const [conditionNotes, setConditionNotes] = useState(() => {
+    if (initialDraft?.conditionNotes) return initialDraft.conditionNotes;
+    return initialData?.conditionNotes || {};
+  });
+  const [whatsappMessage, setWhatsappMessage] = useState(() => {
+    if (initialDraft?.whatsappMessage !== undefined && initialDraft?.whatsappMessage !== null) {
+      return initialDraft.whatsappMessage;
+    }
+    return getInitialMessage();
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableExercises, setAvailableExercises] = useState([]);
+  const [isDraftActive, setIsDraftActive] = useState(Boolean(initialDraft));
+  const [lastSavedTime, setLastSavedTime] = useState(initialDraft?.savedAt || null);
 
+  const prevTargetKeyRef = React.useRef(targetKey);
+
+  // ONLY re-initialize if the user actually switched to a DIFFERENT customer/task.
+  // Never wipe out input if the component merely re-rendered or tab regained focus.
   React.useEffect(() => {
-    if (initialData) {
-      setFormData(prev => ({
-        ...prev,
-        name: initialData.name || '',
-        phone: initialData.phone ? String(initialData.phone) : '',
-        consultDate: initialData.consultDate || 'Few Days ago',
-        painPointIds: getInitialPainPoints(),
-        consent: true
-      }));
-      if (initialData.recommendedExercises) setExercises(initialData.recommendedExercises);
-      if (initialData.customConditions) setCustomConditions(initialData.customConditions);
-      if (initialData.conditionNotes) setConditionNotes(initialData.conditionNotes);
-      const msg = getInitialMessage();
-      if (msg) setWhatsappMessage(msg);
+    if (prevTargetKeyRef.current !== targetKey) {
+      prevTargetKeyRef.current = targetKey;
+      const draft = loadSavedDraft(draftStorageKey);
+      if (draft) {
+        if (draft.formData) setFormData(draft.formData);
+        if (draft.exercises) setExercises(draft.exercises);
+        if (draft.customConditions) setCustomConditions(draft.customConditions);
+        if (draft.conditionNotes) setConditionNotes(draft.conditionNotes);
+        if (draft.whatsappMessage !== undefined) setWhatsappMessage(draft.whatsappMessage);
+        setIsDraftActive(true);
+        setLastSavedTime(draft.savedAt || null);
+      } else if (initialData) {
+        setFormData({
+          name: initialData.name || '',
+          phone: initialData.phone ? String(initialData.phone) : '',
+          consultDate: initialData.consultDate || 'Few Days ago',
+          painPointIds: getInitialPainPoints(),
+          consent: true
+        });
+        setExercises(initialData.recommendedExercises || []);
+        setCustomConditions(initialData.customConditions || []);
+        setConditionNotes(initialData.conditionNotes || {});
+        const msg = getInitialMessage();
+        setWhatsappMessage(msg || '');
+        setIsDraftActive(false);
+        setLastSavedTime(null);
+      } else {
+        setFormData({
+          name: '',
+          phone: '',
+          consultDate: 'Few Days ago',
+          painPointIds: [],
+          consent: false
+        });
+        setExercises([]);
+        setCustomConditions([]);
+        setConditionNotes({});
+        setWhatsappMessage('');
+        setIsDraftActive(false);
+        setLastSavedTime(null);
+      }
     }
-  }, [initialData]);
+  }, [targetKey, draftStorageKey]);
+
+  // Auto-save draft whenever user modifies any input (debounced by 300ms)
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      const hasContent = 
+        Boolean(formData.name || formData.phone || formData.painPointIds?.length > 0) ||
+        exercises.length > 0 ||
+        customConditions.length > 0 ||
+        Object.keys(conditionNotes).length > 0 ||
+        Boolean(whatsappMessage);
+
+      if (hasContent) {
+        const payload = {
+          formData,
+          exercises,
+          customConditions,
+          conditionNotes,
+          whatsappMessage,
+          savedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        try {
+          localStorage.setItem(draftStorageKey, JSON.stringify(payload));
+          setIsDraftActive(true);
+          setLastSavedTime(payload.savedAt);
+        } catch (e) {
+          console.warn("Could not save draft:", e);
+        }
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [formData, exercises, customConditions, conditionNotes, whatsappMessage, draftStorageKey]);
+
+  const handleDiscardDraft = () => {
+    if (window.confirm("Discard draft and restore original data from sheet?")) {
+      try {
+        localStorage.removeItem(draftStorageKey);
+      } catch (e) {}
+      setIsDraftActive(false);
+      setLastSavedTime(null);
+      if (initialData) {
+        setFormData({
+          name: initialData.name || '',
+          phone: initialData.phone ? String(initialData.phone) : '',
+          consultDate: initialData.consultDate || 'Few Days ago',
+          painPointIds: getInitialPainPoints(),
+          consent: true
+        });
+        setExercises(initialData.recommendedExercises || []);
+        setCustomConditions(initialData.customConditions || []);
+        setConditionNotes(initialData.conditionNotes || {});
+        setWhatsappMessage(getInitialMessage());
+      } else {
+        setFormData({
+          name: '',
+          phone: '',
+          consultDate: 'Few Days ago',
+          painPointIds: [],
+          consent: false
+        });
+        setExercises([]);
+        setCustomConditions([]);
+        setConditionNotes({});
+        setWhatsappMessage('');
+      }
+    }
+  };
 
   React.useEffect(() => {
     const fetchExercises = async () => {
@@ -194,6 +334,12 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
         await linkTaskToPatient(initialData.tracker_id, id);
       }
 
+      // Clear the local draft upon successful save
+      try {
+        localStorage.removeItem(draftStorageKey);
+      } catch (e) {}
+      setIsDraftActive(false);
+
       setIsSubmitting(false);
       alert(`Card processed successfully! Portal generated at /r/${id}`);
       
@@ -210,6 +356,25 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
 
   const formContent = (
     <form onSubmit={handleSubmit} className={isEmbedded ? "space-y-6" : "glass-panel p-6 sm:p-8 space-y-6"}>
+      {isDraftActive && (
+        <div className="flex items-center justify-between px-3.5 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span>Draft auto-saved {lastSavedTime ? `at ${lastSavedTime}` : ''} (saved in your browser)</span>
+          </div>
+          <button 
+            type="button" 
+            onClick={handleDiscardDraft} 
+            className="text-xs text-muted-foreground hover:text-destructive underline cursor-pointer ml-3 font-sans"
+            title="Discard draft and reset"
+          >
+            Discard Draft
+          </button>
+        </div>
+      )}
       
       <div>
         <label className="block text-sm font-medium text-muted-foreground mb-2">Customer Name</label>

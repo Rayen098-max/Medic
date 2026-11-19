@@ -53,7 +53,13 @@ const getTaskId = (row: TrackerRow) => row.id || `${row.Date || ''}-${row["Custo
 
 export function TasksTable({ data }: TasksTableProps) {
   const { profile } = useAuth()
-  const [expandedRowIdx, setExpandedRowIdx] = useState<string | null>(null)
+  const [expandedRowIdx, setExpandedRowIdx] = useState<string | null>(() => {
+    try {
+      return sessionStorage.getItem('medic_tasks_expanded_row') || null;
+    } catch {
+      return null;
+    }
+  })
   const [filledForms, setFilledForms] = useState<Set<string>>(new Set())
   const [filledPatientIds, setFilledPatientIds] = useState<Record<string, string>>({})
   const [dbPatients, setDbPatients] = useState<any[]>([])
@@ -88,16 +94,27 @@ export function TasksTable({ data }: TasksTableProps) {
       localStorage.setItem('deleted_tasks', JSON.stringify(Array.from(next)))
       return next
     });
-    if (expandedRowIdx === id) setExpandedRowIdx(null);
+    if (expandedRowIdx === id) {
+      setExpandedRowIdx(null);
+      try { sessionStorage.removeItem('medic_tasks_expanded_row'); } catch (e) {}
+    }
     setTaskToDelete(null);
   };
 
   const handleFillFormClick = (id: string) => {
-    if (expandedRowIdx === id) {
-      setExpandedRowIdx(null)
-    } else {
-      setExpandedRowIdx(id)
-    }
+    setExpandedRowIdx(prev => {
+      const next = prev === id ? null : id;
+      try {
+        if (next) {
+          sessionStorage.setItem('medic_tasks_expanded_row', next);
+        } else {
+          sessionStorage.removeItem('medic_tasks_expanded_row');
+        }
+      } catch (e) {
+        console.warn("sessionStorage error", e);
+      }
+      return next;
+    });
   }
 
   const handleDone = (id: string, newId?: string) => {

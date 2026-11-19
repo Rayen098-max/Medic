@@ -29,8 +29,8 @@ export function AuthProvider({ children }) {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+      setSession(prev => (prev?.access_token === session?.access_token ? prev : session));
+      setUser(prev => (prev?.id === session?.user?.id ? prev : (session?.user ?? null)));
       if (session?.user) {
         // Only set loading to true if this is an explicit sign in.
         // Removed setLoading(true) here because it causes the entire app
@@ -54,7 +54,12 @@ export function AuthProvider({ children }) {
         .single();
         
       if (error) throw error;
-      setProfile(data);
+      setProfile(prev => {
+        if (prev && prev.id === data?.id && prev.role === data?.role && prev.full_name === data?.full_name && prev.email === data?.email) {
+          return prev;
+        }
+        return data;
+      });
     } catch (error) {
       console.error('Error fetching user profile:', error);
     } finally {

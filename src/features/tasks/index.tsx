@@ -372,13 +372,13 @@ export function Tasks() {
       setIsFetching(false);
       toast.error("Failed to load tasks.");
     }
-  }, [profile])
+  }, [profile?.id, profile?.role, profile?.full_name])
 
   useEffect(() => {
-    if (profile) {
+    if (profile?.id) {
       fetchTasks();
     }
-  }, [profile, fetchTasks])
+  }, [profile?.id, fetchTasks])
 
   // Attach pre-calculated date metadata to each attended task, strictly filtered to last 3 months: Sep, Oct, Nov
   const enhancedTasks = useMemo(() => {
