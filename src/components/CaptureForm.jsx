@@ -66,19 +66,36 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
   };
 
   // Scoped key for persisting active draft in localStorage
-  const targetKey = initialData?.tracker_id
-    ? `tracker_${initialData.tracker_id}`
-    : initialData?.id
-      ? `patient_${initialData.id}`
-      : (initialData?.phone ? `phone_${initialData.phone}` : 'standalone_new');
-  const draftStorageKey = `medic_draft_${targetKey}`;
+  // Prioritize customer phone + date so draft key never drifts if row.id changes between sheet & Supabase
+  const cleanPhone = initialData?.phone ? String(initialData.phone).replace(/\D/g, '').slice(-10) : '';
+  const cleanDate = initialData?.consultDate ? String(initialData.consultDate).trim().replace(/[\\\/]/g, '-') : '';
 
-  const loadSavedDraft = (key) => {
+  const targetKey = (cleanPhone && cleanDate)
+    ? `cust_${cleanPhone}_${cleanDate}`
+    : cleanPhone
+      ? `phone_${cleanPhone}`
+      : initialData?.tracker_id
+        ? `tracker_${initialData.tracker_id}`
+        : initialData?.id
+          ? `patient_${initialData.id}`
+          : (initialData?.name ? `name_${String(initialData.name).trim().toLowerCase()}` : 'standalone_new');
+
+  const draftStorageKey = `medic_draft_${targetKey}`;
+  const legacyStorageKeys = [
+    initialData?.tracker_id ? `medic_draft_tracker_${initialData.tracker_id}` : null,
+    initialData?.id ? `medic_draft_patient_${initialData.id}` : null,
+    cleanPhone ? `medic_draft_phone_${cleanPhone}` : null,
+  ].filter(Boolean);
+
+  const loadSavedDraft = (primaryKey, legacyKeys = []) => {
     try {
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed && typeof parsed === 'object') return parsed;
+      const keysToTry = [primaryKey, ...legacyKeys];
+      for (const key of keysToTry) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === 'object') return parsed;
+        }
       }
     } catch (e) {
       console.warn("Error reading draft:", e);
@@ -86,9 +103,9 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
     return null;
   };
 
-  const initialDraft = loadSavedDraft(draftStorageKey);
+  const initialDraft = loadSavedDraft(draftStorageKey, legacyStorageKeys);
 
-  const [formData, setFormData] = useState(() => {
+  const [formData, _setFormData] = useState(() => {
     if (initialDraft?.formData) return initialDraft.formData;
     return {
       name: initialData?.name || '',
@@ -98,19 +115,19 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
       consent: !!initialData
     };
   });
-  const [exercises, setExercises] = useState(() => {
+  const [exercises, _setExercises] = useState(() => {
     if (initialDraft?.exercises) return initialDraft.exercises;
     return initialData?.recommendedExercises || [];
   });
-  const [customConditions, setCustomConditions] = useState(() => {
+  const [customConditions, _setCustomConditions] = useState(() => {
     if (initialDraft?.customConditions) return initialDraft.customConditions;
     return initialData?.customConditions || [];
   });
-  const [conditionNotes, setConditionNotes] = useState(() => {
+  const [conditionNotes, _setConditionNotes] = useState(() => {
     if (initialDraft?.conditionNotes) return initialDraft.conditionNotes;
     return initialData?.conditionNotes || {};
   });
-  const [whatsappMessage, setWhatsappMessage] = useState(() => {
+  const [whatsappMessage, _setWhatsappMessage] = useState(() => {
     if (initialDraft?.whatsappMessage !== undefined && initialDraft?.whatsappMessage !== null) {
       return initialDraft.whatsappMessage;
     }
@@ -122,56 +139,115 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
   const [lastSavedTime, setLastSavedTime] = useState(initialDraft?.savedAt || null);
 
   const prevTargetKeyRef = React.useRef(targetKey);
+  const prevInitialDataIdRef = React.useRef(initialData?.id);
+  const hasUserEditedRef = React.useRef(Boolean(initialDraft));
 
-  // ONLY re-initialize if the user actually switched to a DIFFERENT customer/task.
-  // Never wipe out input if the component merely re-rendered or tab regained focus.
+  const markUserEdited = () => {
+    hasUserEditedRef.current = true;
+  };
+
+  const setFormData = (val) => { markUserEdited(); _setFormData(val); };
+  const setExercises = (val) => { markUserEdited(); _setExercises(val); };
+  const setCustomConditions = (val) => { markUserEdited(); _setCustomConditions(val); };
+  const setConditionNotes = (val) => { markUserEdited(); _setConditionNotes(val); };
+  const setWhatsappMessage = (val) => { markUserEdited(); _setWhatsappMessage(val); };
+
+  // Handle customer switching OR arrival of loaded database record
   React.useEffect(() => {
-    if (prevTargetKeyRef.current !== targetKey) {
+    const isDifferentTarget = prevTargetKeyRef.current !== targetKey;
+    const isNewPatientIdLoaded = !prevInitialDataIdRef.current && Boolean(initialData?.id);
+    const hasIncomingSavedData = Boolean(
+      initialData && (
+        initialData.id || 
+        (Array.isArray(initialData.recommendedExercises) && initialData.recommendedExercises.length > 0) ||
+        (initialData.conditionNotes && Object.keys(initialData.conditionNotes).length > 0)
+      )
+    );
+
+    if (isDifferentTarget) {
+      // Switched to a different customer row
       prevTargetKeyRef.current = targetKey;
-      const draft = loadSavedDraft(draftStorageKey);
+      prevInitialDataIdRef.current = initialData?.id;
+      const draft = loadSavedDraft(draftStorageKey, legacyStorageKeys);
       if (draft) {
-        if (draft.formData) setFormData(draft.formData);
-        if (draft.exercises) setExercises(draft.exercises);
-        if (draft.customConditions) setCustomConditions(draft.customConditions);
-        if (draft.conditionNotes) setConditionNotes(draft.conditionNotes);
-        if (draft.whatsappMessage !== undefined) setWhatsappMessage(draft.whatsappMessage);
+        if (draft.formData) _setFormData(draft.formData);
+        if (draft.exercises) _setExercises(draft.exercises);
+        if (draft.customConditions) _setCustomConditions(draft.customConditions);
+        if (draft.conditionNotes) _setConditionNotes(draft.conditionNotes);
+        if (draft.whatsappMessage !== undefined) _setWhatsappMessage(draft.whatsappMessage);
         setIsDraftActive(true);
         setLastSavedTime(draft.savedAt || null);
+        hasUserEditedRef.current = true;
       } else if (initialData) {
-        setFormData({
+        _setFormData({
           name: initialData.name || '',
           phone: initialData.phone ? String(initialData.phone) : '',
           consultDate: initialData.consultDate || 'Few Days ago',
           painPointIds: getInitialPainPoints(),
           consent: true
         });
-        setExercises(initialData.recommendedExercises || []);
-        setCustomConditions(initialData.customConditions || []);
-        setConditionNotes(initialData.conditionNotes || {});
+        _setExercises(initialData.recommendedExercises || []);
+        _setCustomConditions(initialData.customConditions || []);
+        _setConditionNotes(initialData.conditionNotes || {});
         const msg = getInitialMessage();
-        setWhatsappMessage(msg || '');
+        _setWhatsappMessage(msg || '');
         setIsDraftActive(false);
         setLastSavedTime(null);
+        hasUserEditedRef.current = false;
       } else {
-        setFormData({
+        _setFormData({
           name: '',
           phone: '',
           consultDate: 'Few Days ago',
           painPointIds: [],
           consent: false
         });
-        setExercises([]);
-        setCustomConditions([]);
-        setConditionNotes({});
-        setWhatsappMessage('');
+        _setExercises([]);
+        _setCustomConditions([]);
+        _setConditionNotes({});
+        _setWhatsappMessage('');
+        setIsDraftActive(false);
+        setLastSavedTime(null);
+        hasUserEditedRef.current = false;
+      }
+    } else if (isNewPatientIdLoaded || (!hasUserEditedRef.current && hasIncomingSavedData)) {
+      // Same customer, but database record has arrived (e.g. getPatients resolved)
+      // and the user has not made any unsaved edits yet.
+      prevInitialDataIdRef.current = initialData?.id;
+      const draft = loadSavedDraft(draftStorageKey, legacyStorageKeys);
+      if (!draft && initialData) {
+        _setFormData(prev => ({
+          ...prev,
+          name: initialData.name || prev.name,
+          phone: initialData.phone ? String(initialData.phone) : prev.phone,
+          consultDate: initialData.consultDate || prev.consultDate,
+          painPointIds: getInitialPainPoints(),
+          consent: true
+        }));
+        _setExercises(initialData.recommendedExercises || []);
+        _setCustomConditions(initialData.customConditions || []);
+        _setConditionNotes(initialData.conditionNotes || {});
+        const msg = getInitialMessage();
+        _setWhatsappMessage(msg || '');
         setIsDraftActive(false);
         setLastSavedTime(null);
       }
     }
-  }, [targetKey, draftStorageKey]);
+  }, [
+    targetKey, 
+    draftStorageKey, 
+    initialData?.id, 
+    initialData?.recommendedExercises, 
+    initialData?.conditionNotes,
+    initialData?.customConditions,
+    initialData?.whatsappMessage
+  ]);
 
   // Auto-save draft whenever user modifies any input (debounced by 300ms)
   React.useEffect(() => {
+    // Only auto-save to localStorage if user has made an active edit or draft was already active
+    if (!hasUserEditedRef.current && !isDraftActive) return;
+
     const timer = setTimeout(() => {
       const hasContent = 
         Boolean(formData.name || formData.phone || formData.painPointIds?.length > 0) ||
@@ -200,15 +276,19 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [formData, exercises, customConditions, conditionNotes, whatsappMessage, draftStorageKey]);
+  }, [formData, exercises, customConditions, conditionNotes, whatsappMessage, draftStorageKey, isDraftActive]);
 
   const handleDiscardDraft = () => {
     if (window.confirm("Discard draft and restore original data from sheet?")) {
       try {
         localStorage.removeItem(draftStorageKey);
+        legacyStorageKeys.forEach(k => {
+          try { localStorage.removeItem(k); } catch (e) {}
+        });
       } catch (e) {}
       setIsDraftActive(false);
       setLastSavedTime(null);
+      hasUserEditedRef.current = false;
       if (initialData) {
         setFormData({
           name: initialData.name || '',
@@ -330,15 +410,23 @@ export default function CaptureForm({ initialData = null, onSuccess = null, isEm
       const id = await upsertPatient(newPatient, patientIdToUpdate);
       
       // If linked to a task in tracker_tasks, update the task in Supabase
-      if (initialData?.tracker_id) {
-        await linkTaskToPatient(initialData.tracker_id, id);
+      if (initialData?.tracker_id || formData.phone) {
+        await linkTaskToPatient(initialData?.tracker_id, id, {
+          phone: formData.phone || initialData?.phone,
+          date: initialData?.consultDate || formData.consultDate,
+          name: formData.name || initialData?.name
+        });
       }
 
       // Clear the local draft upon successful save
       try {
         localStorage.removeItem(draftStorageKey);
+        legacyStorageKeys.forEach(k => {
+          try { localStorage.removeItem(k); } catch (e) {}
+        });
       } catch (e) {}
       setIsDraftActive(false);
+      hasUserEditedRef.current = false;
 
       setIsSubmitting(false);
       alert(`Card processed successfully! Portal generated at /r/${id}`);

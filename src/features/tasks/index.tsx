@@ -334,7 +334,12 @@ export function Tasks() {
               if ((nameVal || numVal) && isAttended) {
                 const parsed = parseDateMetadata(lastDate, physioKey);
                 if (parsed.isoDate && ALLOWED_MONTH_KEYS.includes(parsed.monthKey)) {
+                  const cleanPhone = String(numVal || '').replace(/\D/g, '').slice(-10);
+                  const sheetRowId = (physioKey && cleanPhone) 
+                    ? `${physioKey.toLowerCase()}_${cleanPhone}_${parsed.isoDate}`
+                    : undefined;
                   mergedRows.push({
+                    id: sheetRowId,
                     Date: parsed.isoDate,
                     "Physio Name": physioKey,
                     "Customer Name": nameVal || 'Unknown',

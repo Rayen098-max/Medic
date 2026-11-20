@@ -103,13 +103,43 @@ export const getTrackerTasks = async (physioProfile) => {
   return allRows;
 };
 
-export const linkTaskToPatient = async (taskId, patientId) => {
-  if (!supabase || !taskId) return;
+export const linkTaskToPatient = async (taskId, patientId, metadata = {}) => {
+  if (!supabase || !patientId) return;
+  const now = new Date().toISOString();
   try {
-    await supabase
-      .from('tracker_tasks')
-      .update({ patient_id: patientId, updated_at: new Date().toISOString() })
-      .eq('id', taskId);
+    // 1. Direct update if valid taskId provided
+    if (taskId) {
+      const { data, error } = await supabase
+        .from('tracker_tasks')
+        .update({ patient_id: patientId, updated_at: now })
+        .eq('id', taskId)
+        .select('id');
+      if (!error && Array.isArray(data) && data.length > 0) {
+        return;
+      }
+    }
+
+    // 2. Fallback matching by consult_date and phone or name
+    const cleanPhone = metadata.phone ? String(metadata.phone).replace(/\D/g, '').slice(-10) : '';
+    const dateStr = metadata.date || '';
+    if (cleanPhone && dateStr) {
+      await supabase
+        .from('tracker_tasks')
+        .update({ patient_id: patientId, updated_at: now })
+        .eq('consult_date', dateStr)
+        .ilike('customer_phone', `%${cleanPhone}%`);
+    } else if (cleanPhone) {
+      await supabase
+        .from('tracker_tasks')
+        .update({ patient_id: patientId, updated_at: now })
+        .ilike('customer_phone', `%${cleanPhone}%`);
+    } else if (metadata.name && dateStr) {
+      await supabase
+        .from('tracker_tasks')
+        .update({ patient_id: patientId, updated_at: now })
+        .eq('consult_date', dateStr)
+        .ilike('customer_name', `%${String(metadata.name).trim()}%`);
+    }
   } catch (err) {
     console.warn("Error linking task to patient in Supabase:", err);
   }

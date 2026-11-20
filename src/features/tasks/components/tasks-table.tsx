@@ -49,7 +49,17 @@ interface TasksTableProps {
   data: TrackerRow[]
 }
 
-const getTaskId = (row: TrackerRow) => row.id || `${row.Date || ''}-${row["Customer Name"] || ''}-${row["Customer Number"] || ''}`
+const getTaskId = (row: TrackerRow) => {
+  if (row.id) return row.id;
+  const rawPhone = String(row["Customer Number"] || '').replace(/\D/g, '');
+  const cleanPhone = rawPhone.length >= 7 ? rawPhone.slice(-10) : '';
+  const dateStr = String(row.Date || '').trim();
+  const physioStr = String(row["Physio Name"] || '').trim().toLowerCase();
+  if (physioStr && cleanPhone && dateStr) {
+    return `${physioStr}_${cleanPhone}_${dateStr}`;
+  }
+  return `${dateStr}-${row["Customer Name"] || ''}-${row["Customer Number"] || ''}`;
+};
 
 export function TasksTable({ data }: TasksTableProps) {
   const { profile } = useAuth()
@@ -121,8 +131,21 @@ export function TasksTable({ data }: TasksTableProps) {
     setFilledForms(prev => new Set(prev).add(id))
     if (newId) {
       setFilledPatientIds(prev => ({ ...prev, [id]: newId }))
+      const r = data.find(item => getTaskId(item) === id);
+      if (r) {
+        r.patient_id = newId;
+        r.whatsapp_sent_at = new Date().toISOString();
+      }
     }
-    setExpandedRowIdx(null)
+    // Re-fetch patients to update dbPatients cache immediately
+    getPatients().then(res => {
+      if (res) setDbPatients(res);
+    }).catch(console.warn);
+
+    setExpandedRowIdx(null);
+    try {
+      sessionStorage.removeItem('medic_tasks_expanded_row');
+    } catch (e) {}
   }
 
   const getMatchedPatientId = useCallback((row: TrackerRow, id: string) => {
@@ -135,17 +158,39 @@ export function TasksTable({ data }: TasksTableProps) {
 
     // 2. Check explicitly linked patient IDs (from local session)
     if (filledPatientIds[id]) return filledPatientIds[id];
-    const cleanPhone = String(row["Customer Number"] || "").replace(/\D/g, '');
+    const cleanPhone = String(row["Customer Number"] || "").replace(/\D/g, '').slice(-10);
     const cleanName = String(row["Customer Name"] || "").trim().toLowerCase();
-    
-    const found = dbPatients.find(p => {
-      const pPhone = String(p.phone || "").replace(/\D/g, '');
-      const pName = String(p.name || "").trim().toLowerCase();
-      return (cleanPhone.length >= 7 && pPhone.length >= 7 && (pPhone.includes(cleanPhone) || cleanPhone.includes(pPhone))) ||
-             (cleanName && pName && (cleanName === pName));
-    });
+    const rowDate = String(row.Date || "").trim();
 
-    return found ? found.id : null;
+    // 3. Match by 10-digit phone AND date
+    if (cleanPhone && rowDate) {
+      const foundByPhoneAndDate = dbPatients.find(p => {
+        const pPhone = String(p.phone || "").replace(/\D/g, '').slice(-10);
+        const pDate = String(p.consultDate || "").trim();
+        return pPhone === cleanPhone && (pDate === rowDate || pDate.includes(rowDate) || rowDate.includes(pDate));
+      });
+      if (foundByPhoneAndDate) return foundByPhoneAndDate.id;
+    }
+
+    // 4. Match by 10-digit phone
+    if (cleanPhone) {
+      const foundByPhone = dbPatients.find(p => {
+        const pPhone = String(p.phone || "").replace(/\D/g, '').slice(-10);
+        return pPhone === cleanPhone;
+      });
+      if (foundByPhone) return foundByPhone.id;
+    }
+
+    // 5. Match by exact Name
+    if (cleanName && cleanName !== 'unknown' && cleanName !== 'n/a') {
+      const foundByName = dbPatients.find(p => {
+        const pName = String(p.name || "").trim().toLowerCase();
+        return pName === cleanName;
+      });
+      if (foundByName) return foundByName.id;
+    }
+
+    return null;
   }, [dbPatients, filledPatientIds]);
 
   const handlePreview = (row: TrackerRow, id: string) => {
@@ -570,6 +615,7 @@ export function TasksTable({ data }: TasksTableProps) {
                                       conditionNotes: patient?.conditionNotes || {},
                                       whatsappMessage: customAdvice,
                                       recommendedExercises: patient?.recommendedExercises || [],
+                                      customConditions: patient?.customConditions || [],
                                       comments: row.Comments || row.comments || ''
                                     }}
                                     onSuccess={(newId?: string) => handleDone(id, newId)}
